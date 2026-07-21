@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-
 import 'core/provider/App_Provider.dart';
 import 'core/routes/App_Routes.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +27,6 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             initialRoute: '/',
             routes: AppRoutes.routes,
-            // Use the static routes map directly
             onUnknownRoute: (settings) {
               debugPrint(
                 'Attempted to navigate to unknown route: ${settings.name}',
