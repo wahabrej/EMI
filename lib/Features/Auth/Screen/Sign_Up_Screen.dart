@@ -40,7 +40,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (picked != null) {
       setState(() {
         _dobController.text =
-        "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -57,7 +57,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               'assets/images/back.png',
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) =>
-              const SizedBox.shrink(),
+                  const SizedBox.shrink(),
             ),
           ),
 
@@ -87,11 +87,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Transform.translate(
-                                  offset: Offset(0, -40),
+                                  offset: Offset(0, -50),
                                   child: Text(
                                     'সহজ কিস্তিতে মোবাইল ফোন',
                                     style: TextStyle(
-                                      fontSize: 20,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF64748B),
                                       letterSpacing: 0.2,
@@ -122,7 +122,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             // First Name
                             CustomTextField(
                               controller: _firstNameController,
-                              hintText: 'Jabed',
+                              hintText: 'Mohammad',
                             ),
 
                             const SizedBox(height: 14),
@@ -130,7 +130,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             // Last Name
                             CustomTextField(
                               controller: _lastNameController,
-                              hintText: 'Akhter',
+                              hintText: 'Islam',
                             ),
 
                             const SizedBox(height: 14),
@@ -138,7 +138,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             // Email
                             CustomTextField(
                               controller: _emailController,
-                              hintText: 'jabedakhter@gmail.com',
+                              hintText: 'islam@gmail.com',
                               keyboardType: TextInputType.emailAddress,
                             ),
 
@@ -169,10 +169,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         fontSize: 14,
                                       ),
                                       contentPadding:
-                                      const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 16,
-                                      ),
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 16,
+                                          ),
                                       border: InputBorder.none,
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
@@ -252,9 +252,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         ),
                                         border: InputBorder.none,
                                         contentPadding:
-                                        const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                        ),
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -274,10 +274,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(height: 28),
 
                             // Register Button
-                            CustomButton(
-                              text: 'Register',
-                              onPressed: () {},
-                            ),
+                            CustomButton(text: 'Register', onPressed: () {}),
 
                             const Spacer(),
 
@@ -294,7 +291,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 GestureDetector(
                                   onTap: () {
                                     Navigator.pushNamed(
-                                        context, RouteName.loginScreen);
+                                      context,
+                                      RouteName.loginScreen,
+                                    );
                                   },
                                   child: const Text(
                                     'Log in',

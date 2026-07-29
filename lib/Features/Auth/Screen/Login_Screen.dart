@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/Common_Widget/Custom_Button.dart';
 import '../../../core/Common_Widget/Custom_TextField.dart';
 import '../../../core/routes/Routes_name.dart';
+import '../ModelView/Auth_Screen_Provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,8 +24,50 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // 🚀 Handle Login Action
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both email and password')),
+      );
+      return;
+    }
+
+    final authProvider = context.read<AuthScreenProvider>();
+
+    bool success = await authProvider.login(
+      email: email,
+      password: password,
+      rememberMe: _rememberMe,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      // 🟢 Login Successful -> Navigate to Home / Parent Screen
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        RouteName.parentScreen,
+            (route) => false,
+      );
+    } else {
+      // 🔴 Show Error Message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Login failed!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthScreenProvider>();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Stack(
@@ -56,26 +100,25 @@ class _LoginScreenState extends State<LoginScreen> {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Image.asset(
-                                  'assets/icons/logo.png',
+                                  'assets/icons/logo1.png',
                                   height: 190,
                                   fit: BoxFit.contain,
                                 ),
                                 const SizedBox(height: 6),
-                                 Transform.translate(
-                                   offset: Offset(0, -40),
-                                   child: Text(
+                                Transform.translate(
+                                  offset: const Offset(0, -50),
+                                  child: const Text(
                                     'সহজ কিস্তিতে মোবাইল ফোন',
                                     style: TextStyle(
-                                      fontSize: 20,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF64748B),
                                       letterSpacing: 0.2,
                                     ),
-                                                                   ),
-                                 ),
+                                  ),
+                                ),
                               ],
                             ),
-
                             const SizedBox(height: 32),
 
                             // Title Section
@@ -102,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             // Custom Email Field
                             CustomTextField(
                               controller: _emailController,
-                              hintText: 'Jabedakhter@gmail.com',
+                              hintText: 'islam@gmail.com',
                               keyboardType: TextInputType.emailAddress,
                             ),
 
@@ -169,12 +212,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             const SizedBox(height: 28),
 
-                            // Custom Button
-                            CustomButton(
+                            // 🔘 Custom Button with Loading Spinner
+                            authProvider.isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : CustomButton(
                               text: 'Log In',
-                              onPressed: () {
-                                // Login Logic
-                              },
+                              onPressed: _handleLogin,
                             ),
 
                             const SizedBox(height: 28),
@@ -218,7 +261,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    Navigator.pushNamed(context, RouteName.signUpScreen);
+                                    Navigator.pushNamed(
+                                      context,
+                                      RouteName.signUpScreen,
+                                    );
                                   },
                                   child: const Text(
                                     'Sign Up',

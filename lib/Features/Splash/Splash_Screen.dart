@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_pay_app/core/routes/Routes_name.dart';
+import '../../core/constant/Token_storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,11 +36,36 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushNamed(context, RouteName.loginScreen);
-      }
-    });
+    // 🚀 Check Authentication Token and Navigate
+    _checkTokenAndNavigate();
+  }
+
+  Future<void> _checkTokenAndNavigate() async {
+    // এনিমেশন দেখার জন্য ন্যূনতম ২-৩ সেকেন্ড বিলম্ব রাখা ভালো
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    final tokenStorage = AppStorage();
+    final token = await tokenStorage.getToken();
+
+    if (!mounted) return;
+
+    if (token != null && token.isNotEmpty) {
+      // 🟢 Token আছে -> ParentScreen (Home)-এ নিয়ে যাও এবং ব্যাক স্ট্যাক ক্লিয়ার করো
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        RouteName.parentScreen,
+            (route) => false,
+      );
+    } else {
+      // 🔴 Token নাই -> LoginScreen-এ নিয়ে যাও
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        RouteName.loginScreen,
+            (route) => false,
+      );
+    }
   }
 
   @override
@@ -54,7 +80,12 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset('assets/images/back.png', fit: BoxFit.cover),
+            child: Image.asset(
+              'assets/images/back.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+              const SizedBox.shrink(),
+            ),
           ),
           Center(
             child: FadeTransition(
