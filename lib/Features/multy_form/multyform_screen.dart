@@ -1,141 +1,144 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:smart_pay_app/Features/multy_form/viewModel/multyform_provider.dart';
-
-import 'Payment_step.dart';
-import 'confirmation_step.dart'; // 🔹 Imported Confirmation Step
-import 'customer_info_step.dart';
-import 'guarantor_step.dart';
-import 'kyc_verification_step.dart';
+import '../../../../core/constant/App_Colors.dart';
+import 'viewModel/multyform_provider.dart';
 import 'order_review_step.dart';
+import 'customer_info_step.dart';
+import 'kyc_verification_step.dart';
+import 'guarantor_step.dart';
+import 'Payment_step.dart';
+import 'confirmation_step.dart';
 
-class CheckoutScreen extends StatelessWidget {
-  const CheckoutScreen({super.key});
+class MultyFormScreen extends StatelessWidget {
+  const MultyFormScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => CheckoutViewModel(),
-      child: Consumer<CheckoutViewModel>(
-        builder: (context, vm, child) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF8FAFC),
-            appBar: AppBar(
-              title: const Text(
-                'Checkout Workflow',
-                style: TextStyle(color: Colors.black, fontSize: 16),
-              ),
-              backgroundColor: Colors.white,
-              elevation: 0.5,
-              leading: vm.currentStep > 0
-                  ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => vm.previousStep(),
-              )
-                  : null,
+    return Consumer<CheckoutViewModel>(
+      builder: (context, vm, child) {
+        return Scaffold(
+          backgroundColor: AppColors.bgGrey,
+          appBar: AppBar(
+            backgroundColor: AppColors.accentBlue,
+            elevation: 0,
+            title: const Text(
+              'Checkout Process',
+              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            body: vm.isLoading
-                ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 12),
-                  Text('Submitting Application... Please Wait'),
-                ],
-              ),
-            )
-                : Column(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.white),
+              onPressed: () {
+                // Here using currentDisplayStep getter
+                if (vm.currentDisplayStep > 0) {
+                  vm.previousStep();
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: _buildStepIndicator(vm),
+            ),
+          ),
+          body: _buildStepBody(vm, context),
+        );
+      },
+    );
+  }
+
+  Widget _buildStepIndicator(CheckoutViewModel vm) {
+    final activeSteps = vm.activeStepIndices;
+    final currentDisplayIndex = vm.currentDisplayStep; // Using the getter here
+    final totalActiveSteps = vm.totalSteps;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      color: AppColors.accentBlue,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: List.generate(totalActiveSteps, (index) {
+          bool isCompleted = currentDisplayIndex > index;
+          bool isActive = currentDisplayIndex == index;
+          int stepNumber = activeSteps[index] + 1; 
+
+          return Expanded(
+            child: Row(
               children: [
-                // Step Progress Bar Header
-                _buildStepHeader(vm.currentStep),
-
-                // All 6 Steps
-                Expanded(
-                  child: IndexedStack(
-                    index: vm.currentStep,
-                    children: [
-                      // Step 1: Order Review
-                      OrderReviewStep(
-                        onNext: () => vm.nextStep(),
-                      ),
-
-                      // Step 2: Customer Info
-                      CustomerInfoStep(
-                        onNext: () => vm.nextStep(),
-                      ),
-
-                      // Step 3: KYC Verification
-                      KycVerificationStep(
-                        onNext: () => vm.nextStep(),
-                      ),
-
-                      // Step 4: Guarantor Step
-                      GuarantorStep(
-                        onNext: () => vm.nextStep(),
-                      ),
-
-                      // Step 5: Payment Step
-                      PaymentStep(
-                        onNext: () => vm.nextStep(),
-                      ),
-
-                      // Step 6: Confirmation Step (Connected to ConfirmationStep widget)
-                      ConfirmationStep(
-                        onSuccess: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Loan Application Submitted Successfully!'),
-                              backgroundColor: Colors.green,
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.white
+                        : (isCompleted ? AppColors.successGreen : Colors.white24),
+                    shape: BoxShape.circle,
+                    border: isActive ? Border.all(color: AppColors.white, width: 2) : null,
+                  ),
+                  child: Center(
+                    child: isCompleted
+                        ? const Icon(Icons.check, size: 16, color: AppColors.white)
+                        : Text(
+                            '$stepNumber',
+                            style: TextStyle(
+                              color: isActive ? AppColors.primaryBlue : AppColors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
                             ),
-                          );
-                          // TODO: Navigate to Home or Success screen if needed
-                        },
-                      ),
-                    ],
+                          ),
                   ),
                 ),
+                if (index < totalActiveSteps - 1)
+                  Expanded(
+                    child: Container(
+                      height: 2,
+                      color: isCompleted ? AppColors.successGreen : Colors.white24,
+                    ),
+                  ),
               ],
             ),
           );
-        },
+        }),
       ),
     );
   }
 
-  // Header Stepper
-  Widget _buildStepHeader(int currentStep) {
-    List<String> titles = ['Order', 'Customer', 'KYC', 'Guarantor', 'Payment', 'Confirm'];
+  Widget _buildStepBody(CheckoutViewModel vm, BuildContext context) {
+    switch (vm.currentStep) {
+      case 0: return OrderReviewStep(onNext: () => vm.nextStep());
+      case 1: return CustomerInfoStep(onNext: () => vm.nextStep());
+      case 2: return KycVerificationStep(onNext: () => vm.nextStep());
+      case 3: return GuarantorStep(onNext: () => vm.nextStep());
+      case 4: return PaymentStep(onNext: () => vm.nextStep());
+      case 5: return ConfirmationStep(onSuccess: () => _handleSuccess(vm, context));
+      default: return const Center(child: Text("Unknown Step"));
+    }
+  }
 
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(titles.length, (index) {
-          bool active = index <= currentStep;
-          return Column(
-            children: [
-              CircleAvatar(
-                radius: 10,
-                backgroundColor: active ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-                child: Text(
-                  '${index + 1}',
-                  style: TextStyle(fontSize: 9, color: active ? Colors.white : Colors.black45),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                titles[index],
-                style: TextStyle(
-                  fontSize: 9,
-                  color: active ? const Color(0xFF2563EB) : Colors.black38,
-                  fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
-          );
-        }),
+  void _handleSuccess(CheckoutViewModel vm, BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text("Success"),
+          ],
+        ),
+        content: const Text("Your order has been submitted successfully."),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
+            onPressed: () {
+              vm.resetStep();
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+            },
+            child: const Text("Back to Home", style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

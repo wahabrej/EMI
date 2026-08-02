@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/Features/multy_form/viewModel/multyform_provider.dart';
+import '../../../../core/constant/App_Colors.dart';
 
 class KycVerificationStep extends StatefulWidget {
   final VoidCallback onNext;
@@ -17,7 +18,6 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
   final _formKey = GlobalKey<FormState>();
   final _nidController = TextEditingController();
 
-  // Mapping display names to API values
   final Map<String, String> _incomeProofOptions = {
     'Salary Slip': 'INCOME_PROOF_SALARY_SLIP',
     'Bank Statement': 'INCOME_PROOF_BANK_STATEMENT',
@@ -38,13 +38,49 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source, Function(File) onPicked) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: source, imageQuality: 85);
+  // 🔹 Common Image Source Selection
+  Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Select Document Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.primaryBlue),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.primaryBlue),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
 
-    if (image != null) {
-      onPicked(File(image.path));
-    }
+  Future<void> _pickImage(Function(File) onPicked) async {
+    await _showImageSourceActionSheet(context, (source) async {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: source, imageQuality: 85);
+      if (image != null) {
+        onPicked(File(image.path));
+      }
+    });
   }
 
   void _saveAndNext(CheckoutViewModel vm) {
@@ -77,7 +113,6 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
             ),
             const SizedBox(height: 20),
 
-            // ID Number Field
             const Text(
               'Customer NID / Passport Number',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
@@ -106,7 +141,7 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
               title: 'ID Front Side',
               subtitle: data.nidFront != null ? 'Front side uploaded' : 'Tap to upload front side',
               file: data.nidFront,
-              onTap: () => _pickImage(ImageSource.gallery, (file) => vm.setNidFront(file)),
+              onTap: () => _pickImage((file) => vm.setNidFront(file)),
             ),
             const SizedBox(height: 12),
 
@@ -114,7 +149,7 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
               title: 'ID Back Side',
               subtitle: data.nidBack != null ? 'Back side uploaded' : 'Tap to upload back side',
               file: data.nidBack,
-              onTap: () => _pickImage(ImageSource.gallery, (file) => vm.setNidBack(file)),
+              onTap: () => _pickImage((file) => vm.setNidBack(file)),
             ),
             const SizedBox(height: 24),
 
@@ -124,7 +159,6 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
             ),
             const SizedBox(height: 12),
 
-            // Income Proof Type Dropdown
             const Text(
               'Proof of Income Type',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
@@ -148,9 +182,8 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
             ),
             const SizedBox(height: 12),
 
-            // Income Proof Upload
             InkWell(
-              onTap: () => _pickImage(ImageSource.gallery, (file) => vm.setIncomeProof(file)),
+              onTap: () => _pickImage((file) => vm.setIncomeProof(file)),
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 width: double.infinity,
@@ -165,7 +198,7 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
                   children: [
                     Icon(
                       data.incomeProof != null ? Icons.check_circle : Icons.file_upload_outlined,
-                      color: data.incomeProof != null ? Colors.green : const Color(0xFF2563EB),
+                      color: data.incomeProof != null ? Colors.green : AppColors.primaryBlue,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -179,20 +212,16 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
             ),
             const SizedBox(height: 30),
 
-            // Next Step Button
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
                 onPressed: () => _saveAndNext(vm),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text(
-                  'Next Step',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                child: const Text('Next Step', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],
@@ -216,7 +245,7 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: file != null ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            color: file != null ? AppColors.primaryBlue : const Color(0xFFE2E8F0),
             width: file != null ? 1.5 : 1.0,
           ),
         ),
@@ -234,7 +263,7 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
                 borderRadius: BorderRadius.circular(8),
                 child: Image.file(file, fit: BoxFit.cover),
               )
-                  : const Icon(Icons.badge_outlined, color: Color(0xFF2563EB), size: 28),
+                  : const Icon(Icons.badge_outlined, color: AppColors.primaryBlue, size: 28),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -249,7 +278,7 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
             ),
             Icon(
               file != null ? Icons.check_circle : Icons.check_circle_outline,
-              color: file != null ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1),
+              color: file != null ? AppColors.primaryBlue : const Color(0xFFCBD5E1),
               size: 22,
             ),
           ],
@@ -265,7 +294,7 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF2563EB))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primaryBlue)),
       filled: true,
       fillColor: Colors.white,
     );

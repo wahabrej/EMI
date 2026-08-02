@@ -13,6 +13,9 @@ class AuthScreenProvider extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  String? _userRole;
+  String? get userRole => _userRole;
+
   // 🔹 Login Method
   Future<bool> login({
     required String email,
@@ -21,6 +24,7 @@ class AuthScreenProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     _errorMessage = null;
+    _userRole = null;
 
     try {
       final response = await http.post(
@@ -35,43 +39,30 @@ class AuthScreenProvider extends ChangeNotifier {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // 🔑 Dynamic Token Extraction
+        final userData = data['data']?['user'];
         final token = data['token'] ?? data['data']?['token'] ?? data['accessToken'];
-
-        // 👤 User details extraction from API Response
-        final userObj = data['data']?['user'];
-
-        // 🆔 Dynamic User ID Extraction
+        
         final userId = data['id'] ??
             data['userId'] ??
             data['data']?['id'] ??
             data['data']?['userId'] ??
-            userObj?['id'];
+            userData?['id'];
+        final userEmail = userData?['email'] ?? data['email'] ?? data['data']?['email'];
+        final userName = userData?['name'] ?? data['name'] ?? data['data']?['name'];
 
-        // 📧 Dynamic Email Extraction
-        final userEmail = userObj?['email'] ?? data['email'] ?? data['data']?['email'];
-
-        // 🏷️ Dynamic Name Extraction
-        final userName = userObj?['name'] ?? data['name'] ?? data['data']?['name'];
+        // 🛡️ Extract and Save Role Name
+        final roles = userData?['roles'] as List?;
+        if (roles != null && roles.isNotEmpty) {
+          _userRole = roles[0]['role']?['name']?.toString().toUpperCase();
+          debugPrint("👤 User Role Detected: $_userRole");
+          await _tokenStorage.saveUserRole(_userRole!);
+        }
 
         if (token != null) {
-          // 💾 Save Token
           await _tokenStorage.saveToken(token.toString());
-
-          // 💾 Save User ID
-          if (userId != null) {
-            await _tokenStorage.saveUserId(userId.toString());
-          }
-
-          // 💾 Save User Email
-          if (userEmail != null) {
-            await _tokenStorage.saveUserEmail(userEmail.toString());
-          }
-
-          // 💾 Save User Name
-          if (userName != null) {
-            await _tokenStorage.saveUserName(userName.toString());
-          }
+          if (userId != null) await _tokenStorage.saveUserId(userId.toString());
+          if (userEmail != null) await _tokenStorage.saveUserEmail(userEmail.toString());
+          if (userName != null) await _tokenStorage.saveUserName(userName.toString());
 
           _setLoading(false);
           return true;
@@ -87,6 +78,14 @@ class AuthScreenProvider extends ChangeNotifier {
 
     _setLoading(false);
     return false;
+  }
+
+  // 🔹 Logout Method
+  Future<void> logout(BuildContext context) async {
+    await _tokenStorage.clearAll(); // Clears all SharedPreferences data
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    }
   }
 
   void _setLoading(bool value) {

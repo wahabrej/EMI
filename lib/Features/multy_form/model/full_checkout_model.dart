@@ -10,6 +10,7 @@ class FullCheckoutModel {
   String? productId;
   String? productModelId;
   String? productModel;
+  String? brandName; // 💡 Added brand name
   double mrp = 0.0;
 
   // Sale Type

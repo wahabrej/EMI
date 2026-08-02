@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../constant/App_Colors.dart';
+
 class CustomTextField extends StatefulWidget {
   final String? hintText;
   final TextEditingController? controller;
@@ -24,7 +26,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -41,12 +43,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF1F2937),
+          color: AppColors.black,
         ),
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: TextStyle(
-            color: Colors.grey.shade400,
+          hintStyle: const TextStyle(
+            color: AppColors.lightGreyText,
             fontSize: 14,
           ),
           contentPadding: const EdgeInsets.symmetric(
@@ -56,11 +58,11 @@ class _CustomTextFieldState extends State<CustomTextField> {
           border: InputBorder.none,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+            borderSide: const BorderSide(color: AppColors.borderGrey, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+            borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
           ),
           suffixIcon: widget.isPassword
               ? IconButton(
@@ -68,7 +70,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
               _obscureText
                   ? Icons.visibility_off_outlined
                   : Icons.visibility_outlined,
-              color: Colors.grey.shade400,
+              color: AppColors.lightGreyText,
               size: 20,
             ),
             onPressed: () {
@@ -83,4 +85,3 @@ class _CustomTextFieldState extends State<CustomTextField> {
     );
   }
 }
-

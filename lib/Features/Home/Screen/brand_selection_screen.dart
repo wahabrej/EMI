@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/core/routes/Routes_name.dart';
 import '../../../core/constant/Api_End_point.dart';
+import '../../../core/constant/App_Colors.dart';
+import '../../multy_form/viewModel/multyform_provider.dart';
 import '../Model/PhoneProductModel.dart';
 import '../ViewModel/Brand_Selection_Model.dart';
 
@@ -13,14 +15,10 @@ class BrandSelectionScreen extends StatefulWidget {
 }
 
 class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
-  // Brand Primary Color (Dark Blue) matching image
-  static const Color primaryBlue = Color(0xFF0044B4);
-  static const Color accentBlue = Color(0xFF003882);
-  static const Color bgGrey = Color(0xFFF4F6F9);
-
   @override
   void initState() {
     super.initState();
+    //  Load API products on screen initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BrandSelectionViewModel>().fetchProducts();
     });
@@ -31,75 +29,87 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     final vm = context.watch<BrandSelectionViewModel>();
 
     return Scaffold(
-      backgroundColor: bgGrey,
+      backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
-          "SmartPay Catalog",
+          "Device Catalog",
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+            color: AppColors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+            letterSpacing: 0.5,
           ),
         ),
-        backgroundColor: accentBlue,
+        backgroundColor: AppColors.accentBlue,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, size: 22, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: vm.isLoading
-          ? const Center(child: CircularProgressIndicator(color: primaryBlue))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+            )
           : vm.errorMessage != null
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.greyText),
+                  const SizedBox(height: 16),
                   Text(
                     vm.errorMessage!,
-                    style: const TextStyle(color: Colors.red),
+                    style: const TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryBlue,
+                      backgroundColor: AppColors.primaryBlue,
                     ),
                     onPressed: () => vm.fetchProducts(),
                     child: const Text(
                       "Retry",
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                     ),
                   ),
                 ],
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 30),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 1. Searchable Product Selector
                   _buildProductDropdown(vm),
-                  const SizedBox(height: 12),
-                  _buildPurchaseModeSelector(vm),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 20),
 
+                  // 2. Purchase Mode Selector (EMI vs Full Cash)
+                  _buildPurchaseModeSelector(vm),
+                  const SizedBox(height: 24),
+
+                  // 3. Product Header Info
                   if (vm.selectedProduct != null) ...[
                     _buildProductHeader(vm.selectedProduct!),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 24),
                   ],
 
+                  // 4. EMI Section
                   if (vm.selectedPurchaseType == 'EMI') ...[
                     _buildEmiCalculatorCard(vm),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     _buildChoosePlanSection(vm),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     _buildEmiSummary(vm),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     _buildInstallmentScheduleTable(vm),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 32),
                   ],
 
+                  // 5. Submit Action Button
                   _buildActionButtons(vm),
                 ],
               ),
@@ -107,117 +117,141 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
-  // ===================== DROPDOWN =====================
+  // ===================== MODERN SEARCHABLE PRODUCT SELECTOR =====================
   Widget _buildProductDropdown(BrandSelectionViewModel vm) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<Data>(
-          value: vm.selectedProduct,
-          isExpanded: true,
-          hint: const Text(
-            "Select Product",
-            style: TextStyle(color: Colors.grey),
-          ),
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.black87,
-          ),
-          items: vm.productList.map((p) {
-            return DropdownMenuItem(
-              value: p,
-              child: Row(
+    return GestureDetector(
+      onTap: () => _showSearchableProductBottomSheet(vm),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderGrey, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryBlue.withAlpha(15),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primaryBlue.withAlpha(40), AppColors.infoBlue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.search_rounded,
+                color: AppColors.primaryBlue,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.phone_iphone,
-                      color: primaryBlue,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      "${p.name} (${p.brand?.name ?? ''})",
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
                   Text(
-                    '৳${p.sellingPrice ?? "0"}',
+                    vm.selectedProduct != null 
+                        ? vm.selectedProduct!.name! 
+                        : "Find Phone Model...",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: vm.selectedProduct != null ? AppColors.black : Colors.grey.shade400,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    vm.selectedProduct != null 
+                        ? (vm.selectedProduct!.brand?.name ?? "Tap to change")
+                        : "Search by model or brand",
                     style: const TextStyle(
-                      color: primaryBlue,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: AppColors.greyText,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
-            );
-          }).toList(),
-          onChanged: (p) => p != null ? vm.selectProduct(p) : null,
+            ),
+            const Icon(
+              Icons.unfold_more_rounded,
+              color: AppColors.iconGrey,
+              size: 20,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ===================== TOGGLE =====================
+  void _showSearchableProductBottomSheet(BrandSelectionViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _SearchProductBottomSheet(vm: vm),
+    );
+  }
+
+  // ===================== MODERN SLIDING TOGGLE =====================
   Widget _buildPurchaseModeSelector(BrandSelectionViewModel vm) {
     return Container(
+      height: 52,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: const Color(0xFFEEF2F6),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: ['EMI', 'MRP'].map((type) {
           final isSelected = vm.selectedPurchaseType == type;
-          final isEmi = type == 'EMI';
           return Expanded(
             child: GestureDetector(
               onTap: () => vm.setPurchaseType(type),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeInOut,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isSelected ? primaryBlue : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: isSelected
+                      ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                      : [],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      isEmi
-                          ? Icons.calendar_month_outlined
-                          : Icons.account_balance_wallet_outlined,
-                      size: 16,
-                      color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF475569),
+                      type == 'EMI' ? Icons.calendar_today_rounded : Icons.payments_rounded,
+                      size: 18,
+                      color: isSelected ? AppColors.primaryBlue : const Color(0xFF64748B),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
-                      isEmi ? 'EMI / Kisti Plan' : 'Full Cash',
+                      type == 'EMI' ? 'EMI' : 'MRP',
                       style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF475569),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
+                        color: isSelected ? const Color(0xFF1E293B) : const Color(0xFF64748B),
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -233,43 +267,45 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   // ===================== PRODUCT HEADER =====================
   Widget _buildProductHeader(Data product) {
     final imageUrl = product.imageUrl != null
-        ? (product.imageUrl!.startsWith('http')
-              ? product.imageUrl!
-              : ApiEndPoint.assetUrl(product.imageUrl!))
+        ? (product.imageUrl!.startsWith('http') ? product.imageUrl! : ApiEndPoint.assetUrl(product.imageUrl!))
         : '';
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderGrey),
       ),
       child: Row(
         children: [
           Container(
-            width: 90,
-            height: 90,
+            width: 85,
+            height: 85,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.bgGrey,
+              borderRadius: BorderRadius.circular(15),
             ),
             child: imageUrl.isNotEmpty
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(15),
                     child: Image.network(
                       imageUrl,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => const Icon(
                         Icons.phone_android,
                         size: 40,
-                        color: primaryBlue,
+                        color: AppColors.primaryBlue,
                       ),
                     ),
                   )
-                : const Icon(Icons.phone_android, size: 40, color: primaryBlue),
+                : const Icon(
+                    Icons.phone_android,
+                    size: 40,
+                    color: AppColors.primaryBlue,
+                  ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,60 +313,34 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                 Text(
                   product.name ?? 'Phone',
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.black,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   (product.brand?.name ?? '').toUpperCase(),
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: primaryBlue,
+                    color: AppColors.primaryBlue,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       '৳${product.sellingPrice ?? "0"}',
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 22,
                         fontWeight: FontWeight.w900,
-                        color: primaryBlue,
+                        color: AppColors.primaryBlue,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 13,
-                            color: Color(0xFF16A34A),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            '100% Original',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF16A34A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const Icon(Icons.verified_user_rounded, color: AppColors.successGreen, size: 20),
                   ],
                 ),
               ],
@@ -341,71 +351,75 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
-  // ===================== EMI CALCULATOR =====================
+  // ===================== EMI CALCULATOR CARD =====================
   Widget _buildEmiCalculatorCard(BrandSelectionViewModel vm) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderGrey),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.calculate_outlined, color: primaryBlue, size: 20),
-              SizedBox(width: 6),
+              Icon(Icons.auto_graph_rounded, color: AppColors.primaryBlue, size: 22),
+              SizedBox(width: 8),
               Text(
-                "EMI Calculator",
+                "EMI CALCULATOR",
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: primaryBlue,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.accentBlue,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           _calcRow(
             Icons.shopping_bag_outlined,
-            "Product Price",
+            "Selling Price",
             "৳${vm.resultSellingPrice.toStringAsFixed(0)}",
           ),
-          const Divider(height: 18, thickness: 0.5, color: Color(0xFFE2E8F0)),
+          const Divider(height: 24, thickness: 0.8),
           _calcRow(
-            Icons.payments_outlined,
+            Icons.payment_rounded,
             "Down Payment",
             "৳${vm.resultDownPayment.toStringAsFixed(0)}",
             showArrow: true,
             onTap: () => _showDownPaymentDialog(vm),
           ),
-          const Divider(height: 18, thickness: 0.5, color: Color(0xFFE2E8F0)),
+          const Divider(height: 24, thickness: 0.8),
           _calcRow(
-            Icons.percent,
-            "Charge Rate (p.a.)",
+            Icons.percent_rounded,
+            "Charges Rate",
             "${vm.interestRate.toStringAsFixed(0)}%",
             showArrow: true,
             onTap: () => _showInterestDialog(vm),
           ),
-          const Divider(height: 18, thickness: 0.5, color: Color(0xFFE2E8F0)),
+          const Divider(height: 24, thickness: 0.8),
           Row(
             children: [
-              const Icon(
-                Icons.calendar_month_outlined,
-                size: 18,
-                color: Colors.black87,
-              ),
+              const Icon(Icons.calendar_month_outlined, size: 18, color: AppColors.black),
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
-                  "EMI Tenure",
+                  "Tenure",
                   style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -415,29 +429,24 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                   final isSelected = vm.selectedTenureMonths == months;
                   return GestureDetector(
                     onTap: () => vm.selectTenure(months),
-                    child: Container(
-                      width: 36,
-                      height: 28,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 42,
+                      height: 32,
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? primaryBlue
-                            : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isSelected
-                              ? primaryBlue
-                              : const Color(0xFFCBD5E1),
-                        ),
+                        color: isSelected ? AppColors.primaryBlue : AppColors.infoBlue,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: isSelected ? [
+                          BoxShadow(color: AppColors.primaryBlue.withAlpha(50), blurRadius: 8, offset: const Offset(0, 4))
+                        ] : null,
                       ),
                       child: Center(
                         child: Text(
                           "$months",
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xFF334155),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: isSelected ? AppColors.white : AppColors.primaryBlue,
                           ),
                         ),
                       ),
@@ -464,128 +473,209 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.black87),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.bgGrey,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.iconGrey),
+          ),
+          const SizedBox(width: 14),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.black,
+              fontWeight: FontWeight.w600,
             ),
           ),
+          const Spacer(),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: primaryBlue,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primaryBlue,
             ),
           ),
           if (showArrow) ...[
-            const SizedBox(width: 2),
-            const Icon(Icons.chevron_right, size: 18, color: primaryBlue),
+            const SizedBox(width: 8),
+            const Icon(Icons.edit_note_rounded, size: 22, color: AppColors.primaryBlue),
           ],
         ],
       ),
     );
   }
 
-  // ===================== CHOOSE PLAN =====================
+  // ===================== CHOOSE PLAN SECTION =====================
   Widget _buildChoosePlanSection(BrandSelectionViewModel vm) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "Choose a Plan",
+          "SELECTED PLAN",
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            color: AppColors.accentBlue,
+            letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 10),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: vm.availableTenures.map((months) {
-              final isSelected = vm.selectedTenureMonths == months;
-              final price = vm.resultSellingPrice;
-              final charge = (price * vm.interestRate) / 100;
-              final financed = price + charge - vm.downPayment;
-              final monthly = months > 0
-                  ? (financed / months).roundToDouble()
-                  : 0;
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.primaryBlue, AppColors.accentBlue],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryBlue.withAlpha(60),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Text(
+                "${vm.selectedTenureMonths} Months Installment Plan",
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "৳${vm.resultMonthlyEmi.toStringAsFixed(0)}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
+                ),
+              ),
+              const Text(
+                "fixed amount per month",
+                style: TextStyle(
+                  color: Colors.white60,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-              return GestureDetector(
-                onTap: () => vm.selectTenure(months),
-                child: Container(
-                  width: 90,
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
-                      width: isSelected ? 1.5 : 1,
+  // ===================== EMI SUMMARY =====================
+  Widget _buildEmiSummary(BrandSelectionViewModel vm) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.infoBlue,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primaryBlue.withAlpha(30)),
+      ),
+      child: Column(
+        children: [
+          _sumRow("Monthly Installment", "৳${vm.resultMonthlyEmi.toStringAsFixed(0)}", isBold: true),
+          const SizedBox(height: 12),
+          _sumRow("Financing Amount", "৳${vm.resultFinancedAmount.toStringAsFixed(0)}"),
+          const SizedBox(height: 10),
+          _sumRow(" Charges", "৳${(vm.resultAppEmiCharge).toStringAsFixed(0)}"),
+          const SizedBox(height: 10),
+          _sumRow("Cashback Earned", "- ৳${vm.resultCashback.toStringAsFixed(0)}", color: AppColors.successGreen),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, thickness: 1.5, color: Colors.white),
+          ),
+          _sumRow("Grand Total Payable", "৳${vm.resultTotalPayable.toStringAsFixed(0)}", isBold: true, color: AppColors.primaryBlue),
+        ],
+      ),
+    );
+  }
+
+  Widget _sumRow(String label, String value, {bool isBold = false, Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isBold ? 14 : 13,
+            fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
+            color: AppColors.iconGrey,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isBold ? 16 : 14,
+            fontWeight: FontWeight.w900,
+            color: color ?? AppColors.black,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ===================== SCHEDULE =====================
+  Widget _buildInstallmentScheduleTable(BrandSelectionViewModel vm) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "REPAYMENT SCHEDULE",
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.accentBlue, letterSpacing: 1),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.borderGrey),
+          ),
+          child: Column(
+            children: vm.installmentSchedule.map((item) {
+              final index = vm.installmentSchedule.indexOf(item);
+              final isLast = index == vm.installmentSchedule.length - 1;
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.borderGrey, width: 0.5)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: AppColors.infoBlue,
+                          child: Text("${item['month']}", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Monthly Installment",
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        "$months Mon",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "৳${monthly.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: primaryBlue,
-                        ),
-                      ),
-                      const Text(
-                        "/mon",
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected ? primaryBlue : Colors.transparent,
-                          border: Border.all(
-                            color: isSelected
-                                ? primaryBlue
-                                : const Color(0xFFCBD5E1),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: isSelected
-                            ? const Icon(
-                                Icons.check,
-                                size: 12,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                    ],
-                  ),
+                    Text(
+                      "৳${item['amount'].toStringAsFixed(0)}",
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primaryBlue),
+                    ),
+                  ],
                 ),
               );
             }).toList(),
@@ -595,448 +685,78 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
-  // ===================== SUMMARY =====================
-  Widget _buildEmiSummary(BrandSelectionViewModel vm) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.bar_chart, color: primaryBlue, size: 20),
-              SizedBox(width: 6),
-              Text(
-                "EMI Summary",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: primaryBlue,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _summaryItem(
-                        Icons.calendar_today_outlined,
-                        "Monthly EMI",
-                        "৳${vm.resultMonthlyEmi.toStringAsFixed(0)}",
-                        primaryBlue,
-                      ),
-                    ),
-                    Expanded(
-                      child: _summaryItem(
-                        Icons.show_chart,
-                        "Total Charge",
-                        "৳${vm.resultTotalInterest.toStringAsFixed(0)}",
-                        const Color(0xFF16A34A),
-                      ),
-                    ),
-                    Expanded(
-                      child: _summaryItem(
-                        Icons.savings_outlined,
-                        "Total Payable",
-                        "৳${vm.resultTotalPayable.toStringAsFixed(0)}",
-                        primaryBlue,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                height: 45,
-                width: 1,
-                color: const Color(0xFFE2E8F0),
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-              ),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _featureCheck("No hidden charges"),
-                    SizedBox(height: 3),
-                    _featureCheck("Quick approval"),
-                    SizedBox(height: 3),
-                    _featureCheck("Easy process"),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _featureCheck(String text) {
-    return Row(
-      children: [
-        const Icon(
-          Icons.check_circle_outline,
-          size: 12,
-          color: Color(0xFF16A34A),
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 9,
-              color: Colors.black87,
-              fontWeight: FontWeight.w500,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _summaryItem(
-    IconData icon,
-    String title,
-    String value,
-    Color valueColor,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, size: 20, color: primaryBlue),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: valueColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ===================== SCHEDULE TABLE =====================
-  Widget _buildInstallmentScheduleTable(BrandSelectionViewModel vm) {
-    if (vm.installmentSchedule.isEmpty) return const SizedBox();
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(14, 12, 14, 10),
-            child: Row(
-              children: [
-                Icon(Icons.description_outlined, color: primaryBlue, size: 18),
-                SizedBox(width: 6),
-                Text(
-                  "Payment Schedule",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: primaryBlue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            color: accentBlue,
-            child: const Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Month",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Installment",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Amount",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ...vm.installmentSchedule.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            final isLast = index == vm.installmentSchedule.length - 1;
-            final amount = (item['amount'] as num).toDouble();
-
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: Text(
-                      "${item['month']}",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      isLast ? "Final Inst." : "Monthly EMI",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF475569),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      "৳${amount.toStringAsFixed(0)}",
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-          // Dotted Indicator Row (as seen in image)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
-            ),
-            child: const Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "...",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "...",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "...",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Total Footer Row
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(14),
-                bottomRight: Radius.circular(14),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  flex: 3,
-                  child: Text(
-                    "Total Payable",
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: primaryBlue,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "৳${vm.resultTotalPayable.toStringAsFixed(0)}",
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: primaryBlue,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===================== ACTION BUTTONS =====================
+  // ===================== ACTIONS =====================
   Widget _buildActionButtons(BrandSelectionViewModel vm) {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryBlue,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pushNamed(context, RouteName.checkoutParentScreen);
-            },
-            icon: const Icon(
-              Icons.assignment_turned_in_outlined,
-              color: Colors.white,
-              size: 18,
-            ),
-            label: Text(
-              vm.selectedPurchaseType == 'EMI'
-                  ? 'Apply Now'
-                  : 'Buy Now with Full Cash',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        if (vm.selectedPurchaseType == 'EMI') ...[
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: primaryBlue, width: 1.2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () =>
-                  Navigator.pushNamed(context, RouteName.checkoutParentScreen),
-              icon: const Icon(
-                Icons.shopping_cart_outlined,
-                color: primaryBlue,
-                size: 18,
-              ),
-              label: const Text(
-                "Continue Purchase",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: primaryBlue,
-                ),
-              ),
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryBlue.withAlpha(40),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
         ],
-      ],
+      ),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryBlue,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+        ),
+        onPressed: () {
+          final checkoutVM = context.read<CheckoutViewModel>();
+          if (vm.selectedProduct != null) {
+            checkoutVM.setProductFromCatalog(
+              id: vm.selectedProduct!.id!,
+              name: vm.selectedProduct!.name!,
+              price: vm.resultSellingPrice,
+              saleType: vm.selectedPurchaseType == 'EMI' ? 'EMI' : 'Selling Price',
+              brandName: vm.selectedProduct!.brand?.name, // 💡 Passing brand name
+              tenure: vm.selectedTenureMonths,
+              downPayment: vm.resultDownPayment,
+              interestRate: vm.interestRate,
+            );
+          }
+          Navigator.pushNamed(context, RouteName.checkoutParentScreen);
+        },
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Buy",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+            ),
+            const SizedBox(width: 10),
+            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+          ],
+        ),
+      ),
     );
   }
 
   // ===================== DIALOGS =====================
   void _showDownPaymentDialog(BrandSelectionViewModel vm) {
-    final controller = TextEditingController(
-      text: vm.downPayment.toStringAsFixed(0),
-    );
+    final controller = TextEditingController(text: vm.resultDownPayment.toStringAsFixed(0));
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Down Payment"),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Edit Down Payment", style: TextStyle(fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            prefixText: "৳ ",
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(prefixText: "৳ ", border: OutlineInputBorder()),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: primaryBlue),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
             onPressed: () {
-              final value = double.tryParse(controller.text) ?? 0;
-              vm.updateDownPayment(value);
-              Navigator.pop(ctx);
+              vm.updateDownPayment(double.tryParse(controller.text) ?? vm.resultDownPayment);
+              Navigator.pop(context);
             },
-            child: const Text("Save", style: TextStyle(color: Colors.white)),
+            child: const Text("Apply", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1044,34 +764,145 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   }
 
   void _showInterestDialog(BrandSelectionViewModel vm) {
-    final controller = TextEditingController(
-      text: vm.interestRate.toStringAsFixed(0),
-    );
+    final controller = TextEditingController(text: vm.interestRate.toStringAsFixed(0));
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Charge Rate (%)"),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Edit Charges Rate (%)", style: TextStyle(fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            suffixText: "%",
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(suffixText: " %", border: OutlineInputBorder()),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: primaryBlue),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
             onPressed: () {
-              final value = double.tryParse(controller.text) ?? 12;
-              vm.updateInterestRate(value);
-              Navigator.pop(ctx);
+              vm.updateInterestRate(double.tryParse(controller.text) ?? vm.interestRate);
+              Navigator.pop(context);
             },
-            child: const Text("Save", style: TextStyle(color: Colors.white)),
+            child: const Text("Apply", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===================== SEARCH BOTTOM SHEET =====================
+class _SearchProductBottomSheet extends StatefulWidget {
+  final BrandSelectionViewModel vm;
+  const _SearchProductBottomSheet({required this.vm});
+
+  @override
+  State<_SearchProductBottomSheet> createState() => _SearchProductBottomSheetState();
+}
+
+class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Data> _filteredList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredList = widget.vm.productList;
+  }
+
+  void _filter(String query) {
+    setState(() {
+      _filteredList = widget.vm.productList.where((p) {
+        final name = p.name?.toLowerCase() ?? "";
+        final brand = p.brand?.name?.toLowerCase() ?? "";
+        return name.contains(query.toLowerCase()) || brand.contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 50, height: 6, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 16, 12),
+            child:Row(
+              children: [
+                const Text("Select Device", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.accentBlue)),
+                const Spacer(),
+                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close_rounded, color: Colors.grey.shade400)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filter,
+              autofocus: true,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
+                hintText: "Search by phone name or brand...",
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14, fontWeight: FontWeight.w500),
+                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryBlue, size: 22),
+                filled: true,
+                fillColor: AppColors.bgGrey,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _filteredList.isEmpty
+                ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade300), const SizedBox(height: 12), const Text("No models found", style: TextStyle(color: AppColors.greyText, fontWeight: FontWeight.bold))]))
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    itemCount: _filteredList.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final product = _filteredList[index];
+                      final isSelected = widget.vm.selectedProduct?.id == product.id;
+                      return InkWell(
+                        onTap: () { widget.vm.selectProduct(product); Navigator.pop(context); },
+                        borderRadius: BorderRadius.circular(16),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.infoBlue : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: isSelected ? AppColors.primaryBlue : Colors.transparent, width: 1.5),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(width: 54, height: 54, decoration: BoxDecoration(color: AppColors.bgGrey, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.phone_iphone_rounded, color: AppColors.primaryBlue, size: 28)),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(product.name ?? "N/A", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: isSelected ? AppColors.primaryBlue : AppColors.black)),
+                                  Text(product.brand?.name ?? "Other Brand", style: const TextStyle(fontSize: 12, color: AppColors.greyText, fontWeight: FontWeight.w600)),
+                                ]),
+                              ),
+                              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                                Text("৳${product.sellingPrice ?? '0'}", style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryBlue, fontSize: 16)),
+                                if (isSelected) const Icon(Icons.check_circle_rounded, color: AppColors.primaryBlue, size: 16),
+                              ]),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

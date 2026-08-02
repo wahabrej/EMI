@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/Features/multy_form/viewModel/multyform_provider.dart';
+import '../../../../core/constant/App_Colors.dart';
 
 class PaymentStep extends StatefulWidget {
   final VoidCallback onNext;
@@ -16,12 +17,48 @@ class PaymentStep extends StatefulWidget {
 class _PaymentStepState extends State<PaymentStep> {
   final _formKey = GlobalKey<FormState>();
 
+  Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Select Image Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.primaryBlue),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.primaryBlue),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickBankReceipt(CheckoutViewModel vm) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (image != null) {
-      vm.setBankReceipt(File(image.path));
-    }
+    await _showImageSourceActionSheet(context, (source) async {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: source, imageQuality: 85);
+      if (image != null) {
+        vm.setBankReceipt(File(image.path));
+      }
+    });
   }
 
   void _handleNext(CheckoutViewModel vm) {
@@ -41,11 +78,6 @@ class _PaymentStepState extends State<PaymentStep> {
     final vm = Provider.of<CheckoutViewModel>(context);
     final data = vm.checkoutData;
 
-    // Calculative values based on Order Review Step
-    double totalPayable = data.saleType == 'EMI'
-        ? (data.downPayment + (data.monthlyEmi * data.emiTenureMonths))
-        : data.mrp;
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -53,7 +85,6 @@ class _PaymentStepState extends State<PaymentStep> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Title
             const Text(
               'Make Payment',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -67,7 +98,7 @@ class _PaymentStepState extends State<PaymentStep> {
             ),
             const SizedBox(height: 16),
 
-            // Product Card Summary
+            // 🔹 Dynamic Product Card Summary
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -81,7 +112,7 @@ class _PaymentStepState extends State<PaymentStep> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E3A8A),
+                      color: AppColors.primaryBlue,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 24),
@@ -92,7 +123,7 @@ class _PaymentStepState extends State<PaymentStep> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          data.productModel ?? 'OPPO > A6s PRO (8/256)',
+                          "${data.brandName ?? 'Device'} > ${data.productModel ?? 'Model'}",
                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 2),
@@ -107,92 +138,17 @@ class _PaymentStepState extends State<PaymentStep> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        data.saleType == 'EMI' ? 'Down Payment' : 'Collect Full Price',
-                        style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                        '৳ ${data.mrp.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primaryBlue),
                       ),
-                      Text(
-                        '৳ ${data.saleType == 'EMI' ? data.downPayment.toStringAsFixed(0) : data.mrp.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED)),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3E8FF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          data.saleType == 'EMI' ? '${data.emiTenureMonths} Months EMI' : 'No EMI',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED)),
-                        ),
-                      )
+
                     ],
                   )
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // Payment Summary Block
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Payment Summary', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  const SizedBox(height: 12),
-
-                  // 4 Summary Metric Boxes
-                  Row(
-                    children: [
-                      Expanded(child: _buildSummaryBox('Product Selling Price', '৳ ${data.mrp.toStringAsFixed(0)}')),
-                      const SizedBox(width: 8),
-                      Expanded(child: _buildSummaryBox(data.saleType == 'EMI' ? 'Down Payment' : 'Full Payment', '৳ ${(data.saleType == 'EMI' ? data.downPayment : data.mrp).toStringAsFixed(0)}')),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(child: _buildSummaryBox('EMI Charge', '৳ ${data.emiCharge.toStringAsFixed(0)}')),
-                      const SizedBox(width: 8),
-                      Expanded(child: _buildSummaryBox('Total Payable', '৳ ${totalPayable.toStringAsFixed(0)}')),
-                    ],
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(color: Color(0xFFF1F5F9)),
-                  ),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Sale Type', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                      Text(data.saleType == 'EMI' ? 'EMI Sale' : 'Selling Price', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Amount to Collect', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                      Text(
-                        '৳ ${(data.saleType == 'EMI' ? data.downPayment : data.mrp).toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Collection Method Selection Block
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -209,7 +165,6 @@ class _PaymentStepState extends State<PaymentStep> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Option 1: Cash
                   _buildPaymentOption(
                     vm: vm,
                     type: 'CASH',
@@ -221,7 +176,6 @@ class _PaymentStepState extends State<PaymentStep> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Option 2: bKash
                   _buildPaymentOption(
                     vm: vm,
                     type: 'BKASH',
@@ -232,7 +186,6 @@ class _PaymentStepState extends State<PaymentStep> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Option 3: Bank Transfer
                   _buildPaymentOption(
                     vm: vm,
                     type: 'BANK',
@@ -242,13 +195,11 @@ class _PaymentStepState extends State<PaymentStep> {
                     iconColor: Colors.deepOrange,
                   ),
 
-                  // Extra Fields for Bank Selection
                   if (data.downPaymentMethod == 'BANK') ...[
                     const SizedBox(height: 16),
                     const Divider(color: Color(0xFFF1F5F9)),
                     const SizedBox(height: 8),
 
-                    // Bank Reference / Account Input
                     TextFormField(
                       initialValue: data.downPaymentReferenceNumber,
                       style: const TextStyle(fontSize: 13),
@@ -262,7 +213,6 @@ class _PaymentStepState extends State<PaymentStep> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Bank Receipt Upload
                     InkWell(
                       onTap: () => _pickBankReceipt(vm),
                       borderRadius: BorderRadius.circular(8),
@@ -302,41 +252,21 @@ class _PaymentStepState extends State<PaymentStep> {
 
             const SizedBox(height: 24),
 
-            // Next Step Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 52,
               child: ElevatedButton(
                 onPressed: () => _handleNext(vm),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundColor: AppColors.primaryBlue,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('Next Step', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryBox(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-        ],
       ),
     );
   }

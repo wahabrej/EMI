@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/Features/multy_form/viewModel/multyform_provider.dart';
+import '../../../../core/constant/App_Colors.dart';
 import 'model/full_checkout_model.dart';
 
 class GuarantorStep extends StatefulWidget {
@@ -25,12 +26,49 @@ class _GuarantorStepState extends State<GuarantorStep> {
 
   final List<String> _docTypeOptions = ['NID', 'Passport', 'Driving License'];
 
-  Future<void> _pickImage(ImageSource source, Function(File) onPicked) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: source, imageQuality: 85);
-    if (image != null) {
-      onPicked(File(image.path));
-    }
+  // 🔹 Image Source Selection Sheet
+  Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Select Image Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.primaryBlue),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.primaryBlue),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(Function(File) onPicked) async {
+    await _showImageSourceActionSheet(context, (source) async {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: source, imageQuality: 85);
+      if (image != null) {
+        onPicked(File(image.path));
+      }
+    });
   }
 
   void _saveAndNext(CheckoutViewModel vm) {
@@ -88,7 +126,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add, color: Color(0xFF2563EB), size: 20),
+                    Icon(Icons.add, color: AppColors.primaryBlue, size: 20),
                     SizedBox(width: 6),
                     Text(
                       'Add Guarantor',
@@ -107,7 +145,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
               child: ElevatedButton(
                 onPressed: () => _saveAndNext(vm),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: const Text(
@@ -156,7 +194,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
             onChanged: (val) {
               if (val != null) {
                 item.type = val;
-                vm.notify(); // Fixed from notifyListeners()
+                vm.notify();
               }
             },
           ),
@@ -166,7 +204,10 @@ class _GuarantorStepState extends State<GuarantorStep> {
             label: 'Name',
             hint: 'Enter guarantor name',
             initialValue: item.name,
-            onChanged: (val) => item.name = val.trim(),
+            onChanged: (val) {
+              item.name = val.trim();
+              vm.notify();
+            },
             validator: (v) => (vm.checkoutData.saleType == 'EMI' && (v == null || v.isEmpty)) ? 'Required' : null,
           ),
           const SizedBox(height: 12),
@@ -176,7 +217,10 @@ class _GuarantorStepState extends State<GuarantorStep> {
             hint: 'Enter guarantor phone number',
             keyboardType: TextInputType.phone,
             initialValue: item.phone,
-            onChanged: (val) => item.phone = val.trim(),
+            onChanged: (val) {
+              item.phone = val.trim();
+              vm.notify();
+            },
             validator: (v) => (vm.checkoutData.saleType == 'EMI' && (v == null || v.isEmpty)) ? 'Required' : null,
           ),
           const SizedBox(height: 12),
@@ -188,7 +232,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
             onChanged: (val) {
               if (val != null) {
                 item.relationship = val;
-                vm.notify(); // Fixed from notifyListeners()
+                vm.notify();
               }
             },
           ),
@@ -196,9 +240,12 @@ class _GuarantorStepState extends State<GuarantorStep> {
 
           _buildTextField(
             label: 'NID or Passport Number',
-            hint: 'Enter guarantor NID or passport number',
+            hint: 'Enter NID number',
             initialValue: item.nidPassportNumber,
-            onChanged: (val) => item.nidPassportNumber = val.trim(),
+            onChanged: (val) {
+              item.nidPassportNumber = val.trim();
+              vm.notify();
+            },
             validator: (v) => (vm.checkoutData.saleType == 'EMI' && (v == null || v.isEmpty)) ? 'Required' : null,
           ),
           const SizedBox(height: 16),
@@ -224,7 +271,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
                 child: _buildDocUploadBox(
                   title: 'Front Side',
                   file: item.nidFront,
-                  onTap: () => _pickImage(ImageSource.gallery, (file) => vm.setGuarantorNidFront(index, file)),
+                  onTap: () => _pickImage((file) => vm.setGuarantorNidFront(index, file)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -232,7 +279,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
                 child: _buildDocUploadBox(
                   title: 'Back Side',
                   file: item.nidBack,
-                  onTap: () => _pickImage(ImageSource.gallery, (file) => vm.setGuarantorNidBack(index, file)),
+                  onTap: () => _pickImage((file) => vm.setGuarantorNidBack(index, file)),
                 ),
               ),
             ],
@@ -251,7 +298,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: file != null ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1)),
+          border: Border.all(color: file != null ? AppColors.primaryBlue : const Color(0xFFCBD5E1)),
         ),
         child: Row(
           children: [
@@ -267,7 +314,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
                 borderRadius: BorderRadius.circular(4),
                 child: Image.file(file, fit: BoxFit.cover),
               )
-                  : const Icon(Icons.badge_outlined, color: Color(0xFF2563EB), size: 18),
+                  : const Icon(Icons.badge_outlined, color: AppColors.primaryBlue, size: 18),
             ),
             const SizedBox(width: 6),
             Expanded(
@@ -280,7 +327,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
             ),
             Icon(
               file != null ? Icons.check_circle : Icons.check_circle_outline,
-              color: file != null ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1),
+              color: file != null ? AppColors.primaryBlue : const Color(0xFFCBD5E1),
               size: 18,
             ),
           ],
@@ -343,7 +390,7 @@ class _GuarantorStepState extends State<GuarantorStep> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF2563EB))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primaryBlue)),
       errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red)),
       filled: true,
       fillColor: Colors.white,

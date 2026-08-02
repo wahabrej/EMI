@@ -4,15 +4,19 @@ class RouteName {
   static const checkoutParentScreen = "checkoutParentScreen";
   static const emiRepaymentScheduleScreen = "emiRepaymentScheduleScreen";
   static const brandSelectionScreen = "brandSelectionScreen";
-  static const modernOrRusticalScreen = "modernOrRusticalScreen";
-  static const firstOrSlowFoodScreen = "firstOrSlowFoodScreen";
-  static const interestingScreen = "interestingScreen";
-  static const friendProfile = "friendProfile";
-  static const reviewScreen = "reviewScreen";
   static const loginScreen = "loginScreen";
-  static const chatScreen = "chatScreen";
-  static const restaurantDetailScreen = "restaurantDetailScreen";
-  static const votingRestaurantScreen = "votingRestaurantScreen";
   static const signUpScreen = "signUpScreen";
 
+  // ── Customer Feature Routes ──────────────────────────
+  static const customerParentScreen = "customerParentScreen";
+  static const customerHomeScreen = "customerHomeScreen";
+  static const customerLoanDetailsScreen = "customerLoanDetailsScreen";
+  static const customerPaymentScreen = "customerPaymentScreen";
+  static const customerProfileScreen = "customerProfileScreen";
+  static const customerSupportScreen = "customerSupportScreen";
+  static const customerNotificationScreen = "customerNotificationScreen";
+  static const customerLoanApplicationListScreen = "customerLoanApplicationListScreen";
+  static const proceedToPayScreen = "proceedToPayScreen";
+  static const customerLoanApplicationDetailsScreen = "customerLoanApplicationDetailsScreen";
+  static const customerDocumentsScreen = "customerDocumentsScreen";
 }

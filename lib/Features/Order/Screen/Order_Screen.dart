@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constant/App_Colors.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -10,22 +11,21 @@ class OrderScreen extends StatefulWidget {
 
 class _OrderScreenState extends State<OrderScreen> {
   bool _isAgreed = true;
-  int _currentIndex = 2; // Order Tab Active
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF), // UI Matching Soft Background
+      backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: AppColors.accentBlue,
+        elevation: 0,
         title: const Text(
-          'Order',
+          'Order Summary',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.white,
           ),
         ),
         centerTitle: true,
@@ -41,9 +41,9 @@ class _OrderScreenState extends State<OrderScreen> {
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBg,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFF1F5F9)),
+                  border: Border.all(color: AppColors.borderGrey),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.02),
@@ -57,11 +57,11 @@ class _OrderScreenState extends State<OrderScreen> {
                   children: [
                     // 1. Title
                     const Text(
-                      'Order Summary',
+                      'Review Order',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.black,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -76,7 +76,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           height: 80,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            color: const Color(0xFFF8FAFC),
+                            color: AppColors.bgGrey,
                           ),
                           child: Image.network(
                             'https://m.media-amazon.com/images/I/61cwywLZR-L._AC_SL1500_.jpg',
@@ -85,7 +85,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                 const Icon(
                                   Icons.phone_iphone,
                                   size: 45,
-                                  color: Color(0xFF2563EB),
+                                  color: AppColors.primaryBlue,
                                 ),
                           ),
                         ),
@@ -101,7 +101,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.black,
                                 ),
                               ),
                               SizedBox(height: 2),
@@ -109,7 +109,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                 'Blue',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF94A3B8),
+                                  color: AppColors.greyText,
                                 ),
                               ),
                               SizedBox(height: 8),
@@ -118,7 +118,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.primaryBlue,
                                 ),
                               ),
                             ],
@@ -126,46 +126,37 @@ class _OrderScreenState extends State<OrderScreen> {
                         ),
 
                         // 100% Original Badge
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.verified_outlined,
-                              color: Color(0xFF10B981),
-                              size: 18,
-                            ),
-                            const SizedBox(width: 4),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  '100%',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF10B981),
-                                    height: 1.1,
-                                  ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.successBg,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.verified,
+                                color: AppColors.successGreen,
+                                size: 14,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '100% Original',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.successGreen,
                                 ),
-                                Text(
-                                  'Original',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF10B981),
-                                    height: 1.1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
 
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Divider(color: Color(0xFFF1F5F9), height: 1),
+                      child: Divider(color: AppColors.borderGrey, height: 1),
                     ),
 
                     // 3. Selected EMI Plan
@@ -174,7 +165,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.black,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -186,7 +177,7 @@ class _OrderScreenState extends State<OrderScreen> {
                         horizontal: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: AppColors.bgGrey,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -196,13 +187,13 @@ class _OrderScreenState extends State<OrderScreen> {
                           Container(
                             width: 1,
                             height: 30,
-                            color: const Color(0xFFE2E8F0),
+                            color: AppColors.borderGrey,
                           ),
                           _buildPlanItem('৳12,550', 'Monthly EMI'),
                           Container(
                             width: 1,
                             height: 30,
-                            color: const Color(0xFFE2E8F0),
+                            color: AppColors.borderGrey,
                           ),
                           _buildPlanItem('12% p.a.', 'Interest Rate'),
                         ],
@@ -227,8 +218,9 @@ class _OrderScreenState extends State<OrderScreen> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: AppColors.infoBlue,
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.1)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -236,17 +228,17 @@ class _OrderScreenState extends State<OrderScreen> {
                           Text(
                             'Total Payable',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF2563EB),
+                              color: AppColors.primaryBlue,
                             ),
                           ),
                           Text(
                             '৳90,300',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF2563EB),
+                              color: AppColors.primaryBlue,
                             ),
                           ),
                         ],
@@ -261,14 +253,14 @@ class _OrderScreenState extends State<OrderScreen> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
+                        color: AppColors.successBg,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         children: const [
                           Icon(
                             Icons.shield_outlined,
-                            color: Color(0xFF10B981),
+                            color: AppColors.successGreen,
                             size: 18,
                           ),
                           SizedBox(width: 8),
@@ -277,7 +269,7 @@ class _OrderScreenState extends State<OrderScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF059669),
+                              color: AppColors.successGreen,
                             ),
                           ),
                         ],
@@ -298,7 +290,7 @@ class _OrderScreenState extends State<OrderScreen> {
                     height: 24,
                     child: Checkbox(
                       value: _isAgreed,
-                      activeColor: const Color(0xFF2563EB),
+                      activeColor: AppColors.primaryBlue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -316,13 +308,13 @@ class _OrderScreenState extends State<OrderScreen> {
                         text: 'I agree to the ',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF475569),
+                          color: AppColors.iconGrey,
                         ),
                         children: [
                           TextSpan(
                             text: 'Terms & Conditions',
                             style: const TextStyle(
-                              color: Color(0xFF2563EB),
+                              color: AppColors.primaryBlue,
                               fontWeight: FontWeight.bold,
                             ),
                             recognizer: TapGestureRecognizer()..onTap = () {},
@@ -331,7 +323,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           TextSpan(
                             text: 'Privacy Policy',
                             style: const TextStyle(
-                              color: Color(0xFF2563EB),
+                              color: AppColors.primaryBlue,
                               fontWeight: FontWeight.bold,
                             ),
                             recognizer: TapGestureRecognizer()..onTap = () {},
@@ -360,7 +352,7 @@ class _OrderScreenState extends State<OrderScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF2563EB),
+            color: AppColors.primaryBlue,
           ),
         ),
         const SizedBox(height: 2),
@@ -368,7 +360,7 @@ class _OrderScreenState extends State<OrderScreen> {
           label,
           style: const TextStyle(
             fontSize: 11,
-            color: Color(0xFF64748B),
+            color: AppColors.greyText,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -385,7 +377,7 @@ class _OrderScreenState extends State<OrderScreen> {
           title,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF64748B),
+            color: AppColors.greyText,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -393,7 +385,7 @@ class _OrderScreenState extends State<OrderScreen> {
           amount,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF0F172A),
+            color: AppColors.black,
             fontWeight: FontWeight.bold,
           ),
         ),

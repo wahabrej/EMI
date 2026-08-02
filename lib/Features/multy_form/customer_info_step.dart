@@ -25,7 +25,6 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
 
   bool _obscurePassword = true;
 
-  // 🔹 Screenshot অনুযায়ী Updated Source of Income Options
   final List<String> _incomeSources = [
     'Private Service',
     'Business',
@@ -36,17 +35,13 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
   @override
   void initState() {
     super.initState();
-    // 🔹 পূর্বের সেভ থাকা ডাটা লোড করার জন্য
     final vm = Provider.of<CheckoutViewModel>(context, listen: false);
     _nameController.text = vm.checkoutData.name;
     _phoneController.text = vm.checkoutData.phone;
     _passwordController.text = vm.checkoutData.password;
-
-    // 🔹 FIX: double থেকে String এ সঠিকভাবে কনভার্ট করা হয়েছে
     _monthlyIncomeController.text = vm.checkoutData.monthlyIncome == 0.0
         ? ''
         : vm.checkoutData.monthlyIncome.toStringAsFixed(0);
-
     _presentAddressController.text = vm.checkoutData.presentAddress;
     _permanentAddressController.text = vm.checkoutData.permanentAddress;
   }
@@ -62,19 +57,48 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
     super.dispose();
   }
 
-  // 🔹 Image Picker Function
-  Future<void> _pickImage(CheckoutViewModel vm) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
+  Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
     );
+  }
 
-    if (image != null) {
-      final file = File(image.path);
-      vm.setCustomerImage(file);
-      vm.checkoutData.customerPhoto = file; // 🔹 Syncing with Model
-    }
+  Future<void> _pickImage(CheckoutViewModel vm) async {
+    await _showImageSourceActionSheet(context, (source) async {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final file = File(image.path);
+        vm.setCustomerImage(file);
+        vm.checkoutData.customerPhoto = file;
+      }
+    });
   }
 
   void _saveAndNext(CheckoutViewModel vm) {
@@ -82,14 +106,9 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
       vm.checkoutData.name = _nameController.text.trim();
       vm.checkoutData.phone = _phoneController.text.trim();
       vm.checkoutData.password = _passwordController.text.trim();
-
-      // 🔹 FIX: String -> double এ কনভার্ট করা হয়েছে
-      vm.checkoutData.monthlyIncome =
-          double.tryParse(_monthlyIncomeController.text.trim()) ?? 0.0;
-
+      vm.checkoutData.monthlyIncome = double.tryParse(_monthlyIncomeController.text.trim()) ?? 0.0;
       vm.checkoutData.presentAddress = _presentAddressController.text.trim();
       vm.checkoutData.permanentAddress = _permanentAddressController.text.trim();
-
       widget.onNext();
     }
   }
@@ -107,15 +126,10 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
           children: [
             const Text(
               'Customer Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
             const SizedBox(height: 16),
 
-            // 🔹 Customer Name & Phone Number
             _buildTextField(
               controller: _nameController,
               label: 'Customer Name *',
@@ -133,7 +147,6 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
             ),
             const SizedBox(height: 12),
 
-            // 🔹 Customer Login Password
             _buildTextField(
               controller: _passwordController,
               label: 'Customer Login Password *',
@@ -151,7 +164,6 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
             ),
             const SizedBox(height: 16),
 
-            // 🔹 Customer Image Upload Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -202,7 +214,7 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                           Icon(Icons.person_add_alt_1_outlined, color: Color(0xFF2563EB)),
                           SizedBox(height: 4),
                           Text(
-                            'Upload customer image',
+                            'Upload image',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                           ),
                         ],
@@ -214,7 +226,6 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
             ),
             const SizedBox(height: 16),
 
-            // 🔹 Source of Income & Monthly Income
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -231,7 +242,7 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                         value: _incomeSources.contains(vm.checkoutData.sourceOfIncome)
                             ? vm.checkoutData.sourceOfIncome
                             : null,
-                        hint: const Text('Select source of income', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                        hint: const Text('Select source', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
                         isExpanded: true,
                         items: _incomeSources.map((source) {
                           return DropdownMenuItem(
@@ -254,7 +265,7 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                   child: _buildTextField(
                     controller: _monthlyIncomeController,
                     label: 'Monthly Income *',
-                    hint: 'Enter monthly income',
+                    hint: 'Enter income',
                     keyboardType: TextInputType.number,
                     validator: (v) => v!.trim().isEmpty ? 'Enter monthly income' : null,
                   ),
@@ -263,27 +274,24 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
             ),
             const SizedBox(height: 12),
 
-            // 🔹 Present Address
             _buildTextField(
               controller: _presentAddressController,
               label: 'Present Address *',
               hint: 'Enter present address',
-              maxLines: 3,
+              maxLines: 2,
               validator: (v) => v!.trim().isEmpty ? 'Enter present address' : null,
             ),
             const SizedBox(height: 12),
 
-            // 🔹 Permanent Address
             _buildTextField(
               controller: _permanentAddressController,
               label: 'Permanent Address *',
               hint: 'Enter permanent address',
-              maxLines: 3,
+              maxLines: 2,
               validator: (v) => v!.trim().isEmpty ? 'Enter permanent address' : null,
             ),
             const SizedBox(height: 24),
 
-            // 🔹 Next Step Button
             SizedBox(
               width: double.infinity,
               height: 48,

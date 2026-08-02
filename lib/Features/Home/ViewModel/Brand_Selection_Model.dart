@@ -21,7 +21,7 @@ class BrandSelectionViewModel extends ChangeNotifier {
   double downPayment = 10000;          // default
   double interestRate = 12.0;          // 12%
   double cashbackRate = 0.0;           // optional
-
+  // GET {{baseUrl}}/emi-plans?productId={{productId}}&isActive=true
   // ===== Calculation Results =====
   double resultSellingPrice = 0.0;
   double resultDownPayment = 0.0;

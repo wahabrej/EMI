@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constant/App_Colors.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -8,23 +9,22 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  int _currentIndex = 3; // Payment Tab Active (Index 3)
   String _selectedMethod = 'bkash';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF), // UI Matching Soft Background
+      backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: AppColors.accentBlue,
+        elevation: 0,
         title: const Text(
           'Payment',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.white,
           ),
         ),
         centerTitle: true,
@@ -41,7 +41,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.black,
               ),
             ),
             const SizedBox(height: 4),
@@ -49,7 +49,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               'Pay your down payment to confirm your order',
               style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFF64748B),
+                color: AppColors.greyText,
               ),
             ),
             const SizedBox(height: 16),
@@ -58,9 +58,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
+                border: Border.all(color: AppColors.borderGrey),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -78,13 +78,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     height: 80,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      color: const Color(0xFFF8FAFC),
+                      color: AppColors.bgGrey,
                     ),
                     child: Image.network(
                       'https://m.media-amazon.com/images/I/61cwywLZR-L._AC_SL1500_.jpg',
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.phone_iphone, size: 45, color: Color(0xFF2563EB)),
+                      const Icon(Icons.phone_iphone, size: 45, color: AppColors.primaryBlue),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -106,7 +106,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
+                                    color: AppColors.black,
                                   ),
                                 ),
                                 SizedBox(height: 2),
@@ -114,7 +114,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   'Blue',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.greyText,
                                   ),
                                 ),
                               ],
@@ -126,7 +126,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   'Total Payable',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: Color(0xFF94A3B8),
+                                    color: AppColors.lightGreyText,
                                   ),
                                 ),
                                 SizedBox(height: 2),
@@ -135,7 +135,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2563EB),
+                                    color: AppColors.primaryBlue,
                                   ),
                                 ),
                               ],
@@ -151,13 +151,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF334155),
+                                color: AppColors.black,
                               ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
+                                color: AppColors.infoBlue,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Text(
@@ -165,7 +165,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2563EB),
+                                  color: AppColors.primaryBlue,
                                 ),
                               ),
                             ),
@@ -185,7 +185,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.black,
               ),
             ),
             const SizedBox(height: 10),
@@ -193,9 +193,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
+                border: Border.all(color: AppColors.borderGrey),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -226,7 +226,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.black,
               ),
             ),
             const SizedBox(height: 10),
@@ -304,7 +304,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundColor: AppColors.primaryBlue,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -333,14 +333,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.shield_outlined, size: 15, color: Color(0xFF64748B)),
+                Icon(Icons.shield_outlined, size: 15, color: AppColors.greyText),
                 SizedBox(width: 6),
                 Text(
                   'Secure Payment',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF64748B),
+                    color: AppColors.greyText,
                   ),
                 ),
               ],
@@ -349,7 +349,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ],
         ),
       ),
-
     );
   }
 
@@ -362,7 +361,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           title,
           style: TextStyle(
             fontSize: 13,
-            color: isBold ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+            color: isBold ? AppColors.black : AppColors.greyText,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
           ),
         ),
@@ -370,7 +369,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           amount,
           style: TextStyle(
             fontSize: 14,
-            color: const Color(0xFF0F172A),
+            color: AppColors.black,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
           ),
         ),
@@ -397,10 +396,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            color: isSelected ? AppColors.primaryBlue : AppColors.borderGrey,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -413,7 +412,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1),
+                  color: isSelected ? AppColors.primaryBlue : AppColors.lightGreyText,
                   width: isSelected ? 5.5 : 1.5,
                 ),
               ),
@@ -434,7 +433,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.black,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -443,7 +442,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       subtitle,
                       style: const TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF64748B),
+                        color: AppColors.greyText,
                       ),
                     ),
                   ],
@@ -456,7 +455,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
+                  color: AppColors.successBg,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
@@ -464,7 +463,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF10B981),
+                    color: AppColors.successGreen,
                   ),
                 ),
               ),

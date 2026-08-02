@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/core/routes/Routes_name.dart';
+import '../../../core/constant/App_Colors.dart';
 import '../../../core/constant/Token_storage.dart';
 import '../Model/sales_dashboard_model.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
@@ -14,15 +15,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const Color kBlue = Color(0xFF2458E8);
-  static const Color kRed = Color(0xFFEF4444);
-  static const Color kGreen = Color(0xFF10B981);
-  static const Color kOrange = Color(0xFFF97316);
-  static const Color kTextDark = Color(0xFF0F172A);
-  static const Color kTextMid = Color(0xFF475569);
-  static const Color kTextLight = Color(0xFF94A3B8);
-  static const Color kBorder = Color(0xFFF1F5F9);
-
   final AppStorage _appStorage = AppStorage();
 
   @override
@@ -37,17 +29,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4FF),
+      backgroundColor: AppColors.bgGrey,
       body: Consumer<SalesDashboardViewModel>(
         builder: (context, viewModel, child) {
-          // 1. Loading State
           if (viewModel.isLoading) {
             return const Center(
-              child: CircularProgressIndicator(color: kBlue),
+              child: CircularProgressIndicator(color: AppColors.primaryBlue),
             );
           }
 
-          // 2. Error State
           if (viewModel.errorMessage != null) {
             return Center(
               child: Padding(
@@ -55,19 +45,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: kRed),
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.errorRed),
                     const SizedBox(height: 12),
                     Text(
                       viewModel.errorMessage!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: kTextDark, fontSize: 14),
+                      style: const TextStyle(color: AppColors.black, fontSize: 14),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: kBlue),
-                      onPressed: () {
-                        viewModel.fetchSalesDashboard();
-                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
+                      onPressed: () => viewModel.fetchSalesDashboard(),
                       child: const Text('Retry', style: TextStyle(color: Colors.white)),
                     ),
                   ],
@@ -78,7 +66,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
           final data = viewModel.dashboardData;
 
-          // 3. Success State with Dynamic Data
+          // ── Stats calculate from model ──
+          final int totalCustomers = data?.customers ?? 0;
+          final loans = data?.loans ?? [];
+          final applications = data?.applications ?? [];
+          final payments = data?.payments ?? [];
+
+          final int activeLoans = loans
+              .where((l) => (l.status ?? '').toUpperCase() == 'ACTIVE' ||
+              (l.status ?? '').toUpperCase() == 'DISBURSED')
+              .length;
+
+          final int overdueLoans = loans.where((l) {
+            if (l.installments == null) return false;
+            return l.installments!.any((i) =>
+            (i.status ?? '').toUpperCase() == 'PENDING' &&
+                i.dueDate != null &&
+                DateTime.tryParse(i.dueDate!)?.isBefore(DateTime.now()) == true);
+          }).length;
+
+          final int pendingApps = applications
+              .where((a) => (a.status ?? '').toUpperCase() == 'PENDING')
+              .length;
+
+          // Total collection (simple sum if payment objects have amount)
+          num totalCollections = 0;
+          for (var p in payments) {
+            if (p is Map && p['amount'] != null) {
+              totalCollections += num.tryParse(p['amount'].toString()) ?? 0;
+            }
+          }
+
           return Stack(
             children: [
               // Top Blue Background
@@ -93,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       bottomLeft: Radius.circular(30),
                       bottomRight: Radius.circular(30),
                     ),
-                    color: kBlue,
+                    color: AppColors.primaryBlue,
                   ),
                 ),
               ),
@@ -108,27 +126,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     physics: const BouncingScrollPhysics(),
                     child: Column(
                       children: [
-                        // Header Section
-                        _buildHeader(data),
-
-                        // Main Content
+                        _buildHeader(pendingApps),
                         Transform.translate(
                           offset: const Offset(0, -24),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
                               children: [
-                                _buildPortfolioCard(data?.stats),
+                                _buildPortfolioCard(
+                                  totalCustomers: totalCustomers,
+                                  totalCollections: totalCollections,
+                                  activeLoans: activeLoans,
+                                ),
                                 const SizedBox(height: 14),
-                                _buildStatusGrid(data?.stats),
+                                _buildStatusGrid(
+                                  totalCustomers: totalCustomers,
+                                  overdueLoans: overdueLoans,
+                                  activeLoans: activeLoans,
+                                  pendingApps: pendingApps,
+                                ),
                                 const SizedBox(height: 14),
                                 _buildCreateCustomerButton(),
                                 const SizedBox(height: 20),
                                 _buildQuickActions(),
                                 const SizedBox(height: 20),
-                                _buildRecentApplications(data?.recentApplications ?? []),
+                                _buildRecentApplications(applications),
                                 const SizedBox(height: 20),
-                                _buildRecentPayments(data?.recentPayments ?? []),
+                                _buildRecentLoans(loans),
                                 const SizedBox(height: 100),
                               ],
                             ),
@@ -147,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           Navigator.pushNamed(context, RouteName.brandSelectionScreen);
         },
-        backgroundColor: kBlue,
+        backgroundColor: AppColors.primaryBlue,
         elevation: 6,
         shape: const CircleBorder(),
         child: const Icon(Icons.add, color: Colors.white, size: 30),
@@ -156,10 +180,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── HEADER SECTION ──────────────────────────────────────────────────────────
-  Widget _buildHeader(Data? data) {
-    final pendingCount = data?.stats?.pendingApplications ?? 0;
-
+  // ── Header ────────────────────────────────────────────
+  Widget _buildHeader(int pendingCount) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
       child: Column(
@@ -172,7 +194,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 'assets/icons/logo.png',
                 height: 50,
                 errorBuilder: (context, error, stackTrace) =>
-                const Text('SMART PAY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                const Text('SMART PAY',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18)),
               ),
               Row(
                 children: [
@@ -182,10 +208,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
+                          color: Colors.white.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
+                        child: const Icon(Icons.notifications_outlined,
+                            color: Colors.white, size: 22),
                       ),
                       if (pendingCount > 0)
                         Positioned(
@@ -194,11 +221,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Container(
                             width: 16,
                             height: 16,
-                            decoration: const BoxDecoration(color: kRed, shape: BoxShape.circle),
+                            decoration: const BoxDecoration(
+                                color: AppColors.errorRed, shape: BoxShape.circle),
                             child: Center(
                               child: Text(
                                 '$pendingCount',
-                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -210,23 +241,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.person_outline, color: Colors.white, size: 22),
+                    child: const Icon(Icons.person_outline,
+                        color: Colors.white, size: 22),
                   ),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            _getGreetingMessage(),
-            style: const TextStyle(color: Color(0xFFBFD4FF), fontSize: 14, fontWeight: FontWeight.w400),
+          const Text(
+            'Welcome back,',
+            style: TextStyle(
+                color: Color(0xFFBFD4FF),
+                fontSize: 14,
+                fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 4),
-
-          // 🔹 FutureBuilder tile local storage theke User Name read korbe
           FutureBuilder<String?>(
             future: _appStorage.getUserName(),
             builder: (context, snapshot) {
@@ -256,19 +289,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _getGreetingMessage() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning,';
-    if (hour < 17) return 'Good Afternoon,';
-    return 'Good Evening,';
-  }
-
-  // ── PORTFOLIO OVERVIEW CARD ─────────────────────────────────────────────────
-  Widget _buildPortfolioCard(Stats? stats) {
-    final num totalCollections = stats?.totalCollections ?? 0;
-    final int totalCustomers = stats?.totalCustomers ?? 0;
-    final int activeLoans = stats?.activeLoans ?? 0;
-
+  // ── Portfolio Card ────────────────────────────────────
+  Widget _buildPortfolioCard({
+    required int totalCustomers,
+    required num totalCollections,
+    required int activeLoans,
+  }) {
     double progressRatio = totalCustomers > 0
         ? (activeLoans / totalCustomers).clamp(0.0, 1.0)
         : 0.0;
@@ -276,11 +302,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -294,19 +320,28 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Text(
                 'Portfolio Overview',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kTextDark),
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.black),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: AppColors.bgGrey,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
                   children: [
-                    Text('This Month', style: TextStyle(fontSize: 12, color: kTextMid, fontWeight: FontWeight.w500)),
+                    Text('This Month',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.greyText,
+                            fontWeight: FontWeight.w500)),
                     SizedBox(width: 3),
-                    Icon(Icons.keyboard_arrow_down, size: 16, color: kTextMid),
+                    Icon(Icons.keyboard_arrow_down,
+                        size: 16, color: AppColors.greyText),
                   ],
                 ),
               ),
@@ -319,10 +354,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: AppColors.infoBlue,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.people_alt_outlined, color: kBlue, size: 26),
+                child: const Icon(Icons.people_alt_outlined,
+                    color: AppColors.primaryBlue, size: 26),
               ),
               const SizedBox(width: 12),
               Column(
@@ -330,21 +366,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     '$totalCustomers',
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: kTextDark, height: 1),
+                    style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.black,
+                        height: 1),
                   ),
                   const SizedBox(height: 2),
-                  const Text('Total Customers', style: TextStyle(fontSize: 11, color: kTextLight)),
+                  const Text('Total Customers',
+                      style:
+                      TextStyle(fontSize: 11, color: AppColors.greyText)),
                 ],
               ),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Total Collection", style: TextStyle(fontSize: 11, color: kTextLight)),
+                  const Text("Total Collection",
+                      style:
+                      TextStyle(fontSize: 11, color: AppColors.greyText)),
                   const SizedBox(height: 2),
                   Text(
                     '৳$totalCollections',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kBlue),
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryBlue),
                   ),
                 ],
               ),
@@ -357,7 +404,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Center(
                     child: Text(
                       '$percentage%',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: kTextDark),
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.black),
                     ),
                   ),
                 ),
@@ -370,8 +420,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: LinearProgressIndicator(
               value: progressRatio,
               minHeight: 7,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: const AlwaysStoppedAnimation<Color>(kBlue),
+              backgroundColor: AppColors.borderGrey,
+              valueColor:
+              const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
             ),
           ),
         ],
@@ -379,8 +430,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── STATS GRID SECTION ──────────────────────────────────────────────────────
-  Widget _buildStatusGrid(Stats? stats) {
+  // ── Status Grid ───────────────────────────────────────
+  Widget _buildStatusGrid({
+    required int totalCustomers,
+    required int overdueLoans,
+    required int activeLoans,
+    required int pendingApps,
+  }) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -391,34 +447,34 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _buildStatusCard(
           icon: Icons.account_balance_wallet_rounded,
-          iconBg: const Color(0xFFEFF6FF),
-          iconColor: kBlue,
+          iconBg: AppColors.infoBlue,
+          iconColor: AppColors.primaryBlue,
           title: 'Total Customers',
-          count: '${stats?.totalCustomers ?? 0}',
+          count: '$totalCustomers',
           subtitle: 'Active',
         ),
         _buildStatusCard(
           icon: Icons.warning_amber_rounded,
           iconBg: const Color(0xFFFEF2F2),
-          iconColor: kRed,
+          iconColor: AppColors.errorRed,
           title: 'Over Dues',
-          count: '${stats?.overdueLoans ?? 0}',
+          count: '$overdueLoans',
           subtitle: 'Loans',
         ),
         _buildStatusCard(
           icon: Icons.description_outlined,
-          iconBg: const Color(0xFFECFDF5),
-          iconColor: kGreen,
+          iconBg: AppColors.successBg,
+          iconColor: AppColors.successGreen,
           title: 'Active Loans',
-          count: '${stats?.activeLoans ?? 0}',
+          count: '$activeLoans',
           subtitle: 'Loans',
         ),
         _buildStatusCard(
           icon: Icons.assignment_outlined,
           iconBg: const Color(0xFFFFF7ED),
-          iconColor: kOrange,
+          iconColor: Colors.orange,
           title: 'Pending Approval',
-          count: '${stats?.pendingApplications ?? 0}',
+          count: '$pendingApps',
           subtitle: 'Apps',
         ),
       ],
@@ -436,24 +492,24 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.borderGrey),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+            decoration:
+            BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 8),
@@ -466,14 +522,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: iconColor),
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: iconColor),
                 ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
                     Text(
                       count,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kTextDark),
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.black),
                     ),
                     const SizedBox(width: 4),
                     Expanded(
@@ -481,7 +543,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 10, color: kTextLight),
+                        style: const TextStyle(
+                            fontSize: 10, color: AppColors.greyText),
                       ),
                     ),
                   ],
@@ -495,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── CREATE CUSTOMER BUTTON ──────────────────────────────────────────────────
+  // ── Create Customer Button ────────────────────────────
   Widget _buildCreateCustomerButton() {
     return GestureDetector(
       onTap: () {
@@ -504,21 +567,27 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         width: double.infinity,
         height: 56,
-        decoration: BoxDecoration(color: kBlue, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+            color: AppColors.primaryBlue,
+            borderRadius: BorderRadius.circular(16)),
         child: Row(
           children: [
             const SizedBox(width: 16),
             Container(
               width: 32,
               height: 32,
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: const Icon(Icons.add, color: kBlue, size: 20),
+              decoration:
+              const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              child: const Icon(Icons.add, color: AppColors.primaryBlue, size: 20),
             ),
             const SizedBox(width: 14),
             const Expanded(
               child: Text(
                 'Create New Customer',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700),
               ),
             ),
             const Icon(Icons.chevron_right, color: Colors.white, size: 24),
@@ -529,14 +598,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── QUICK ACTIONS ──────────────────────────────────────────────────────────
+  // ── Quick Actions ─────────────────────────────────────
   Widget _buildQuickActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Quick Actions',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kTextDark),
+          style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.black),
         ),
         const SizedBox(height: 12),
         Row(
@@ -558,61 +630,76 @@ class _HomeScreenState extends State<HomeScreen> {
       width: size,
       height: size + 8,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kBorder),
+        border: Border.all(color: AppColors.borderGrey),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 3)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: kBlue, size: 26),
+          Icon(icon, color: AppColors.primaryBlue, size: 26),
           const SizedBox(height: 7),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kTextDark, height: 1.15),
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.black,
+                height: 1.15),
           ),
         ],
       ),
     );
   }
 
-  // ── RECENT APPLICATIONS LIST ────────────────────────────────────────────────
-  Widget _buildRecentApplications(List<RecentApplications> recentApps) {
+  // ── Recent Applications ───────────────────────────────
+  Widget _buildRecentApplications(List<Applications> apps) {
+    final recent = apps.take(5).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Recent Applications',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kTextDark),
+          style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.black),
         ),
         const SizedBox(height: 12),
-        recentApps.isEmpty
+        recent.isEmpty
             ? _buildEmptyBox('No Recent Applications')
             : Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: kBorder),
+            border: Border.all(color: AppColors.borderGrey),
           ),
           child: Column(
-            children: List.generate(recentApps.length, (index) {
-              final app = recentApps[index];
-              final String name = app.name ?? 'Unknown Customer';
-              final String status = app.status ?? 'PENDING';
+            children: List.generate(recent.length, (index) {
+              final app = recent[index];
+              final name = app.name ?? app.customer?.name ?? 'Unknown';
+              final status = app.status ?? 'PENDING';
               final isPending = status.toUpperCase() == 'PENDING';
 
               return _buildListTile(
                 initials: name.isNotEmpty ? name[0].toUpperCase() : 'C',
                 title: name,
-                subtitle: 'EMI: ৳${app.monthlyEmi ?? 0}/mo',
+                subtitle: 'MRP: ৳${app.mrp ?? 0} • ${app.planMonths ?? 0} mo',
                 badgeText: status,
-                badgeBg: isPending ? const Color(0xFFFFF7ED) : const Color(0xFFECFDF5),
-                badgeColor: isPending ? kOrange : kGreen,
-                isLast: index == recentApps.length - 1,
+                badgeBg: isPending
+                    ? const Color(0xFFFFF7ED)
+                    : AppColors.successBg,
+                badgeColor:
+                isPending ? Colors.orange : AppColors.successGreen,
+                isLast: index == recent.length - 1,
               );
             }),
           ),
@@ -621,38 +708,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── RECENT PAYMENTS LIST ────────────────────────────────────────────────────
-  Widget _buildRecentPayments(List<RecentPayments> recentPayments) {
+  // ── Recent Loans ──────────────────────────────────────
+  Widget _buildRecentLoans(List<Loans> loans) {
+    final recent = loans.take(5).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Recent Payments',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kTextDark),
+          'Recent Loans',
+          style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.black),
         ),
         const SizedBox(height: 12),
-        recentPayments.isEmpty
-            ? _buildEmptyBox('No Recent Payments')
+        recent.isEmpty
+            ? _buildEmptyBox('No Recent Loans')
             : Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: kBorder),
+            border: Border.all(color: AppColors.borderGrey),
           ),
           child: Column(
-            children: List.generate(recentPayments.length, (index) {
-              final pay = recentPayments[index];
-              final String customerName = pay.loan?.customer?.name ?? 'Customer';
-              final String method = pay.paymentMethod ?? 'CASH';
+            children: List.generate(recent.length, (index) {
+              final loan = recent[index];
+              final name = loan.customer?.name ?? 'Customer';
+              final status = loan.status ?? 'N/A';
+              final emi = loan.calculationSnapshot?.monthlyEmi ?? '0';
 
               return _buildListTile(
-                initials: customerName.isNotEmpty ? customerName[0].toUpperCase() : 'P',
-                title: customerName,
-                subtitle: 'Method: $method',
-                badgeText: '৳${pay.amount ?? 0}',
-                badgeBg: const Color(0xFFEFF6FF),
-                badgeColor: kBlue,
-                isLast: index == recentPayments.length - 1,
+                initials: name.isNotEmpty ? name[0].toUpperCase() : 'L',
+                title: name,
+                subtitle: 'EMI: ৳$emi/mo • ${loan.displayId ?? ''}',
+                badgeText: status,
+                badgeBg: AppColors.infoBlue,
+                badgeColor: AppColors.primaryBlue,
+                isLast: index == recent.length - 1,
               );
             }),
           ),
@@ -661,7 +754,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── HELPER LIST TILE ────────────────────────────────────────────────────────
+  // ── List Tile ─────────────────────────────────────────
   Widget _buildListTile({
     required String initials,
     required String title,
@@ -679,10 +772,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFFEFF6FF),
+                backgroundColor: AppColors.infoBlue,
                 child: Text(
                   initials,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kBlue),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryBlue),
                 ),
               ),
               const SizedBox(width: 12),
@@ -692,28 +788,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kTextDark),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.black),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(fontSize: 11, color: kTextLight),
+                      style: const TextStyle(
+                          fontSize: 11, color: AppColors.greyText),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(20)),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    color: badgeBg, borderRadius: BorderRadius.circular(20)),
                 child: Text(
                   badgeText,
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: badgeColor),
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: badgeColor),
                 ),
               ),
             ],
           ),
         ),
-        if (!isLast) const Divider(height: 1, thickness: 1, color: Color(0xFFF8F8F8)),
+        if (!isLast)
+          const Divider(height: 1, thickness: 1, color: AppColors.borderGrey),
       ],
     );
   }
@@ -723,18 +829,18 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(20),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: kBorder),
+        border: Border.all(color: AppColors.borderGrey),
       ),
       child: Center(
-        child: Text(message, style: const TextStyle(color: kTextLight, fontSize: 13)),
+        child: Text(message,
+            style: const TextStyle(color: AppColors.greyText, fontSize: 13)),
       ),
     );
   }
 }
 
-// ── CUSTOM DONUT PAINTER ─────────────────────────────────────────────────────
 class _DonutPainter extends CustomPainter {
   final double progress;
   _DonutPainter(this.progress);
@@ -746,19 +852,18 @@ class _DonutPainter extends CustomPainter {
     const stroke = 5.5;
 
     final bgPaint = Paint()
-      ..color = const Color(0xFFE2E8F0)
+      ..color = AppColors.borderGrey
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round;
 
     final fgPaint = Paint()
-      ..color = const Color(0xFF2458E8)
+      ..color = AppColors.primaryBlue
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius, bgPaint);
-
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,

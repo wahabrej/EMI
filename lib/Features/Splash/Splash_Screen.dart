@@ -36,34 +36,44 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // 🚀 Check Authentication Token and Navigate
-    _checkTokenAndNavigate();
+    // 🚀 Check Authentication and Role for Redirection
+    _checkAuthAndNavigate();
   }
 
-  Future<void> _checkTokenAndNavigate() async {
-    // এনিমেশন দেখার জন্য ন্যূনতম ২-৩ সেকেন্ড বিলম্ব রাখা ভালো
+  Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
-    final tokenStorage = AppStorage();
-    final token = await tokenStorage.getToken();
+    final storage = AppStorage();
+    final token = await storage.getToken();
+    final role = await storage.getUserRole();
 
     if (!mounted) return;
 
     if (token != null && token.isNotEmpty) {
-      // 🟢 Token আছে -> ParentScreen (Home)-এ নিয়ে যাও এবং ব্যাক স্ট্যাক ক্লিয়ার করো
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        RouteName.parentScreen,
-            (route) => false,
-      );
+      // 🟢 Logged In -> Redirect based on Role
+      if (role == 'CUSTOMER') {
+        debugPrint("🏠 Splash: Redirecting to Customer Portal");
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          RouteName.customerParentScreen,
+          (route) => false,
+        );
+      } else {
+        debugPrint("🏠 Splash: Redirecting to Staff/Admin Portal");
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          RouteName.parentScreen,
+          (route) => false,
+        );
+      }
     } else {
-      // 🔴 Token নাই -> LoginScreen-এ নিয়ে যাও
+      // 🔴 Not Logged In -> Go to Login
       Navigator.pushNamedAndRemoveUntil(
         context,
         RouteName.loginScreen,
-            (route) => false,
+        (route) => false,
       );
     }
   }
@@ -84,7 +94,7 @@ class _SplashScreenState extends State<SplashScreen>
               'assets/images/back.png',
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) =>
-              const SizedBox.shrink(),
+                  const SizedBox.shrink(),
             ),
           ),
           Center(
@@ -102,7 +112,6 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-
           Positioned(
             bottom: 50,
             left: 0,

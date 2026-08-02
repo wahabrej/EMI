@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../core/constant/App_Colors.dart';
+import '../../Auth/ModelView/Auth_Screen_Provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -8,30 +11,28 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _currentIndex = 4; // Profile Tab Active (Index 4)
   bool _isNotificationEnabled = true;
-  bool _isBiometricEnabled = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF), // UI Matching Soft Background
+      backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: AppColors.accentBlue,
+        elevation: 0,
         title: const Text(
           'Profile',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.white,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Color(0xFF0F172A), size: 22),
+            icon: const Icon(Icons.settings_outlined, color: AppColors.white, size: 22),
             onPressed: () {},
           ),
         ],
@@ -93,7 +94,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   setState(() => _isNotificationEnabled = val);
                 },
               ),
-
             ]),
             const SizedBox(height: 24),
 
@@ -121,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
 
             // 6. Logout Button
-            _buildLogoutButton(),
+            _buildLogoutButton(context),
             const SizedBox(height: 16),
 
             // App Version Footer
@@ -130,7 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'App Version 1.0.0',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF94A3B8),
+                  color: AppColors.lightGreyText,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -139,18 +139,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-
     );
   }
 
-  // 🔹 User Profile Card Helper
   Widget _buildUserProfileCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.borderGrey),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -161,13 +159,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Row(
         children: [
-          // Profile Avatar with Edit Icon
           Stack(
             children: [
               const CircleAvatar(
                 radius: 32,
-                backgroundColor: Color(0xFFEFF6FF),
-                child: Icon(Icons.person_rounded, size: 36, color: Color(0xFF2563EB)),
+                backgroundColor: AppColors.infoBlue,
+                child: Icon(Icons.person_rounded, size: 36, color: AppColors.primaryBlue),
               ),
               Positioned(
                 bottom: 0,
@@ -176,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: 22,
                   height: 22,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF2563EB),
+                    color: AppColors.primaryBlue,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.edit, size: 12, color: Colors.white),
@@ -185,24 +182,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(width: 14),
-
-          // User Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: [
-                    const Text(
+                  children: const [
+                    Text(
                       'Mohammad Wahab',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.black,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.verified, size: 16, color: Color(0xFF2563EB)),
+                    SizedBox(width: 4),
+                    Icon(Icons.verified, size: 16, color: AppColors.primaryBlue),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -210,16 +205,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   '+880 1720 000000',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF64748B),
+                    color: AppColors.greyText,
                   ),
                 ),
                 const SizedBox(height: 6),
-
-                // Verified KYC Tag
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
+                    color: AppColors.successBg,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(
@@ -227,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF10B981),
+                      color: AppColors.successGreen,
                     ),
                   ),
                 ),
@@ -239,12 +232,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Active EMI Summary Quick Badge
   Widget _buildEmiSummaryBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF2563EB),
+        color: AppColors.primaryBlue,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -262,9 +254,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: const [
                   Text(
                     '1 Active EMI Plan',
                     style: TextStyle(
@@ -291,25 +283,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Section Header Helper
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
       style: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF0F172A),
+        color: AppColors.black,
       ),
     );
   }
 
-  // 🔹 Container for Menu Items Group
   Widget _buildMenuCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.borderGrey),
       ),
       child: Column(
         children: children,
@@ -317,7 +307,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Menu Item Helper
   Widget _buildMenuItem({
     required IconData icon,
     required String title,
@@ -335,10 +324,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: AppColors.bgGrey,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 18, color: const Color(0xFF2563EB)),
+              child: Icon(icon, size: 18, color: AppColors.primaryBlue),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -350,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.black,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -359,21 +348,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       subtitle,
                       style: const TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF64748B),
+                        color: AppColors.greyText,
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.lightGreyText, size: 20),
           ],
         ),
       ),
     );
   }
 
-  // 🔹 Switch Toggle Menu Item Helper
   Widget _buildToggleItem({
     required IconData icon,
     required String title,
@@ -388,10 +376,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: AppColors.bgGrey,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 18, color: const Color(0xFF2563EB)),
+            child: Icon(icon, size: 18, color: AppColors.primaryBlue),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -400,13 +388,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.black,
               ),
             ),
           ),
           Switch(
             value: value,
-            activeColor: const Color(0xFF2563EB),
+            activeColor: AppColors.primaryBlue,
             onChanged: onChanged,
           ),
         ],
@@ -414,13 +402,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Logout Button Helper
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Logout'),
+              content: const Text('Are you sure you want to logout?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    context.read<AuthScreenProvider>().logout(context);
+                  },
+                  child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+                ),
+              ],
+            ),
+          );
+        },
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Color(0xFFFCA5A5)),
           backgroundColor: const Color(0xFFFEF2F2),
@@ -428,13 +435,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 18),
+        icon: const Icon(Icons.logout_rounded, color: AppColors.errorRed, size: 18),
         label: const Text(
           'Log Out',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Color(0xFFEF4444),
+            color: AppColors.errorRed,
           ),
         ),
       ),

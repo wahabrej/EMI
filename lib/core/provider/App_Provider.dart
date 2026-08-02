@@ -5,6 +5,13 @@ import '../../Features/Home/ViewModel/Brand_Selection_Model.dart';
 import '../../Features/Home/ViewModel/SalesDashboardViewModel.dart';
 import '../../Features/Parent/ViewModel/Parent_screen_provider.dart';
 import '../../Features/multy_form/viewModel/multyform_provider.dart';
+import '../../CustomerFeature/parent/viewModel/customerParentViewModel.dart';
+import '../../CustomerFeature/home/viewModel/home_view_model.dart';
+import '../../CustomerFeature/payment/viewModel/customer_payment_history_view_model.dart';
+import '../../CustomerFeature/home/viewModel/loan_view_model.dart';
+import '../../CustomerFeature/home/viewModel/loan_application_view_model.dart';
+import '../../CustomerFeature/home/viewModel/notification_view_model.dart';
+import '../../CustomerFeature/profile/viewModel/customer_profile_view_model.dart';
 
 class AppProviders {
   static List<ChangeNotifierProvider> getProviders() {
@@ -18,12 +25,34 @@ class AppProviders {
       ChangeNotifierProvider<CheckoutViewModel>(
         create: (context) => CheckoutViewModel(),
       ),
-      // 🟢 ২. এখানে BrandSelectionViewModel যোগ করে দিন
       ChangeNotifierProvider<BrandSelectionViewModel>(
         create: (context) => BrandSelectionViewModel(),
       ),
       ChangeNotifierProvider<SalesDashboardViewModel>(
         create: (context) => SalesDashboardViewModel(),
+      ),
+      
+      // ── Customer Feature Providers ────────────────────────
+      ChangeNotifierProvider<CustomerParentViewModel>(
+        create: (context) => CustomerParentViewModel(),
+      ),
+      ChangeNotifierProvider<CustomerHomeViewModel>(
+        create: (context) => CustomerHomeViewModel(),
+      ),
+      ChangeNotifierProvider<CustomerPaymentHistoryViewModel>(
+        create: (context) => CustomerPaymentHistoryViewModel(),
+      ),
+      ChangeNotifierProvider<CustomerLoanViewModel>(
+        create: (context) => CustomerLoanViewModel(),
+      ),
+      ChangeNotifierProvider<CustomerLoanApplicationViewModel>(
+        create: (context) => CustomerLoanApplicationViewModel(),
+      ),
+      ChangeNotifierProvider<CustomerNotificationViewModel>(
+        create: (context) => CustomerNotificationViewModel(),
+      ),
+      ChangeNotifierProvider<CustomerProfileViewModel>(
+        create: (context) => CustomerProfileViewModel(),
       ),
     ];
   }

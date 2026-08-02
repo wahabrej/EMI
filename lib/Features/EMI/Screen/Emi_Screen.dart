@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constant/App_Colors.dart';
 
 class EmiScreen extends StatefulWidget {
   const EmiScreen({super.key});
@@ -8,29 +9,26 @@ class EmiScreen extends StatefulWidget {
 }
 
 class _EmiScreenState extends State<EmiScreen> {
-  int _currentIndex = 1; // EMI Tab Active (Index 1)
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF), // UI Matching Background
+      backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-
-        backgroundColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: AppColors.accentBlue,
+        elevation: 0,
         title: const Text(
           'EMI Repayment Schedule',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.white,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.download_outlined, color: Color(0xFF0F172A), size: 22),
+            icon: const Icon(Icons.download_outlined, color: AppColors.white, size: 22),
             onPressed: () {},
           ),
         ],
@@ -55,7 +53,7 @@ class _EmiScreenState extends State<EmiScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.black,
               ),
             ),
             const SizedBox(height: 12),
@@ -72,7 +70,6 @@ class _EmiScreenState extends State<EmiScreen> {
           ],
         ),
       ),
-
     );
   }
 
@@ -81,9 +78,9 @@ class _EmiScreenState extends State<EmiScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.borderGrey),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -101,13 +98,13 @@ class _EmiScreenState extends State<EmiScreen> {
             height: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: const Color(0xFFF8FAFC),
+              color: AppColors.bgGrey,
             ),
             child: Image.network(
               'https://m.media-amazon.com/images/I/61cwywLZR-L._AC_SL1500_.jpg',
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.phone_iphone, size: 45, color: Color(0xFF2563EB)),
+              const Icon(Icons.phone_iphone, size: 45, color: AppColors.primaryBlue),
             ),
           ),
           const SizedBox(width: 14),
@@ -129,7 +126,7 @@ class _EmiScreenState extends State<EmiScreen> {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.black,
                           ),
                         ),
                         SizedBox(height: 2),
@@ -137,7 +134,7 @@ class _EmiScreenState extends State<EmiScreen> {
                           'Blue',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF64748B),
+                            color: AppColors.greyText,
                           ),
                         ),
                       ],
@@ -149,7 +146,7 @@ class _EmiScreenState extends State<EmiScreen> {
                           'Total Payable',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Color(0xFF94A3B8),
+                            color: AppColors.lightGreyText,
                           ),
                         ),
                         SizedBox(height: 2),
@@ -158,7 +155,7 @@ class _EmiScreenState extends State<EmiScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF2563EB),
+                            color: AppColors.primaryBlue,
                           ),
                         ),
                       ],
@@ -174,13 +171,13 @@ class _EmiScreenState extends State<EmiScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF334155),
+                        color: AppColors.black,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: AppColors.infoBlue,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -188,7 +185,7 @@ class _EmiScreenState extends State<EmiScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF2563EB),
+                          color: AppColors.primaryBlue,
                         ),
                       ),
                     ),
@@ -207,33 +204,33 @@ class _EmiScreenState extends State<EmiScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.borderGrey),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildMetricItem(
             icon: Icons.calculate_outlined,
-            iconBg: const Color(0xFFEFF6FF),
-            iconColor: const Color(0xFF2563EB),
+            iconBg: AppColors.infoBlue,
+            iconColor: AppColors.primaryBlue,
             label: 'Monthly EMI',
             value: '৳12,550',
           ),
-          Container(width: 1, height: 35, color: const Color(0xFFF1F5F9)),
+          Container(width: 1, height: 35, color: AppColors.borderGrey),
           _buildMetricItem(
             icon: Icons.percent_rounded,
-            iconBg: const Color(0xFFECFDF5),
-            iconColor: const Color(0xFF10B981),
+            iconBg: AppColors.successBg,
+            iconColor: AppColors.successGreen,
             label: 'Total Interest',
             value: '৳5,300',
           ),
-          Container(width: 1, height: 35, color: const Color(0xFFF1F5F9)),
+          Container(width: 1, height: 35, color: AppColors.borderGrey),
           _buildMetricItem(
             icon: Icons.receipt_long_outlined,
             iconBg: const Color(0xFFF3E8FF),
-            iconColor: const Color(0xFF9333EA),
+            iconColor: Colors.purple,
             label: 'Total Payable',
             value: '৳90,300',
           ),
@@ -268,7 +265,7 @@ class _EmiScreenState extends State<EmiScreen> {
               label,
               style: const TextStyle(
                 fontSize: 10,
-                color: Color(0xFF64748B),
+                color: AppColors.greyText,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -278,7 +275,7 @@ class _EmiScreenState extends State<EmiScreen> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.black,
               ),
             ),
           ],
@@ -300,9 +297,9 @@ class _EmiScreenState extends State<EmiScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.borderGrey),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -333,7 +330,7 @@ class _EmiScreenState extends State<EmiScreen> {
               bool isPaid = row['status'] == 'Paid';
               return TableRow(
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+                  border: Border(top: BorderSide(color: AppColors.borderGrey)),
                 ),
                 children: [
                   _buildTableCell(row['#']!),
@@ -372,7 +369,7 @@ class _EmiScreenState extends State<EmiScreen> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: isHeader ? FontWeight.bold : (isBold ? FontWeight.bold : FontWeight.w500),
-              color: isHeader ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+              color: isHeader ? AppColors.greyText : AppColors.black,
             ),
           ),
         ),
@@ -384,7 +381,7 @@ class _EmiScreenState extends State<EmiScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isPaid ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
+        color: isPaid ? AppColors.successBg : AppColors.infoBlue,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -392,7 +389,7 @@ class _EmiScreenState extends State<EmiScreen> {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,
-          color: isPaid ? const Color(0xFF10B981) : const Color(0xFF2563EB),
+          color: isPaid ? AppColors.successGreen : AppColors.primaryBlue,
         ),
       ),
     );
@@ -403,13 +400,13 @@ class _EmiScreenState extends State<EmiScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F6FF),
+        color: AppColors.infoBlue,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDBEAFE)),
+        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.1)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 20),
+          const Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -419,7 +416,7 @@ class _EmiScreenState extends State<EmiScreen> {
                   'EMI will be auto-debited from your selected account.',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF334155),
+                    color: AppColors.iconGrey,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -429,13 +426,13 @@ class _EmiScreenState extends State<EmiScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2563EB),
+                    color: AppColors.primaryBlue,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF2563EB), size: 20),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.primaryBlue, size: 20),
         ],
       ),
     );
@@ -446,9 +443,9 @@ class _EmiScreenState extends State<EmiScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.borderGrey),
       ),
       child: Row(
         children: [
@@ -456,10 +453,10 @@ class _EmiScreenState extends State<EmiScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
+              color: AppColors.infoBlue,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF2563EB), size: 22),
+            child: const Icon(Icons.notifications_none_rounded, color: AppColors.primaryBlue, size: 22),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -471,7 +468,7 @@ class _EmiScreenState extends State<EmiScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.black,
                   ),
                 ),
                 SizedBox(height: 2),
@@ -479,7 +476,7 @@ class _EmiScreenState extends State<EmiScreen> {
                   'Get reminders before your due date',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF64748B),
+                    color: AppColors.greyText,
                   ),
                 ),
               ],
@@ -488,7 +485,7 @@ class _EmiScreenState extends State<EmiScreen> {
           OutlinedButton(
             onPressed: () {},
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF2563EB)),
+              side: const BorderSide(color: AppColors.primaryBlue),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -499,7 +496,7 @@ class _EmiScreenState extends State<EmiScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2563EB),
+                color: AppColors.primaryBlue,
               ),
             ),
           ),
