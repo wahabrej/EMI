@@ -26,6 +26,13 @@ class Data {
   List<dynamic>? payments;
   List<Products>? products;
 
+  Data({
+    this.customers,
+    this.loans,
+    this.applications,
+    this.payments,
+    this.products,
+  });
 
   Data.fromJson(Map<String, dynamic> json) {
     customers = json['customers'];
@@ -82,6 +89,17 @@ class Loans {
   CalculationSnapshot? calculationSnapshot;
   List<Installments>? installments;
 
+  Loans({
+    this.id,
+    this.displayId,
+    this.status,
+    this.createdAt,
+    this.customer,
+    this.productModel,
+    this.product,
+    this.calculationSnapshot,
+    this.installments,
+  });
 
   Loans.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -127,6 +145,7 @@ class Customer {
   String? name;
   String? phone;
 
+  Customer({this.id, this.displayId, this.name, this.phone});
 
   Customer.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -150,6 +169,7 @@ class ProductModel {
   String? code;
   Brand? brand;
 
+  ProductModel({this.name, this.code, this.brand});
 
   ProductModel.fromJson(Map<String, dynamic> json) {
     name = json['name'];
@@ -187,7 +207,13 @@ class CalculationSnapshot {
   int? planMonths;
   String? monthlyEmi;
 
-
+  CalculationSnapshot({
+    this.totalAfterCashback,
+    this.regularPrice,
+    this.initialPaymentAmount,
+    this.planMonths,
+    this.monthlyEmi,
+  });
 
   CalculationSnapshot.fromJson(Map<String, dynamic> json) {
     totalAfterCashback = json['totalAfterCashback'];

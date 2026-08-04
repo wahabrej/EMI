@@ -30,143 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
-      body: Consumer<SalesDashboardViewModel>(
-        builder: (context, viewModel, child) {
-          if (viewModel.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryBlue),
-            );
-          }
 
-          if (viewModel.errorMessage != null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.errorRed),
-                    const SizedBox(height: 12),
-                    Text(
-                      viewModel.errorMessage!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.black, fontSize: 14),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
-                      onPressed: () => viewModel.fetchSalesDashboard(),
-                      child: const Text('Retry', style: TextStyle(color: Colors.white)),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final data = viewModel.dashboardData;
-
-          // ── Stats calculate from model ──
-          final int totalCustomers = data?.customers ?? 0;
-          final loans = data?.loans ?? [];
-          final applications = data?.applications ?? [];
-          final payments = data?.payments ?? [];
-
-          final int activeLoans = loans
-              .where((l) => (l.status ?? '').toUpperCase() == 'ACTIVE' ||
-              (l.status ?? '').toUpperCase() == 'DISBURSED')
-              .length;
-
-          final int overdueLoans = loans.where((l) {
-            if (l.installments == null) return false;
-            return l.installments!.any((i) =>
-            (i.status ?? '').toUpperCase() == 'PENDING' &&
-                i.dueDate != null &&
-                DateTime.tryParse(i.dueDate!)?.isBefore(DateTime.now()) == true);
-          }).length;
-
-          final int pendingApps = applications
-              .where((a) => (a.status ?? '').toUpperCase() == 'PENDING')
-              .length;
-
-          // Total collection (simple sum if payment objects have amount)
-          num totalCollections = 0;
-          for (var p in payments) {
-            if (p is Map && p['amount'] != null) {
-              totalCollections += num.tryParse(p['amount'].toString()) ?? 0;
-            }
-          }
-
-          return Stack(
-            children: [
-              // Top Blue Background
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 220,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
-                    ),
-                    color: AppColors.primaryBlue,
-                  ),
-                ),
-              ),
-
-              SafeArea(
-                bottom: false,
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await viewModel.fetchSalesDashboard();
-                  },
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      children: [
-                        _buildHeader(pendingApps),
-                        Transform.translate(
-                          offset: const Offset(0, -24),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              children: [
-                                _buildPortfolioCard(
-                                  totalCustomers: totalCustomers,
-                                  totalCollections: totalCollections,
-                                  activeLoans: activeLoans,
-                                ),
-                                const SizedBox(height: 14),
-                                _buildStatusGrid(
-                                  totalCustomers: totalCustomers,
-                                  overdueLoans: overdueLoans,
-                                  activeLoans: activeLoans,
-                                  pendingApps: pendingApps,
-                                ),
-                                const SizedBox(height: 14),
-                                _buildCreateCustomerButton(),
-                                const SizedBox(height: 20),
-                                _buildQuickActions(),
-                                const SizedBox(height: 20),
-                                _buildRecentApplications(applications),
-                                const SizedBox(height: 20),
-                                _buildRecentLoans(loans),
-                                const SizedBox(height: 100),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, RouteName.brandSelectionScreen);
@@ -452,6 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Total Customers',
           count: '$totalCustomers',
           subtitle: 'Active',
+          onTap: () => Navigator.pushNamed(context, RouteName.totalCustomerScreen),
         ),
         _buildStatusCard(
           icon: Icons.warning_amber_rounded,
@@ -460,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Over Dues',
           count: '$overdueLoans',
           subtitle: 'Loans',
+          onTap: () => Navigator.pushNamed(context, RouteName.overdueLoanScreen),
         ),
         _buildStatusCard(
           icon: Icons.description_outlined,
@@ -468,6 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Active Loans',
           count: '$activeLoans',
           subtitle: 'Loans',
+          onTap: () => Navigator.pushNamed(context, RouteName.activeLoanScreen),
         ),
         _buildStatusCard(
           icon: Icons.assignment_outlined,
@@ -476,6 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Pending Approval',
           count: '$pendingApps',
           subtitle: 'Apps',
+          onTap: () => Navigator.pushNamed(context, RouteName.pendingApprovalScreen),
         ),
       ],
     );
@@ -488,72 +356,76 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String count,
     required String subtitle,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderGrey),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration:
-            BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: iconColor),
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(
-                      count,
-                      style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.black),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 10, color: AppColors.greyText),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderGrey),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
-          ),
-          Icon(Icons.chevron_right, color: iconColor, size: 18),
-        ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration:
+              BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: iconColor),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        count,
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.black),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 10, color: AppColors.greyText),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: iconColor, size: 18),
+          ],
+        ),
       ),
     );
   }

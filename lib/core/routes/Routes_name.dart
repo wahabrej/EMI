@@ -7,6 +7,12 @@ class RouteName {
   static const loginScreen = "loginScreen";
   static const signUpScreen = "signUpScreen";
 
+  // ── Sales Dashboard Details ──────────────────────────
+  static const totalCustomerScreen = "totalCustomerScreen";
+  static const pendingApprovalScreen = "pendingApprovalScreen";
+  static const activeLoanScreen = "activeLoanScreen";
+  static const overdueLoanScreen = "overdueLoanScreen";
+
   // ── Customer Feature Routes ──────────────────────────
   static const customerParentScreen = "customerParentScreen";
   static const customerHomeScreen = "customerHomeScreen";

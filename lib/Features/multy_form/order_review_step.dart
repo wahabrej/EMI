@@ -21,8 +21,8 @@ class OrderReviewStep extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(color: AppColors.primaryBlue),
-            const SizedBox(height: 12),
-            const Text("Loading data from server...", style: TextStyle(color: AppColors.greyText)),
+            SizedBox(height: 12),
+            Text("Loading data from server...", style: TextStyle(color: AppColors.greyText)),
           ],
         ),
       );
@@ -47,10 +47,10 @@ class OrderReviewStep extends StatelessWidget {
           // 🔹 1. Store Assignment Section
           _buildSectionTitle("Store Assignment"),
           const SizedBox(height: 16),
-          _buildDropdownField(
+          CustomDropdownField(
             label: 'Select Shop *',
             value: order.shopId,
-            items: _buildDropdownItems(vm.shopList),
+            items: vm.shopList,
             onChanged: (val) => vm.onShopSelected(val),
             icon: Icons.storefront_rounded,
           ),
@@ -59,20 +59,20 @@ class OrderReviewStep extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildDropdownField(
+                child: CustomDropdownField(
                   label: 'Agent *',
                   value: order.agentId,
-                  items: _buildDropdownItems(vm.agentList),
+                  items: vm.agentList,
                   onChanged: (val) => vm.onAgentSelected(val),
                   icon: Icons.person_search_rounded,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildDropdownField(
+                child: CustomDropdownField(
                   label: 'Manager *',
                   value: order.managerId,
-                  items: _buildDropdownItems(vm.managerList),
+                  items: vm.managerList,
                   onChanged: (val) => vm.onManagerSelected(val),
                   icon: Icons.manage_accounts_rounded,
                 ),
@@ -81,10 +81,10 @@ class OrderReviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          _buildDropdownField(
+          CustomDropdownField(
             label: 'Sales Person *',
             value: order.salesPersonId,
-            items: _buildDropdownItems(vm.salesPersonList),
+            items: vm.salesPersonList,
             onChanged: (val) => vm.onSalesPersonSelected(val),
             icon: Icons.badge_outlined,
           ),
@@ -94,10 +94,10 @@ class OrderReviewStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           // 🔹 2. Product Selection
-          _buildDropdownField(
+          CustomDropdownField(
             label: 'Select Product *',
             value: order.productId,
-            items: _buildDropdownItems(vm.productList),
+            items: vm.productList,
             onChanged: (val) => vm.onProductSelected(val),
             icon: Icons.phone_iphone_rounded,
           ),
@@ -167,14 +167,14 @@ class OrderReviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // 🔹 4. EMI Configuration
+          //  4. EMI Configuration
           if (order.saleType == 'EMI') ...[
             _buildEmiCalculationOptions(vm, order),
           ],
 
           const SizedBox(height: 40),
 
-          // 🔹 Next Step Action
+          //  Next Step Action
           SizedBox(
             width: double.infinity,
             height: 56,
@@ -273,10 +273,10 @@ class OrderReviewStep extends StatelessWidget {
         const SizedBox(height: 20),
 
         if (order.emiMode == 'EXISTING_PLAN') ...[
-          _buildDropdownField(
+          CustomDropdownField(
             label: 'Choose EMI Plan *',
             value: order.emiPlanId,
-            items: _buildDropdownItems(vm.emiPlanList),
+            items: vm.emiPlanList,
             onChanged: (val) => vm.onEmiPlanSelected(val),
             icon: Icons.assignment_outlined,
           ),
@@ -386,127 +386,47 @@ class OrderReviewStep extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _buildTextField(
-              label: 'Upfront (৳)',
-              hint: '10000',
-              keyboardType: TextInputType.number,
-              initialValue: order.customUpfrontPayment > 0 ? order.customUpfrontPayment.toString() : '',
-              onChanged: (v) {
-                order.customUpfrontPayment = double.tryParse(v) ?? 0;
-                vm.notify();
-              },
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  label: 'Upfront (৳)',
+                  hint: '10000',
+                  keyboardType: TextInputType.number,
+                  initialValue: order.customUpfrontPayment > 0 ? order.customUpfrontPayment.toString() : '',
+                  onChanged: (v) {
+                    order.customUpfrontPayment = double.tryParse(v) ?? 0;
+                    vm.notify();
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  label: 'Duration',
+                  hint: '6 Mos',
+                  keyboardType: TextInputType.number,
+                  initialValue: order.customEmiDurationMonths.toString(),
+                  onChanged: (v) {
+                    order.customEmiDurationMonths = int.tryParse(v) ?? 6;
+                    vm.notify();
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildTextField(
-              label: 'Duration',
-              hint: '6 Mos',
-              keyboardType: TextInputType.number,
-              initialValue: order.customEmiDurationMonths.toString(),
-              onChanged: (v) {
-                order.customEmiDurationMonths = int.tryParse(v) ?? 6;
-                vm.notify();
-              },
-            ),
+          const Divider(height: 32, thickness: 0.5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Monthly EMI:', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              Text('৳${NumberFormat('#,###').format(order.monthlyEmi)}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryBlue, fontSize: 18)),
+            ],
           ),
         ],
       ),
-    );
-  }
-
-  // ────────────── Helper UI Widgets ──────────────
-
-  List<DropdownMenuItem<String>> _buildDropdownItems(List<DropdownItemModel> items) {
-    return items.map((item) {
-      return DropdownMenuItem<String>(
-        value: item.id,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(
-            item.name,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-        ),
-      );
-    }).toList();
-  }
-
-  Widget _buildDropdownField({
-    required String label,
-    required String? value,
-    required List<DropdownMenuItem<String>> items,
-    required ValueChanged<String?> onChanged,
-    required IconData icon,
-  }) {
-    bool isValueValid = items.any((element) => element.value == value);
-    String? safeValue = isValueValid ? value : null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF334155),
-            ),
-          ),
-        ),
-        DropdownButtonFormField<String>(
-          value: safeValue,
-          items: items,
-          onChanged: onChanged,
-          isExpanded: true,
-          menuMaxHeight: 280,
-          borderRadius: BorderRadius.circular(16),
-          dropdownColor: Colors.white,
-          elevation: 8,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: AppColors.primaryBlue,
-            size: 24,
-          ),
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
-          ),
-          decoration: InputDecoration(
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 12, right: 8),
-              child: Icon(icon, size: 20, color: AppColors.primaryBlue),
-            ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 44),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-          ),
-        ),
-      ],
     );
   }
 
@@ -631,6 +551,185 @@ class OrderReviewStep extends StatelessWidget {
           Text(amount, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
         ],
       ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// 🔹 CUSTOM DROPDOWN — Strictly anchors menu below input field
+// ══════════════════════════════════════════════════════════════════════
+
+class CustomDropdownField extends StatefulWidget {
+  final String label;
+  final String? value;
+  final List<DropdownItemModel> items;
+  final ValueChanged<String?> onChanged;
+  final IconData icon;
+
+  const CustomDropdownField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    required this.icon,
+  });
+
+  @override
+  State<CustomDropdownField> createState() => _CustomDropdownFieldState();
+}
+
+class _CustomDropdownFieldState extends State<CustomDropdownField> {
+  final LayerLink _layerLink = LayerLink();
+  final GlobalKey _fieldKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+
+  void _toggleDropdown() {
+    if (_isOpen) {
+      _removeOverlay();
+    } else {
+      _showOverlay();
+    }
+  }
+
+  void _showOverlay() {
+    final renderBox = _fieldKey.currentContext!.findRenderObject() as RenderBox;
+    final fieldSize = renderBox.size;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _removeOverlay,
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: Offset(0, fieldSize.height + 6), // 🔹 Always strictly below with a small gap
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: fieldSize.width,
+                constraints: const BoxConstraints(maxHeight: 280),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 15, offset: const Offset(0, 8)),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shrinkWrap: true,
+                    itemCount: widget.items.length,
+                    itemBuilder: (context, index) {
+                      final item = widget.items[index];
+                      final isSelected = item.id == widget.value;
+                      return InkWell(
+                        onTap: () {
+                          widget.onChanged(item.id);
+                          _removeOverlay();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          color: isSelected ? AppColors.primaryBlue.withOpacity(0.08) : Colors.transparent,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  item.name,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                    color: isSelected ? AppColors.primaryBlue : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                              if (isSelected) const Icon(Icons.check_circle, size: 18, color: AppColors.primaryBlue),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isOpen = true);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) setState(() => _isOpen = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedItem = widget.items.where((e) => e.id == widget.value).firstOrNull;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(widget.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+        ),
+        CompositedTransformTarget(
+          link: _layerLink,
+          child: GestureDetector(
+            key: _fieldKey,
+            onTap: _toggleDropdown,
+            child: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _isOpen ? AppColors.primaryBlue : const Color(0xFFE2E8F0),
+                  width: _isOpen ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(widget.icon, size: 20, color: AppColors.primaryBlue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      selectedItem?.name ?? 'Select Option',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: selectedItem != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _isOpen ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryBlue, size: 24),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

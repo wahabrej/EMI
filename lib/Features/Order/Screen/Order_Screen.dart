@@ -1,6 +1,7 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import '../../../core/constant/App_Colors.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/constant/App_Colors.dart';
+import '../viewModel/OrderSummaryViewModel.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -10,18 +11,26 @@ class OrderScreen extends StatefulWidget {
 }
 
 class _OrderScreenState extends State<OrderScreen> {
-  bool _isAgreed = true;
+  @override
+  void initState() {
+    super.initState();
+    // Fetch summary without passing token from View
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<OrderSummaryViewModel>(context, listen: false)
+          .fetchOrderSummary();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         backgroundColor: AppColors.accentBlue,
         elevation: 0,
         title: const Text(
-          'Order Summary',
+          'Loans & Sales Summary',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -30,366 +39,278 @@ class _OrderScreenState extends State<OrderScreen> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🔹 Main White Card Container
-              Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderGrey),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+      body: Consumer<OrderSummaryViewModel>(
+        builder: (context, viewModel, child) {
+          // 1. Loading State
+          if (viewModel.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+            );
+          }
+
+          // 2. Error State
+          if (viewModel.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    viewModel.errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      viewModel.fetchOrderSummary();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBlue,
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. Title
-                    const Text(
-                      'Review Order',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.black,
+                    child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                  )
+                ],
+              ),
+            );
+          }
+
+          final data = viewModel.summaryData;
+
+          // 3. Empty State
+          if (data == null) {
+            return const Center(
+              child: Text('No summary data available.'),
+            );
+          }
+
+          // 4. Dynamic Data Render State
+          return RefreshIndicator(
+            onRefresh: () async {
+              await viewModel.fetchOrderSummary();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 🔹 Sales Financial Cards Grid
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.4,
+                    children: [
+                      _buildMetricCard(
+                        'Total Sales',
+                        '৳${data.totalSalesValue ?? "0.00"}',
+                        Icons.monetization_on_outlined,
+                        Colors.blue,
                       ),
+                      _buildMetricCard(
+                        'Total Collected',
+                        '৳${data.totalCollected ?? "0.00"}',
+                        Icons.check_circle_outline,
+                        Colors.green,
+                      ),
+                      _buildMetricCard(
+                        'Total Outstanding',
+                        '৳${data.totalOutstanding ?? "0.00"}',
+                        Icons.pending_actions,
+                        Colors.orange,
+                      ),
+                      _buildMetricCard(
+                        'Products Sold',
+                        '${data.totalProductsSold ?? 0} Pcs',
+                        Icons.shopping_bag_outlined,
+                        Colors.purple,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // 🔹 Status Breakdown Badge
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14.0),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderGrey),
                     ),
-                    const SizedBox(height: 16),
-
-                    // 2. Product Row
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Image Container
-                        Container(
-                          width: 65,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: AppColors.bgGrey,
-                          ),
-                          child: Image.network(
-                            'https://m.media-amazon.com/images/I/61cwywLZR-L._AC_SL1500_.jpg',
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                                  Icons.phone_iphone,
-                                  size: 45,
-                                  color: AppColors.primaryBlue,
-                                ),
+                        const Text(
+                          'Approved Loans',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.black,
                           ),
                         ),
-                        const SizedBox(width: 12),
-
-                        // Title, Subtitle & Price
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'iPhone 14 128GB',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.black,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Blue',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.greyText,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                '৳85,000',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // 100% Original Badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: AppColors.successBg,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Row(
-                            children: const [
-                              Icon(
-                                Icons.verified,
-                                color: AppColors.successGreen,
-                                size: 14,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '100% Original',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.successGreen,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            '${data.statusBreakdown?.aPPROVED ?? 0} Approved',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.successGreen,
+                            ),
                           ),
                         ),
                       ],
                     ),
+                  ),
 
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Divider(color: AppColors.borderGrey, height: 1),
-                    ),
+                  const SizedBox(height: 20),
 
-                    // 3. Selected EMI Plan
-                    const Text(
-                      'Selected EMI Plan',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // 3-Column Plan Details Container
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgGrey,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildPlanItem('6 Months', 'Tenure'),
-                          Container(
-                            width: 1,
-                            height: 30,
-                            color: AppColors.borderGrey,
-                          ),
-                          _buildPlanItem('৳12,550', 'Monthly EMI'),
-                          Container(
-                            width: 1,
-                            height: 30,
-                            color: AppColors.borderGrey,
-                          ),
-                          _buildPlanItem('12% p.a.', 'Interest Rate'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 4. Breakdown Amounts
-                    _buildSummaryRow('Product Price', '৳85,000'),
-                    const SizedBox(height: 12),
-                    _buildSummaryRow('Down Payment', '৳15,000'),
-                    const SizedBox(height: 12),
-                    _buildSummaryRow('Amount Financed', '৳70,000'),
-                    const SizedBox(height: 12),
-                    _buildSummaryRow('Total Interest', '৳5,300'),
-                    const SizedBox(height: 14),
-
-                    // 5. Total Payable Box
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.infoBlue,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.1)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
-                            'Total Payable',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryBlue,
-                            ),
-                          ),
-                          Text(
-                            '৳90,300',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryBlue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 6. Security Note Banner
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.successBg,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: const [
-                          Icon(
-                            Icons.shield_outlined,
-                            color: AppColors.successGreen,
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'No hidden charges. Transparent & secure.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.successGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // 🔹 Checkbox with Terms and Policy
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _isAgreed,
-                      activeColor: AppColors.primaryBlue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      onChanged: (bool? value) {
-                        setState(() {
-                          _isAgreed = value ?? false;
-                        });
-                      },
+                  // 🔹 Top Sold Products List
+                  const Text(
+                    'Top Selling Products',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.black,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text.rich(
-                      TextSpan(
-                        text: 'I agree to the ',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.iconGrey,
+                  const SizedBox(height: 12),
+
+                  data.topProducts == null || data.topProducts!.isEmpty
+                      ? const Text(
+                    'No top products data found',
+                    style: TextStyle(color: AppColors.greyText),
+                  )
+                      : ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: data.topProducts!.length,
+                    separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final product = data.topProducts![index];
+                      return Container(
+                        padding: const EdgeInsets.all(12.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardBg,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderGrey),
                         ),
-                        children: [
-                          TextSpan(
-                            text: 'Terms & Conditions',
-                            style: const TextStyle(
-                              color: AppColors.primaryBlue,
-                              fontWeight: FontWeight.bold,
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: AppColors.bgGrey,
+                              child: Text(
+                                '${index + 1}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryBlue,
+                                ),
+                              ),
                             ),
-                            recognizer: TapGestureRecognizer()..onTap = () {},
-                          ),
-                          const TextSpan(text: ' and '),
-                          TextSpan(
-                            text: 'Privacy Policy',
-                            style: const TextStyle(
-                              color: AppColors.primaryBlue,
-                              fontWeight: FontWeight.bold,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.productName ?? 'Unknown',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Brand: ${product.brand ?? "N/A"}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.greyText,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            recognizer: TapGestureRecognizer()..onTap = () {},
-                          ),
-                        ],
-                      ),
-                    ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.infoBlue,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${product.unitsSold ?? 0} Sold',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryBlue,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
-
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  // Helper Widget for EMI Plan Details
-  Widget _buildPlanItem(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryBlue,
+  Widget _buildMetricCard(
+      String title, String value, IconData icon, Color iconColor) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGrey),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.greyText,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Icon(icon, color: iconColor, size: 20),
+            ],
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.greyText,
-            fontWeight: FontWeight.w500,
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.black,
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  // Helper Widget for Financial Data Rows
-  Widget _buildSummaryRow(String title, String amount) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.greyText,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          amount,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

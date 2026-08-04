@@ -7,11 +7,15 @@ import '../Model/PhoneProductModel.dart';
 
 class BrandSelectionViewModel extends ChangeNotifier {
   bool isLoading = false;
+  bool isFetchingEmiPlans = false; // EMI Plan লোড হওয়ার জন্য লোডার
   String? errorMessage;
 
   PhoneProductModel? phoneProductResponse;
   List<Data> productList = [];
   Data? selectedProduct;
+
+  // EMI Plan-এর জন্য মডেল/লিস্ট (CheckoutViewModel-এর মতো)
+  List<dynamic> emiPlanList = [];
 
   // ===== Frontend Controlled =====
   String selectedPurchaseType = 'EMI'; // 'EMI' or 'MRP'
@@ -21,7 +25,7 @@ class BrandSelectionViewModel extends ChangeNotifier {
   double downPayment = 10000;          // default
   double interestRate = 12.0;          // 12%
   double cashbackRate = 0.0;           // optional
-  // GET {{baseUrl}}/emi-plans?productId={{productId}}&isActive=true
+
   // ===== Calculation Results =====
   double resultSellingPrice = 0.0;
   double resultDownPayment = 0.0;
@@ -74,7 +78,7 @@ class BrandSelectionViewModel extends ChangeNotifier {
         productList = phoneProductResponse?.data ?? [];
 
         if (productList.isNotEmpty) {
-          selectProduct(productList.first);
+          await selectProduct(productList.first);
         } else {
           errorMessage = "No products available.";
         }
@@ -89,13 +93,47 @@ class BrandSelectionViewModel extends ChangeNotifier {
   }
 
   // ===================== Selection =====================
-  void selectProduct(Data product) {
+  Future<void> selectProduct(Data product) async {
     selectedProduct = product;
+    final productId = product.id;
     final price = double.tryParse(product.sellingPrice ?? '0') ?? 0.0;
 
     // Auto set default down payment = 25% of price (or keep previous if reasonable)
     if (downPayment <= 0 || downPayment > price) {
       downPayment = (price * 0.25).roundToDouble();
+    }
+
+    // ─── EMI Plan API Fetching (CheckoutViewModel-এর মতো) ───
+    emiPlanList.clear();
+    if (productId != null && productId.isNotEmpty) {
+      isFetchingEmiPlans = true;
+      notifyListeners();
+
+      final url = "${ApiEndPoint.emiPlans}?productId=$productId&isActive=true";
+      try {
+        final headers = await _getHeaders();
+        final res = await http.get(Uri.parse(url), headers: headers);
+        final data = jsonDecode(res.body);
+
+        if (res.statusCode == 200 && data['success'] == true) {
+          emiPlanList = data['data'] as List;
+
+          // যদি এপিআই থেকে কোনো ডিফল্ট প্ল্যান পাওয়া যায়, তবে তার ইন্টারেস্ট বা টেনিউর সেট করতে পারেন
+          if (emiPlanList.isNotEmpty) {
+            final firstPlan = emiPlanList.first;
+            if (firstPlan['months'] != null) {
+              selectedTenureMonths = int.tryParse(firstPlan['months'].toString()) ?? selectedTenureMonths;
+            }
+            if (firstPlan['appEmiChargeRate'] != null) {
+              interestRate = double.tryParse(firstPlan['appEmiChargeRate'].toString()) ?? interestRate;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint(" [BrandSelectionVM] fetchEmiPlans Error: $e");
+      } finally {
+        isFetchingEmiPlans = false;
+      }
     }
 
     calculateQuotation();

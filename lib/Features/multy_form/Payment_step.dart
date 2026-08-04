@@ -17,19 +17,30 @@ class PaymentStep extends StatefulWidget {
 class _PaymentStepState extends State<PaymentStep> {
   final _formKey = GlobalKey<FormState>();
 
-  Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+  Future<void> _showImageSourceActionSheet(
+    BuildContext context,
+    Function(ImageSource) onSourceSelected,
+  ) async {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text('Select Image Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Select Image Source',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppColors.primaryBlue),
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppColors.primaryBlue,
+              ),
               title: const Text('Gallery'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -37,7 +48,10 @@ class _PaymentStepState extends State<PaymentStep> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primaryBlue),
+              leading: const Icon(
+                Icons.camera_alt,
+                color: AppColors.primaryBlue,
+              ),
               title: const Text('Camera'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -54,7 +68,10 @@ class _PaymentStepState extends State<PaymentStep> {
   Future<void> _pickBankReceipt(CheckoutViewModel vm) async {
     await _showImageSourceActionSheet(context, (source) async {
       final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: source, imageQuality: 85);
+      final XFile? image = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
       if (image != null) {
         vm.setBankReceipt(File(image.path));
       }
@@ -62,9 +79,13 @@ class _PaymentStepState extends State<PaymentStep> {
   }
 
   void _handleNext(CheckoutViewModel vm) {
-    if (vm.checkoutData.downPaymentMethod == 'BANK' && vm.checkoutData.bankReceipt == null) {
+    if (vm.checkoutData.downPaymentMethod == 'BANK' &&
+        vm.checkoutData.bankReceipt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload bank receipt'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Please upload bank receipt'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -87,7 +108,11 @@ class _PaymentStepState extends State<PaymentStep> {
           children: [
             const Text(
               'Make Payment',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+              ),
             ),
             const SizedBox(height: 2),
             Text(
@@ -115,7 +140,11 @@ class _PaymentStepState extends State<PaymentStep> {
                       color: AppColors.primaryBlue,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 24),
+                    child: const Icon(
+                      Icons.shopping_cart_outlined,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -124,12 +153,21 @@ class _PaymentStepState extends State<PaymentStep> {
                       children: [
                         Text(
                           "${data.brandName ?? 'Device'} > ${data.productModel ?? 'Model'}",
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          data.saleType == 'EMI' ? 'EMI Sale' : 'Selling Price Sale',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          data.saleType == 'EMI'
+                              ? 'EMI Sale'
+                              : 'Selling Price Sale',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -139,11 +177,14 @@ class _PaymentStepState extends State<PaymentStep> {
                     children: [
                       Text(
                         '৳ ${data.mrp.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primaryBlue),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primaryBlue,
+                        ),
                       ),
-
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -161,7 +202,11 @@ class _PaymentStepState extends State<PaymentStep> {
                 children: [
                   const Text(
                     'Full Payment Collection Method',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                   const SizedBox(height: 12),
 
@@ -206,10 +251,16 @@ class _PaymentStepState extends State<PaymentStep> {
                       decoration: InputDecoration(
                         labelText: 'Transaction Reference No.',
                         hintText: 'Enter bank transaction/receipt ref no',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                       ),
-                      onChanged: (val) => data.downPaymentReferenceNumber = val.trim(),
+                      onChanged: (val) =>
+                          data.downPaymentReferenceNumber = val.trim(),
                     ),
                     const SizedBox(height: 12),
 
@@ -225,22 +276,33 @@ class _PaymentStepState extends State<PaymentStep> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.upload_file, color: Color(0xFF2563EB)),
+                            const Icon(
+                              Icons.upload_file,
+                              color: Color(0xFF2563EB),
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                data.bankReceipt != null ? 'Receipt Uploaded: ${data.bankReceipt!.path.split('/').last}' : 'Upload Bank Deposit Receipt Image',
+                                data.bankReceipt != null
+                                    ? 'Receipt Uploaded: ${data.bankReceipt!.path.split('/').last}'
+                                    : 'Upload Bank Deposit Receipt Image',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: data.bankReceipt != null ? Colors.green : const Color(0xFF475569),
+                                  color: data.bankReceipt != null
+                                      ? Colors.green
+                                      : const Color(0xFF475569),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             if (data.bankReceipt != null)
-                              const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 20,
+                              ),
                           ],
                         ),
                       ),
@@ -260,9 +322,18 @@ class _PaymentStepState extends State<PaymentStep> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Next Step', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                child: const Text(
+                  'Next Step',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
           ],
@@ -291,7 +362,9 @@ class _PaymentStepState extends State<PaymentStep> {
           color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? const Color(0xFF2563EB)
+                : const Color(0xFFE2E8F0),
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
@@ -315,7 +388,11 @@ class _PaymentStepState extends State<PaymentStep> {
               child: Center(
                 child: Text(
                   avatarText,
-                  style: TextStyle(fontWeight: FontWeight.bold, color: iconColor, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: iconColor,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -324,8 +401,21 @@ class _PaymentStepState extends State<PaymentStep> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -338,7 +428,11 @@ class _PaymentStepState extends State<PaymentStep> {
                 ),
                 child: Text(
                   badgeText,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF166534),
+                  ),
                 ),
               ),
           ],

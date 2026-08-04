@@ -89,10 +89,17 @@ class ApiEndPoint {
 
   static const String customerPayments = '$baseUrl/customer/payments';
   static const String initiateCustomerPayment = '$baseUrl/customer/payments/initiate';
+  static const String submitBankPayment = '$baseUrl/customer/payments/bank';
   static const String customerLoanApplications = '$baseUrl/customer/loan-applications';
 
   static String customerLoanApplicationById(String id) =>
       '$baseUrl/customer/loan-applications/$id';
 
   static const String customerNotifications = '$baseUrl/customer/notifications';
+  /// Order Summary (Total sold, collected amount, outstanding, etc.)
+  static const String loansSummary = '$baseUrl/loans/summary';
+
+  /// Payment History list endpoint
+  static const String paymentsHistory = '$baseUrl/payments';
+
 }
