@@ -30,7 +30,146 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
+      body: Consumer<SalesDashboardViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+            );
+          }
 
+          if (viewModel.errorMessage != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.errorRed),
+                    const SizedBox(height: 12),
+                    Text(
+                      viewModel.errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.black, fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
+                      onPressed: () => viewModel.fetchSalesDashboard(),
+                      child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final data = viewModel.dashboardData;
+
+          // ── Stats calculate from model ──
+          final int totalCustomers = data?.customers ?? 0;
+          final loans = data?.loans ?? [];
+          final applications = data?.applications ?? [];
+          final payments = data?.payments ?? [];
+
+          // 🔹 লজিক আপডেট: APPROVED, ACTIVE, এবং DISBURSED সবগুলোকে Active Loan হিসেবে গণনা করা হচ্ছে
+          final int activeLoansCount = loans
+              .where((l) {
+                final status = (l.status ?? '').toUpperCase();
+                return status == 'ACTIVE' || status == 'DISBURSED' || status == 'APPROVED';
+              })
+              .length;
+
+          final int overdueLoansCount = loans.where((l) {
+            if (l.installments == null) return false;
+            return l.installments!.any((i) =>
+            (i.status ?? '').toUpperCase() == 'PENDING' &&
+                i.dueDate != null &&
+                DateTime.tryParse(i.dueDate!)?.isBefore(DateTime.now()) == true);
+          }).length;
+
+          final int pendingAppsCount = applications
+              .where((a) => (a.status ?? '').toUpperCase() == 'PENDING')
+              .length;
+
+          // Total collection (simple sum if payment objects have amount)
+          num totalCollections = 0;
+          for (var p in payments) {
+            if (p is Map && p['amount'] != null) {
+              totalCollections += num.tryParse(p['amount'].toString()) ?? 0;
+            }
+          }
+
+          return Stack(
+            children: [
+              // Top Blue Background
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 220,
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ),
+
+              SafeArea(
+                bottom: false,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await viewModel.fetchSalesDashboard();
+                  },
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        _buildHeader(pendingAppsCount),
+                        Transform.translate(
+                          offset: const Offset(0, -24),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              children: [
+                                _buildPortfolioCard(
+                                  totalCustomers: totalCustomers,
+                                  totalCollections: totalCollections,
+                                  activeLoans: activeLoansCount,
+                                ),
+                                const SizedBox(height: 14),
+                                _buildStatusGrid(
+                                  totalCustomers: totalCustomers,
+                                  overdueLoans: overdueLoansCount,
+                                  activeLoans: activeLoansCount,
+                                  pendingApps: pendingAppsCount,
+                                ),
+                                const SizedBox(height: 14),
+                                _buildCreateCustomerButton(),
+                                const SizedBox(height: 20),
+                                _buildQuickActions(),
+                                const SizedBox(height: 20),
+                                _buildRecentApplications(applications),
+                                const SizedBox(height: 20),
+                                _buildRecentLoans(loans),
+                                const SizedBox(height: 100),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, RouteName.brandSelectionScreen);
