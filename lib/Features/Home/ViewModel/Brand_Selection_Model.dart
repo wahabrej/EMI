@@ -3,31 +3,32 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/constant/Api_End_point.dart';
 import '../../../core/constant/Token_storage.dart';
+import '../Model/EmiPlan.dart';
 import '../Model/PhoneProductModel.dart';
 
 class BrandSelectionViewModel extends ChangeNotifier {
   bool isLoading = false;
-  bool isFetchingEmiPlans = false; // EMI Plan লোড হওয়ার জন্য লোডার
+  bool isFetchingEmiPlans = false;
   String? errorMessage;
 
   PhoneProductModel? phoneProductResponse;
   List<Data> productList = [];
   Data? selectedProduct;
 
-  // EMI Plan-এর জন্য মডেল/লিস্ট (CheckoutViewModel-এর মতো)
-  List<dynamic> emiPlanList = [];
+  List<EmiPlan> emiPlanList = [];
+  EmiPlan? selectedEmiPlan;
 
-  // ===== Frontend Controlled =====
-  String selectedPurchaseType = 'EMI'; // 'EMI' or 'MRP'
+  List<int> availableTenures = [];
+
+  // ─── User Selection ───
+  String selectedPurchaseType = 'EMI';
   int selectedTenureMonths = 6;
+  double downPayment = 0;
+  double interestRate = 0.0;
+  double cashbackRate = 0.0;
 
-  // Editable values (Frontend)
-  double downPayment = 10000;          // default
-  double interestRate = 12.0;          // 12%
-  double cashbackRate = 0.0;           // optional
-
-  // ===== Calculation Results =====
-  double resultSellingPrice = 0.0;
+  // ─── Calculation Results ───
+  double resultSellingPrice = 0.0;        //
   double resultDownPayment = 0.0;
   double resultBaseEmiCharge = 0.0;
   double resultAppEmiCharge = 0.0;
@@ -40,13 +41,27 @@ class BrandSelectionViewModel extends ChangeNotifier {
 
   List<Map<String, dynamic>> installmentSchedule = [];
 
-  // Available tenures (Frontend fixed)
-  final List<int> availableTenures = [3, 6, 9, 12];
+  final AppStorage _appStorage = AppStorage();
+  String? _currentUserId;
 
-  final AppStorage _tokenStorage = AppStorage();
+  // ─── Constructor ───
+  BrandSelectionViewModel() {
+    _loadCurrentUserId();
+  }
 
+  // ─── User ID Load from SharedPreferences ───
+  Future<void> _loadCurrentUserId() async {
+    try {
+      _currentUserId = await _appStorage.getUserId();
+      debugPrint(" [BrandSelectionVM] Current User ID loaded: $_currentUserId");
+    } catch (e) {
+      debugPrint(" [BrandSelectionVM] Error loading user ID: $e");
+    }
+  }
+
+  // ─── Get Headers ───
   Future<Map<String, String>> _getHeaders() async {
-    final token = await _tokenStorage.getToken();
+    final token = await _appStorage.getToken();
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -57,75 +72,166 @@ class BrandSelectionViewModel extends ChangeNotifier {
     return headers;
   }
 
-  // ===================== API =====================
+  // ───  Main Method: Auto-fetch with Current User ID ───
+  Future<void> fetchProductsForCurrentUser() async {
+    // User ID Load করা না থাকলে Load করুন
+    if (_currentUserId == null || _currentUserId!.isEmpty) {
+      await _loadCurrentUserId();
+
+      if (_currentUserId == null || _currentUserId!.isEmpty) {
+        errorMessage = "User not logged in. Please login again.";
+        debugPrint("[BrandSelectionVM] $errorMessage");
+        _setLoading(false);
+        notifyListeners();
+        return;
+      }
+    }
+
+    debugPrint(" [BrandSelectionVM] Fetching products for User ID: $_currentUserId");
+    await fetchProducts(salesPersonId: _currentUserId);
+  }
+
+  // ─── Generic fetchProducts ───
   Future<void> fetchProducts({String? salesPersonId, String? brandId, String? search}) async {
     _setLoading(true);
     errorMessage = null;
 
+    //
+    final String effectiveSalesPersonId = salesPersonId ?? _currentUserId ?? '';
+
+    debugPrint("═══════════════════════════════════════════════════");
+    debugPrint("🔍 [BrandSelectionVM] fetchProducts() CALLED");
+    debugPrint(" Sales Person ID (Effective): $effectiveSalesPersonId");
+    debugPrint(" Brand ID: $brandId");
+    debugPrint(" Search: $search");
+    debugPrint("═══════════════════════════════════════════════════");
+
+    if (effectiveSalesPersonId.isEmpty) {
+      errorMessage = "Sales Person ID is required.";
+      debugPrint(" [BrandSelectionVM] $errorMessage");
+      _setLoading(false);
+      notifyListeners();
+      return;
+    }
+
     try {
-      final queryParams = <String, String>{};
-      if (salesPersonId != null && salesPersonId.isNotEmpty) queryParams['salesPersonId'] = salesPersonId;
-      if (brandId != null && brandId.isNotEmpty) queryParams['brandId'] = brandId;
-      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      final String apiUrl = "${ApiEndPoint.products}?salesPersonId=$effectiveSalesPersonId";
+      debugPrint(" [BrandSelectionVM] Final API URL: $apiUrl");
 
-      final uri = Uri.parse(ApiEndPoint.products).replace(queryParameters: queryParams);
       final headers = await _getHeaders();
-      final response = await http.get(uri, headers: headers);
+      debugPrint(" [BrandSelectionVM] Headers: ${headers.keys.join(', ')}");
+      if (headers['Authorization'] != null) {
+        final token = headers['Authorization']!;
+        debugPrint(" [BrandSelectionVM] Token: ${token.substring(0, token.length > 20 ? 20 : token.length)}...");
+      }
 
+      debugPrint("⏳ [BrandSelectionVM] Calling API...");
+      final stopwatch = Stopwatch()..start();
+
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: headers,
+      );
+
+      stopwatch.stop();
+      debugPrint(" [BrandSelectionVM] Response Time: ${stopwatch.elapsedMilliseconds}ms");
+      debugPrint(" [BrandSelectionVM] Status Code: ${response.statusCode}");
+
+      // ─── Response Handle ───
       if (response.statusCode == 200) {
+        debugPrint(" [BrandSelectionVM] API call SUCCESSFUL!");
+
         final Map<String, dynamic> json = jsonDecode(response.body);
+
+        final List<dynamic> rawData = json['data'] ?? [];
+        debugPrint(" [BrandSelectionVM] Total Products in Response: ${rawData.length}");
+
+        if (rawData.isNotEmpty) {
+          debugPrint(" [BrandSelectionVM] Product List:");
+          for (int i = 0; i < rawData.length; i++) {
+            final p = rawData[i];
+            final brandName = p['brand']?['name'] ?? 'N/A';
+            debugPrint("   ${i+1}. ${p['name']} (ID: ${p['id']}) | Price: ${p['sellingPrice']} | Brand: $brandName");
+          }
+        } else {
+          debugPrint("⚠ [BrandSelectionVM] No products found for Sales Person: $effectiveSalesPersonId");
+        }
+
         phoneProductResponse = PhoneProductModel.fromJson(json);
         productList = phoneProductResponse?.data ?? [];
 
         if (productList.isNotEmpty) {
+          debugPrint(" [BrandSelectionVM] ${productList.length} products loaded successfully.");
           await selectProduct(productList.first);
         } else {
-          errorMessage = "No products available.";
+          errorMessage = "No products available for this Sales Person.";
+          debugPrint(" [BrandSelectionVM] $errorMessage");
         }
+
       } else {
+        debugPrint(" [BrandSelectionVM] API call FAILED!");
+        debugPrint("   Status Code: ${response.statusCode}");
+        debugPrint("   Response Body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}");
         errorMessage = "Failed to load products. Status Code: ${response.statusCode}";
       }
-    } catch (e) {
+
+    } catch (e, stackTrace) {
+      debugPrint(" [BrandSelectionVM] EXCEPTION CAUGHT!");
+      debugPrint("   Error: $e");
+      debugPrint("   StackTrace: $stackTrace");
       errorMessage = "Network Error: ${e.toString()}";
     } finally {
       _setLoading(false);
+      debugPrint(" [BrandSelectionVM] fetchProducts() COMPLETED");
+      debugPrint("═══════════════════════════════════════════════════");
     }
   }
 
-  // ===================== Selection =====================
+  // ─── Select Product ───
   Future<void> selectProduct(Data product) async {
     selectedProduct = product;
-    final productId = product.id;
     final price = double.tryParse(product.sellingPrice ?? '0') ?? 0.0;
 
-    // Auto set default down payment = 25% of price (or keep previous if reasonable)
-    if (downPayment <= 0 || downPayment > price) {
-      downPayment = (price * 0.25).roundToDouble();
-    }
+    //  resultSellingPrice
+    resultSellingPrice = price;
 
-    // ─── EMI Plan API Fetching (CheckoutViewModel-এর মতো) ───
+    downPayment = (price * 0.25).roundToDouble();
+
     emiPlanList.clear();
-    if (productId != null && productId.isNotEmpty) {
+    availableTenures.clear();
+    selectedEmiPlan = null;
+
+    if (product.id != null && product.id!.isNotEmpty) {
       isFetchingEmiPlans = true;
       notifyListeners();
 
-      final url = "${ApiEndPoint.emiPlans}?productId=$productId&isActive=true";
+      final url = "${ApiEndPoint.emiPlans}?productId=${product.id}&isActive=true";
       try {
         final headers = await _getHeaders();
         final res = await http.get(Uri.parse(url), headers: headers);
         final data = jsonDecode(res.body);
 
         if (res.statusCode == 200 && data['success'] == true) {
-          emiPlanList = data['data'] as List;
+          final List rawList = data['data'] ?? [];
+          emiPlanList = rawList.map((e) => EmiPlan.fromJson(e)).toList();
 
-          // যদি এপিআই থেকে কোনো ডিফল্ট প্ল্যান পাওয়া যায়, তবে তার ইন্টারেস্ট বা টেনিউর সেট করতে পারেন
+          final tenures = emiPlanList.map((e) => e.months).toSet().toList();
+          tenures.sort();
+          availableTenures = tenures;
+
           if (emiPlanList.isNotEmpty) {
-            final firstPlan = emiPlanList.first;
-            if (firstPlan['months'] != null) {
-              selectedTenureMonths = int.tryParse(firstPlan['months'].toString()) ?? selectedTenureMonths;
+            selectedEmiPlan = emiPlanList.firstWhere(
+                  (e) => e.months == availableTenures.first,
+              orElse: () => emiPlanList.first,
+            );
+            selectedTenureMonths = selectedEmiPlan?.months ?? 6;
+
+            if (selectedEmiPlan?.appEmiChargeRate != null) {
+              interestRate = double.tryParse(selectedEmiPlan!.appEmiChargeRate) ?? 0.0;
             }
-            if (firstPlan['appEmiChargeRate'] != null) {
-              interestRate = double.tryParse(firstPlan['appEmiChargeRate'].toString()) ?? interestRate;
+
+            if (selectedEmiPlan?.cashbackRate != null) {
+              cashbackRate = double.tryParse(selectedEmiPlan!.cashbackRate) ?? 0.0;
             }
           }
         }
@@ -140,70 +246,84 @@ class BrandSelectionViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Select Tenure ───
   void selectTenure(int months) {
     selectedTenureMonths = months;
+
+    final matchedPlan = emiPlanList.firstWhere(
+          (e) => e.months == months,
+      orElse: () => emiPlanList.first,
+    );
+
+    selectedEmiPlan = matchedPlan;
+
+    if (matchedPlan.appEmiChargeRate != null) {
+      interestRate = double.tryParse(matchedPlan.appEmiChargeRate) ?? 0.0;
+    }
+
+    if (matchedPlan.cashbackRate != null) {
+      cashbackRate = double.tryParse(matchedPlan.cashbackRate) ?? 0.0;
+    }
+
     calculateQuotation();
   }
 
+  // ─── Update Down Payment ───
   void updateDownPayment(double value) {
     downPayment = value;
     calculateQuotation();
   }
 
+  // ─── Update Interest Rate ───
   void updateInterestRate(double value) {
     interestRate = value;
     calculateQuotation();
   }
 
-  // ===================== CALCULATION (PDF Logic) =====================
+  // ─── Calculate Quotation ───
   void calculateQuotation() {
     if (selectedProduct == null) return;
 
     final sellingPrice = double.tryParse(selectedProduct!.sellingPrice ?? '0') ?? 0.0;
+
+    //  resultSellingPrice
     resultSellingPrice = sellingPrice;
-
-    // 1. Down Payment
     resultDownPayment = downPayment;
-
-    // 2. Base EMI Charge (Interest)
     resultBaseEmiCharge = (sellingPrice * interestRate) / 100;
-    resultAppEmiCharge = resultBaseEmiCharge; // no additional components for now
-
-    // 3. Cashback
+    resultAppEmiCharge = resultBaseEmiCharge;
     resultCashback = (sellingPrice * cashbackRate) / 100;
-
-    // 4. Financed Amount
     resultFinancedAmount = sellingPrice + resultAppEmiCharge - resultDownPayment;
 
-    // 5. Monthly Installment
     final months = selectedTenureMonths;
     resultMonthlyEmi = months > 0 ? resultFinancedAmount / months : 0;
     resultMonthlyEmi = _round(resultMonthlyEmi);
 
-    // 6. Final Installment
     resultFinalInstallment = resultFinancedAmount - (resultMonthlyEmi * (months - 1));
     resultFinalInstallment = _round(resultFinalInstallment);
 
-    // 7. Total Payable
     resultTotalPayable = resultDownPayment + resultFinancedAmount;
-
-    // 8. Total Interest
     resultTotalInterest = resultAppEmiCharge - resultCashback;
 
     _generateInstallmentSchedule(months);
     notifyListeners();
   }
 
+  // ─── Generate Installment Schedule ───
   void _generateInstallmentSchedule(int months) {
     installmentSchedule.clear();
     for (int i = 1; i <= months; i++) {
       final amount = (i == months) ? resultFinalInstallment : resultMonthlyEmi;
-      installmentSchedule.add({'month': i, 'amount': amount});
+      installmentSchedule.add({
+        'month': i,
+        'amount': amount,
+        'isFinal': i == months,
+      });
     }
   }
 
   double _round(double val) => double.parse(val.toStringAsFixed(0));
 
+  // ─── Set Purchase Type ───
   void setPurchaseType(String type) {
     selectedPurchaseType = type;
     notifyListeners();
@@ -212,5 +332,15 @@ class BrandSelectionViewModel extends ChangeNotifier {
   void _setLoading(bool value) {
     isLoading = value;
     notifyListeners();
+  }
+
+  // ─── Get Down Payment Components ───
+  List<DownPaymentComponent> getDownPaymentComponents() {
+    return selectedEmiPlan?.downPaymentComponents ?? [];
+  }
+
+  // ─── Get Display Down Payment Percent ───
+  String getDisplayDownPaymentPercent() {
+    return selectedEmiPlan?.displayDownPaymentPercent ?? '0';
   }
 }

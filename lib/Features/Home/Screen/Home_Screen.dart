@@ -205,50 +205,56 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Row(
                 children: [
-                  Stack(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.notifications_outlined,
-                            color: Colors.white, size: 22),
-                      ),
-                      if (pendingCount > 0)
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: const BoxDecoration(
-                                color: AppColors.errorRed, shape: BoxShape.circle),
-                            child: Center(
-                              child: Text(
-                                '$pendingCount',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                  // GestureDetector(
+                  //   onTap: () => Navigator.pushNamed(context, RouteName.customerNotificationScreen),
+                  //   child: Stack(
+                  //     children: [
+                  //       Container(
+                  //         width: 42,
+                  //         height: 42,
+                  //         decoration: BoxDecoration(
+                  //           color: Colors.white.withValues(alpha: 0.18),
+                  //           shape: BoxShape.circle,
+                  //         ),
+                  //         child: const Icon(Icons.notifications_outlined,
+                  //             color: Colors.white, size: 22),
+                  //       ),
+                  //       if (pendingCount > 0)
+                  //         Positioned(
+                  //           right: 6,
+                  //           top: 6,
+                  //           child: Container(
+                  //             width: 16,
+                  //             height: 16,
+                  //             decoration: const BoxDecoration(
+                  //                 color: AppColors.errorRed, shape: BoxShape.circle),
+                  //             child: Center(
+                  //               child: Text(
+                  //                 '$pendingCount',
+                  //                 style: const TextStyle(
+                  //                     color: Colors.white,
+                  //                     fontSize: 9,
+                  //                     fontWeight: FontWeight.bold),
+                  //               ),
+                  //             ),
+                  //           ),
+                  //         ),
+                  //     ],
+                  //   ),
+                  // ),
                   const SizedBox(width: 10),
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      shape: BoxShape.circle,
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, RouteName.profileScreen),
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.person_outline,
+                          color: Colors.white, size: 22),
                     ),
-                    child: const Icon(Icons.person_outline,
-                        color: Colors.white, size: 22),
                   ),
                 ],
               ),
@@ -625,47 +631,66 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildQABtn(Icons.smartphone_outlined, 'New Loan'),
-            _buildQABtn(Icons.payments_outlined, 'Receive\nPayment'),
-            _buildQABtn(Icons.article_outlined, 'Applications'),
-            _buildQABtn(Icons.person_add_alt_1_outlined, 'Create\nCustomer'),
+            _buildQABtn(
+              Icons.smartphone_outlined,
+              'New Loan',
+              () => Navigator.pushNamed(context, RouteName.brandSelectionScreen),
+            ),
+            _buildQABtn(
+              Icons.payments_outlined,
+              'Receive\nPayment',
+              () => Navigator.pushNamed(context, RouteName.activeLoanScreen),
+            ),
+            _buildQABtn(
+              Icons.article_outlined,
+              'Applications',
+              () => Navigator.pushNamed(context, RouteName.pendingApprovalScreen),
+            ),
+            _buildQABtn(
+              Icons.person_add_alt_1_outlined,
+              'Create\nCustomer',
+              () => Navigator.pushNamed(context, RouteName.brandSelectionScreen),
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildQABtn(IconData icon, String label) {
+  Widget _buildQABtn(IconData icon, String label, VoidCallback onTap) {
     final double size = (MediaQuery.of(context).size.width - 80) / 4;
-    return Container(
-      width: size,
-      height: size + 8,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderGrey),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: AppColors.primaryBlue, size: 26),
-          const SizedBox(height: 7),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.black,
-                height: 1.15),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size + 8,
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderGrey),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.primaryBlue, size: 26),
+            const SizedBox(height: 7),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.black,
+                  height: 1.15),
+            ),
+          ],
+        ),
       ),
     );
   }

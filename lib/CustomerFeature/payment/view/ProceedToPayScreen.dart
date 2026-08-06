@@ -29,10 +29,18 @@ class ProceedToPayScreen extends StatefulWidget {
 class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  // Payment Method Selection
+  String _selectedPaymentMethod = 'BANK'; // 'BANK' or 'BKASH'
+
   // Bank Form Controllers
   final _accNameController = TextEditingController();
   final _accNoController = TextEditingController();
   final _bankNameController = TextEditingController();
+
+  // bKash Form Controller
+  final _bKashMobileController = TextEditingController();
+
+  // Common Controllers
   final _refController = TextEditingController();
   final _remarksController = TextEditingController();
   File? _receiptFile;
@@ -42,19 +50,18 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
     _accNameController.dispose();
     _accNoController.dispose();
     _bankNameController.dispose();
+    _bKashMobileController.dispose();
     _refController.dispose();
     _remarksController.dispose();
     super.dispose();
   }
 
-  // ── Business Logic: Compute Due Amount with Cashback Eligibility ─────
   double get totalPayableAmount {
     double total = 0;
     DateTime now = DateTime.now();
-    DateTime today = DateTime(now.year, now.month, now.day); // Normalize to midnight
+    DateTime today = DateTime(now.year, now.month, now.day);
 
     for (var item in widget.selectedItems) {
-      // Logic: totalDue - eligibleCashback[cite: 1]
       double itemTotalDue = double.tryParse(item.totalDue ?? '0') ?? 0;
       double cashbackAmount = double.tryParse(item.cashbackAmount ?? '0') ?? 0;
 
@@ -65,7 +72,6 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
       }
 
       double eligibleCashback = 0;
-      // If cashbackStatus === "PENDING" and today <= dueDate[cite: 1]
       if (item.cashbackStatus?.toUpperCase() == "PENDING" &&
           dueDate != null &&
           !today.isAfter(dueDate)) {
@@ -100,10 +106,7 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: Color(0xFF0F172A)),
         ),
-        title: const Text(
-          'Proceed to Pay',
-          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800, fontSize: 18),
-        ),
+        title: const Text('Proceed to Pay', style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800, fontSize: 18)),
         centerTitle: true,
       ),
       body: Stack(
@@ -116,9 +119,9 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
                 children: [
                   _buildSummaryCard(),
                   const SizedBox(height: 16),
-                  _buildSelectedInstallments(),
+                  _buildPaymentMethodSelector(),
                   const SizedBox(height: 16),
-                  _buildBankForm(), // Direct Bank Form Entry
+                  _selectedPaymentMethod == 'BANK' ? _buildBankForm() : _buildBkashForm(),
                   const SizedBox(height: 20),
                   _buildSecurityBanner(),
                   const SizedBox(height: 28),
@@ -137,65 +140,130 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
     );
   }
 
+  // ══════════════════ PAYMENT METHOD SELECTOR ══════════════════
+  Widget _buildPaymentMethodSelector() {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _methodTab('Bank Transfer', 'BANK')),
+          Expanded(child: _methodTab('bKash', 'BKASH')),
+        ],
+      ),
+    );
+  }
+
+  Widget _methodTab(String title, String method) {
+    bool isSelected = _selectedPaymentMethod == method;
+    return InkWell(
+      onTap: () => setState(() => _selectedPaymentMethod = method),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
+        ),
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isSelected ? AppColors.primaryBlue : const Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ══════════════════ BANK FORM UI ══════════════════
   Widget _buildBankForm() {
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E8F0))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
-              Icon(Icons.account_balance_outlined, color: AppColors.primaryBlue, size: 20),
-              SizedBox(width: 8),
-              Text('Bank Transfer Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
-            ],
-          ),
+          const Text('Bank Transfer Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           const SizedBox(height: 16),
-          _buildField(_accNameController, 'Bank Account Name *', 'Enter your account name'),
+          _buildField(_accNameController, 'Your Bank Account Name *', 'Enter account name'),
           const SizedBox(height: 12),
-          _buildField(_accNoController, 'Bank Account Number *', 'Enter account number'),
+          _buildField(_accNoController, 'Your Bank Account Number *', 'Enter account number'),
           const SizedBox(height: 12),
           _buildField(_bankNameController, 'Bank Name *', 'e.g. Dutch Bangla Bank'),
           const SizedBox(height: 12),
-          _buildField(_refController, 'Reference Number', 'Transaction ID or Ref (Optional)', isReq: false),
+          _buildField(_refController, 'Transaction ID / Reference No.', 'Optional for Bank', isReq: false),
           const SizedBox(height: 12),
           _buildField(_remarksController, 'Remarks', 'Add any notes (Optional)', isReq: false),
           const SizedBox(height: 20),
-          const Text('Bank Deposit Receipt *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569))),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: _pickReceipt,
-            child: Container(
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _receiptFile != null ? AppColors.primaryBlue : const Color(0xFFCBD5E1), width: 1.5),
-              ),
-              child: _receiptFile != null
-                  ? ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(_receiptFile!, fit: BoxFit.cover),
-              )
-                  : const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_a_photo_outlined, color: AppColors.primaryBlue, size: 30),
-                  SizedBox(height: 8),
-                  Text('Upload Receipt Photo (Max 5MB)', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ),
-          ),
+          _buildReceiptUploader(isRequired: true),
         ],
       ),
+    );
+  }
+
+  // ══════════════════ BKASH FORM UI ══════════════════
+  Widget _buildBkashForm() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E8F0))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('bKash Payment Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFFD12053))),
+          const SizedBox(height: 16),
+          _buildField(_bKashMobileController, 'bKash Account Number *', 'e.g. 01712345678'),
+          const SizedBox(height: 12),
+          _buildField(_refController, 'Transaction ID (TrxID) *', 'e.g. TRX8A1B2C3D4'),
+          const SizedBox(height: 12),
+          _buildField(_remarksController, 'Remarks', 'Add any notes (Optional)', isReq: false),
+          const SizedBox(height: 20),
+          _buildReceiptUploader(isRequired: false), // Optional for bKash
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceiptUploader({required bool isRequired}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Payment Receipt / Screenshot ${isRequired ? '*' : '(Optional)'}',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569)),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _pickReceipt,
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _receiptFile != null ? AppColors.primaryBlue : const Color(0xFFCBD5E1), width: 1.5),
+            ),
+            child: _receiptFile != null
+                ? ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(_receiptFile!, fit: BoxFit.cover),
+            )
+                : const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_a_photo_outlined, color: AppColors.primaryBlue, size: 30),
+                SizedBox(height: 8),
+                Text('Upload Screenshot/Receipt (Max 5MB)', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -223,11 +291,7 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
   Widget _buildSummaryCard() {
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E8F0))),
       child: Column(
         children: [
           _row('Customer ID', widget.customerDisplayId ?? 'N/A'),
@@ -249,83 +313,60 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
     );
   }
 
-  Widget _buildSelectedInstallments() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Selected Installments', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-          const SizedBox(height: 12),
-          ...widget.selectedItems.map((item) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Installment #${item.installmentNumber}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                Text(_formatDate(item.dueDate), style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
-                Text('৳${item.totalDue}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              ],
-            ),
-          )),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSubmitButton(CustomerPaymentHistoryViewModel historyVM) {
     return SizedBox(
       width: double.infinity,
       height: 54,
       child: ElevatedButton(
-        onPressed: () => _handleBankPaymentSubmission(historyVM),
+        onPressed: () => _handlePaymentSubmission(historyVM),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryBlue,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
         ),
         child: Text(
-          'Submit Bank Payment ৳${NumberFormat('#,##,###').format(totalPayableAmount)}',
+          'Submit Payment ৳${NumberFormat('#,##,###').format(totalPayableAmount)}',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
         ),
       ),
     );
   }
 
-  // ══════════════════ BANK PAYMENT SUBMISSION HANDLER ══════════════════
-  Future<void> _handleBankPaymentSubmission(CustomerPaymentHistoryViewModel historyVM) async {
+  // ══════════════════ SUBMISSION HANDLER ══════════════════
+  Future<void> _handlePaymentSubmission(CustomerPaymentHistoryViewModel historyVM) async {
     if (widget.selectedItems.isEmpty) return;
     final loanId = widget.selectedItems.first.loanId;
     if (loanId == null) return;
 
-    if (_receiptFile == null) {
+    // Validate Receipt File for BANK method
+    if (_selectedPaymentMethod == 'BANK' && _receiptFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bank deposit receipt is required'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('Bank deposit receipt photo is required'), backgroundColor: Colors.orange),
       );
       return;
     }
 
     if (_formKey.currentState!.validate()) {
-      final success = await historyVM.submitBankPayment(
-        loanId: loanId, //[cite: 1]
-        installmentId: widget.selectedItems.length == 1 ? widget.selectedItems.first.id : null, //[cite: 1]
-        amount: totalPayableAmount, //[cite: 1]
-        bankAccountName: _accNameController.text.trim(), //[cite: 1]
-        bankAccountNumber: _accNoController.text.trim(), //[cite: 1]
-        bankName: _bankNameController.text.trim(), //[cite: 1]
-        referenceNumber: _refController.text.trim(), //[cite: 1]
-        remarks: _remarksController.text.trim(), //[cite: 1]
-        receiptFile: _receiptFile!, //[cite: 1]
+      final success = await historyVM.submitPayment(
+        loanId: loanId,
+        installmentId: widget.selectedItems.length == 1 ? widget.selectedItems.first.id : null,
+        amount: totalPayableAmount,
+        paymentMethod: _selectedPaymentMethod,
+
+        // Conditional inputs
+        bankAccountName: _selectedPaymentMethod == 'BANK' ? _accNameController.text.trim() : null,
+        bankAccountNumber: _selectedPaymentMethod == 'BANK' ? _accNoController.text.trim() : null,
+        bankName: _selectedPaymentMethod == 'BANK' ? _bankNameController.text.trim() : null,
+        senderMobileNumber: _selectedPaymentMethod == 'BKASH' ? _bKashMobileController.text.trim() : null,
+
+        referenceNumber: _refController.text.trim(),
+        remarks: _remarksController.text.trim(),
+        receiptFile: _receiptFile,
       );
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bank payment submitted for verification'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Payment submitted successfully for verification'), backgroundColor: Colors.green),
         );
         Navigator.pop(context);
       } else if (mounted) {
@@ -340,11 +381,11 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        const Icon(Icons.verified_user, color: Color(0xFF2563EB), size: 22),
-        const SizedBox(width: 12),
+      child: const Row(children: [
+        Icon(Icons.verified_user, color: Color(0xFF2563EB), size: 22),
+        SizedBox(width: 12),
         Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('100% Secure Payment', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
               Text('Your payment information is submitted safely for admin verification.', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
             ])),
@@ -359,13 +400,4 @@ class _ProceedToPayScreenState extends State<ProceedToPayScreen> {
       Text(v, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
     ]),
   );
-
-  String _formatDate(String? d) {
-    if (d == null) return 'N/A';
-    try {
-      return DateFormat('dd MMM yyyy').format(DateTime.parse(d));
-    } catch (_) {
-      return d;
-    }
-  }
 }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constant/App_Colors.dart';
 import '../../Auth/ModelView/Auth_Screen_Provider.dart';
-
+import '../model/ProfileModel.dart';
+import '../viewmodel/profileScreenProvider.dart';
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -12,6 +13,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isNotificationEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().fetchProfile();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,117 +41,188 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.white, size: 22),
-            onPressed: () {},
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.white, size: 22),
+            onPressed: () {
+              context.read<ProfileProvider>().fetchProfile();
+            },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. User Info Header Card
-            _buildUserProfileCard(),
-            const SizedBox(height: 20),
+      body: Consumer<ProfileProvider>(
+        builder: (context, provider, child) {
+          // লোডিং স্টেট
+          if (provider.isLoading) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: AppColors.primaryBlue,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading profile...',
+                    style: TextStyle(
+                      color: AppColors.greyText,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
-            // 2. Active EMI Summary Badge
-            _buildEmiSummaryBadge(),
-            const SizedBox(height: 24),
+          // এ
+          if (provider.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.errorRed,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.errorRed,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      provider.errorMessage!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.errorRed,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      provider.fetchProfile();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
 
-            // 3. Account Settings Section
-            _buildSectionTitle('Account Settings'),
-            const SizedBox(height: 10),
-            _buildMenuCard([
-              _buildMenuItem(
-                icon: Icons.person_outline_rounded,
-                title: 'Personal Details',
-                subtitle: 'Update your name, email & phone',
-                onTap: () {},
+          // ডেটা না থাকলে এবং লোডিং না হলে
+          if (provider.profileData == null && !provider.isLoading) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.person_outline_rounded,
+                    size: 64,
+                    color: AppColors.lightGreyText,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No profile data available',
+                    style: TextStyle(
+                      color: AppColors.greyText,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      provider.fetchProfile();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Load Profile'),
+                  ),
+                ],
               ),
-              _buildMenuItem(
-                icon: Icons.account_balance_wallet_outlined,
-                title: 'Saved Payment Methods',
-                subtitle: 'bKash, Nagad & Linked Cards',
-                onTap: () {},
-              ),
-              _buildMenuItem(
-                icon: Icons.location_on_outlined,
-                title: 'Delivery Addresses',
-                subtitle: 'Manage home & office addresses',
-                onTap: () {},
-              ),
-            ]),
-            const SizedBox(height: 24),
+            );
+          }
 
-            // 4. EMI & Security Section
-            _buildSectionTitle('EMI & Security'),
-            const SizedBox(height: 10),
-            _buildMenuCard([
-              _buildMenuItem(
-                icon: Icons.auto_awesome_outlined,
-                title: 'Auto Pay Settings',
-                subtitle: 'Manage recurring EMI deductions',
-                onTap: () {},
-              ),
-              _buildToggleItem(
-                icon: Icons.notifications_none_rounded,
-                title: 'EMI Payment Reminders',
-                value: _isNotificationEnabled,
-                onChanged: (val) {
-                  setState(() => _isNotificationEnabled = val);
-                },
-              ),
-            ]),
-            const SizedBox(height: 24),
+          // ডেটা থাকলে দেখাবে
+          if (provider.profileData != null) {
+            final profile = provider.profileData!;
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. User Profile Card
+                  _buildUserProfileCard(profile),
+                  const SizedBox(height: 20),
 
-            // 5. Support & Legal Section
-            _buildSectionTitle('Support & Legal'),
-            const SizedBox(height: 10),
-            _buildMenuCard([
-              _buildMenuItem(
-                icon: Icons.help_outline_rounded,
-                title: 'Help & Support Center',
-                subtitle: 'FAQs, Live Chat & Helpline',
-                onTap: () {},
-              ),
-              _buildMenuItem(
-                icon: Icons.shield_outlined,
-                title: 'Privacy Policy',
-                onTap: () {},
-              ),
-              _buildMenuItem(
-                icon: Icons.description_outlined,
-                title: 'Terms & Conditions',
-                onTap: () {},
-              ),
-            ]),
-            const SizedBox(height: 24),
+                  // 2. KYC Status Badge
+                  _buildKycStatusBadge(profile),
+                  const SizedBox(height: 24),
 
-            // 6. Logout Button
-            _buildLogoutButton(context),
-            const SizedBox(height: 16),
+                  // 3. Personal Information Section
+                  _buildSectionTitle('Personal Information'),
+                  const SizedBox(height: 10),
+                  _buildPersonalInfoCard(profile),
+                  const SizedBox(height: 24),
 
-            // App Version Footer
-            const Center(
-              child: Text(
-                'App Version 1.0.0',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.lightGreyText,
-                  fontWeight: FontWeight.w500,
-                ),
+                  // 4. Roles & Permissions Section
+                  if (profile.roles != null && profile.roles!.isNotEmpty) ...[
+                    _buildSectionTitle('Roles & Permissions'),
+                    const SizedBox(height: 10),
+                    _buildRolesCard(profile),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // 5. Account Information Section
+                  _buildSectionTitle('Account Information'),
+                  const SizedBox(height: 10),
+                  _buildAccountInfoCard(profile),
+                  const SizedBox(height: 24),
+
+                  // 6. Logout Button
+                  _buildLogoutButton(context),
+                  const SizedBox(height: 16),
+
+                  // App Version Footer
+                  const Center(
+                    child: Text(
+                      'App Version 1.0.0',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.lightGreyText,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
+            );
+          }
+
+          // Fallback
+          return const SizedBox.shrink();
+        },
       ),
     );
   }
 
-  Widget _buildUserProfileCard() {
+  Widget _buildUserProfileCard(ProfileData profile) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -161,10 +241,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Stack(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 32,
                 backgroundColor: AppColors.infoBlue,
-                child: Icon(Icons.person_rounded, size: 36, color: AppColors.primaryBlue),
+                child: Text(
+                  profile.name?.isNotEmpty == true
+                      ? profile.name![0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
               ),
               Positioned(
                 bottom: 0,
@@ -187,40 +276,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: const [
-                    Text(
-                      'Mohammad Wahab',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.black,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        profile.name ?? 'No Name',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.black,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.verified, size: 16, color: AppColors.primaryBlue),
+                    const SizedBox(width: 4),
+                    if (profile.isStaff == true)
+                      const Icon(
+                        Icons.verified,
+                        size: 16,
+                        color: AppColors.primaryBlue,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  '+880 1720 000000',
-                  style: TextStyle(
+                Text(
+                  profile.email ?? 'No Email',
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.greyText,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.successBg,
+                    color: profile.isStaff == true
+                        ? AppColors.successBg
+                        : AppColors.successBg,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
-                    'KYC Verified',
+                  child: Text(
+                    profile.isStaff == true ? 'Staff Member' : 'Customer',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.successGreen,
+                      color: profile.isStaff == true
+                          ? AppColors.successGreen
+                          : AppColors.successGreen,
                     ),
                   ),
                 ),
@@ -232,12 +334,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildEmiSummaryBadge() {
+  Widget _buildKycStatusBadge(ProfileData profile) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.primaryBlue,
+        gradient: const LinearGradient(
+          colors: [AppColors.primaryBlue, AppColors.accentBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryBlue.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -251,24 +364,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.white.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.verified_user_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    '1 Active EMI Plan',
-                    style: TextStyle(
+                    profile.roleSlug?.toUpperCase() ?? 'User',
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'Next Due: 15 Aug 2024 (৳12,550)',
-                    style: TextStyle(
+                    profile.roles != null && profile.roles!.isNotEmpty
+                        ? '${profile.roles!.length} Role(s) Assigned'
+                        : 'No Roles Assigned',
+                    style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFFDBEAFE),
                     ),
@@ -277,7 +396,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  'Active',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -294,82 +437,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuCard(List<Widget> children) {
+  Widget _buildPersonalInfoCard(ProfileData profile) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderGrey),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.bgGrey,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 18, color: AppColors.primaryBlue),
+        children: [
+          _buildInfoItem(
+            icon: Icons.person_outline_rounded,
+            label: 'Full Name',
+            value: profile.name ?? 'N/A',
+          ),
+          _buildDivider(),
+          _buildInfoItem(
+            icon: Icons.email_outlined,
+            label: 'Email Address',
+            value: profile.email ?? 'N/A',
+          ),
+          _buildDivider(),
+          _buildInfoItem(
+            icon: Icons.badge_outlined,
+            label: 'User ID',
+            value: profile.id ?? 'N/A',
+          ),
+          if (profile.shopId != null) ...[
+            _buildDivider(),
+            _buildInfoItem(
+              icon: Icons.storefront_outlined,
+              label: 'Shop ID',
+              value: profile.shopId!,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.black,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.greyText,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.lightGreyText, size: 20),
           ],
-        ),
+          if (profile.customerId != null) ...[
+            _buildDivider(),
+            _buildInfoItem(
+              icon: Icons.person_outline_rounded,
+              label: 'Customer ID',
+              value: profile.customerId!,
+            ),
+          ],
+          _buildDivider(),
+          _buildInfoItem(
+            icon: Icons.account_circle_outlined,
+            label: 'Account Type',
+            value: profile.isStaff == true ? 'Staff' : 'Customer',
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildToggleItem({
+  Widget _buildInfoItem({
     required IconData icon,
-    required String title,
-    required bool value,
-    required ValueChanged<bool> onChanged,
+    required String label,
+    required String value,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
           Container(
@@ -383,20 +517,202 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: AppColors.black,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.greyText,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.black,
+                  ),
+                ),
+              ],
             ),
           ),
-          Switch(
-            value: value,
-            activeColor: AppColors.primaryBlue,
-            onChanged: onChanged,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Divider(
+        height: 1,
+        color: AppColors.borderGrey.withOpacity(0.5),
+      ),
+    );
+  }
+
+  Widget _buildRolesCard(ProfileData profile) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderGrey),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Column(
+        children: profile.roles!.map((roleItem) {
+          final role = roleItem.role;
+          return Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+            ),
+            child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              leading: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.bgGrey,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.security_rounded,
+                  size: 18,
+                  color: AppColors.primaryBlue,
+                ),
+              ),
+              title: Text(
+                role?.displayName ?? role?.name ?? 'Unknown Role',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.black,
+                ),
+              ),
+              subtitle: Text(
+                'ID: ${role?.id ?? 'N/A'}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.greyText,
+                ),
+              ),
+              children: [
+                if (role?.permissions != null && role!.permissions!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: role.permissions!.map((perm) {
+                        final permission = perm.permission;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgGrey,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.lock_open_rounded,
+                                size: 14,
+                                color: AppColors.primaryBlue,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  permission?.resource ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.black,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.successBg,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  permission?.action ?? 'N/A',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.successGreen,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                if (role?.permissions == null || role!.permissions!.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: Text(
+                      'No permissions assigned',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.greyText,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildAccountInfoCard(ProfileData profile) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderGrey),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (profile.createdAt != null)
+            _buildInfoItem(
+              icon: Icons.calendar_today_outlined,
+              label: 'Created At',
+              value: _formatDate(profile.createdAt!),
+            ),
+          if (profile.createdAt != null && profile.updatedAt != null)
+            _buildDivider(),
+          if (profile.updatedAt != null)
+            _buildInfoItem(
+              icon: Icons.update_rounded,
+              label: 'Updated At',
+              value: _formatDate(profile.updatedAt!),
+            ),
         ],
       ),
     );
@@ -411,18 +727,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: const Text('Logout'),
               content: const Text('Are you sure you want to logout?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: AppColors.greyText),
+                  ),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () {
                     context.read<AuthScreenProvider>().logout(context);
                   },
-                  child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.errorRed,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Logout'),
                 ),
               ],
             ),
@@ -446,5 +774,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+    } catch (e) {
+      return dateString;
+    }
   }
 }

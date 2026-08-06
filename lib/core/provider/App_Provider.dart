@@ -6,6 +6,7 @@ import '../../Features/Home/ViewModel/SalesDashboardViewModel.dart';
 import '../../Features/Order/viewModel/OrderSummaryViewModel.dart';
 import '../../Features/Parent/ViewModel/Parent_screen_provider.dart';
 import '../../Features/Payment/viewmodel/PaymentHistoryViewModel.dart';
+import '../../Features/Profile/viewmodel/profileScreenProvider.dart';
 import '../../Features/multy_form/viewModel/multyform_provider.dart';
 import '../../CustomerFeature/parent/viewModel/customerParentViewModel.dart';
 import '../../CustomerFeature/home/viewModel/home_view_model.dart';
@@ -63,6 +64,10 @@ class AppProviders {
 
       ChangeNotifierProvider<PaymentHistoryViewModel>(
         create: (context) => PaymentHistoryViewModel(),
+      ),
+
+      ChangeNotifierProvider<ProfileProvider>(
+        create: (context) => ProfileProvider(),
       ),
     ];
   }

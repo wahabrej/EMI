@@ -1,14 +1,14 @@
 class ApiEndPoint {
   ApiEndPoint._();
 
-  // ── Base URLs ──────────────────────────────────────────────
+  // ── Base URLs ─────────────────────── ───────────────────────
   static const String localBaseUrl      = 'http://localhost:3001';
   static const String productionBaseUrl = 'https://api.smartpay.click';
 
   // Active base URL (Switch to productionBaseUrl for release)
   static const String baseUrl = productionBaseUrl;
 
-  // ── Auth ───────────────────────────────────────────────────
+  // ── Auth ────────────────────────── ─────────────────────────
   static const String login       = '$baseUrl/auth/login';
   static const String currentUser = '$baseUrl/auth/me';
 
@@ -20,7 +20,7 @@ class ApiEndPoint {
   static String customerDashboardSummary(String userId) =>
       '$baseUrl/dashboard/customer-summary/$userId';
 
-  // ── Lookup / Dropdown APIs ─────────────────────────────────
+  // ── Lookup / Dropdown APIs ────────────── ───────────────────
   static const String shops        = '$baseUrl/shops';
   static const String agents       = '$baseUrl/agents';
   static const String managers     = '$baseUrl/managers';
@@ -31,11 +31,11 @@ class ApiEndPoint {
   static String emiPlansByProduct(String productId) =>
       '$baseUrl/emi-plans/product/$productId';
 
-  // ── EMI Quotation ──────────────────────────────────────────
+  // ── EMI Quotation ─────────────────── ───────────────────────
   static String emiQuotation(String emiPlanId) =>
       '$baseUrl/emi-plans/$emiPlanId/quotation';
 
-  // ── Customer CRUD ──────────────────────────────────────────
+  // ── Customer CRUD ──────────────────── ──────────────────────
   static const String customers = '$baseUrl/customers';
   static const String myCustomerDetails = '$baseUrl/customers/me/details';
 
@@ -45,7 +45,7 @@ class ApiEndPoint {
   static String customerDetails(String id) =>
       '$baseUrl/customers/$id/details';
 
-  // ── Customer File Uploads ──────────────────────────────────
+  // ── Customer File Uploads ─────────────── ───────────────────
   static String uploadCustomerPhoto(String customerId) =>
       '$baseUrl/customers/$customerId/photo';
 
@@ -55,7 +55,7 @@ class ApiEndPoint {
   static String deleteCustomerDocument(String customerId, String docId) =>
       '$baseUrl/customers/$customerId/documents/$docId';
 
-  // ── Guarantor Document Upload ──────────────────────────────
+  // ── Guarantor Document Upload ───────────── ─────────────────
   static String uploadGuarantorDocument(String customerId, String guarantorId) =>
       '$baseUrl/customers/$customerId/guarantors/$guarantorId/document';
 
@@ -101,5 +101,6 @@ class ApiEndPoint {
 
   /// Payment History list endpoint
   static const String paymentsHistory = '$baseUrl/payments';
+  static const String payInstallment = '$baseUrl/customer/installment/pay';
 
 }

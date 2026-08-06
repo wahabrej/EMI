@@ -6,6 +6,8 @@ class RouteName {
   static const brandSelectionScreen = "brandSelectionScreen";
   static const loginScreen = "loginScreen";
   static const signUpScreen = "signUpScreen";
+  static const profileScreen = "profileScreen";
+  static const notificationScreen = "notificationScreen";
 
   // ── Sales Dashboard Details ──────────────────────────
   static const totalCustomerScreen = "totalCustomerScreen";

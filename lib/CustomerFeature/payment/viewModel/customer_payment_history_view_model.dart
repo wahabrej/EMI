@@ -22,20 +22,17 @@ class CustomerPaymentHistoryViewModel extends ChangeNotifier {
   List<CustomerPaymentHistoryModel> _paymentList = [];
   List<CustomerPaymentHistoryModel> get paymentList => _paymentList;
 
-  // 🔹 Fetch Payment History
-  Future<void> fetchPaymentHistory({String? loanId}) async {
+  // 🔹 Fetch Customer Payment History
+  Future<void> fetchPaymentHistory() async {
     _setLoading(true);
     _errorMessage = null;
 
-    final token = await _tokenStorage.getToken();
-    String url = ApiEndPoint.customerPayments;
-    if (loanId != null) url += "?loanId=$loanId";
-
-    debugPrint("\n================ 🌐 [FETCH PAYMENTS START] ================");
-    debugPrint("📌 URL: $url");
-    debugPrint("🔑 Token Present: ${token != null && token.isNotEmpty}");
-
     try {
+      final token = await _tokenStorage.getToken();
+      final url = ApiEndPoint.customerPayments;
+
+      debugPrint("📥 Fetching Payment History: $url");
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -44,58 +41,57 @@ class CustomerPaymentHistoryViewModel extends ChangeNotifier {
         },
       );
 
-      debugPrint("📥 Status Code: ${response.statusCode}");
-      debugPrint("📦 Raw Body: ${response.body}");
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
 
-      // Check if response is valid JSON
-      if (response.headers['content-type']?.contains('application/json') ?? false) {
-        final data = jsonDecode(response.body);
-
-        if (response.statusCode == 200 && data['success'] == true) {
-          _paymentList = (data['data'] as List)
+        if (body['success'] == true && body['data'] != null) {
+          final List<dynamic> list = body['data'];
+          _paymentList = list
               .map((e) => CustomerPaymentHistoryModel.fromJson(e))
               .toList();
-          debugPrint("✅ Loaded ${_paymentList.length} payments successfully.");
         } else {
-          _errorMessage = data['message'] ?? "Failed to load payments";
-          debugPrint("⚠️ Server Error Message: $_errorMessage");
+          _paymentList = [];
         }
       } else {
-        _errorMessage = "Server returned non-JSON response (${response.statusCode})";
-        debugPrint("🚨 [Non-JSON Response] Check endpoint URL or backend server.");
+        _errorMessage = "Failed to load payment history (${response.statusCode})";
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _errorMessage = e.toString();
-      debugPrint("🚨 [Fetch Exception]: $e");
-      debugPrint("🔍 StackTrace: $stackTrace");
     } finally {
-      debugPrint("================ 🌐 [FETCH PAYMENTS END] ==================\n");
       _setLoading(false);
     }
   }
 
-  // 🔹 Submit Bank Payment (Point 3 in Documentation)
-  Future<bool> submitBankPayment({
+  // 🔹 Submit Universal Payment (Handles both BANK and BKASH)
+  Future<bool> submitPayment({
     required String loanId,
     String? installmentId,
     required num amount,
-    required String bankAccountName,
-    required String bankAccountNumber,
-    required String bankName,
-    String? referenceNumber,
+    required String paymentMethod, // 'BANK' or 'BKASH'
+
+    // Bank Fields
+    String? bankAccountName,
+    String? bankAccountNumber,
+    String? bankName,
+
+    // bKash Fields
+    String? senderMobileNumber,
+
+    // Common Optional Fields
+    String? referenceNumber, // Bank Ref or bKash TrxID
     String? remarks,
-    required File receiptFile,
+    File? receiptFile,
   }) async {
     _isSubmitting = true;
     _errorMessage = null;
     notifyListeners();
 
     final token = await _tokenStorage.getToken();
-    final url = ApiEndPoint.submitBankPayment;
+    final url = ApiEndPoint.payInstallment;
 
-    debugPrint("\n================ 📤 [SUBMIT BANK PAYMENT START] ================");
-    debugPrint("📌 Endpoint Target: $url");
-    debugPrint("🔑 Token Present: ${token != null && token.isNotEmpty}");
+    debugPrint("\n================ 📤 [SUBMIT PAYMENT START] ================");
+    debugPrint("📌 Target URL: $url");
+    debugPrint("💳 Payment Method: $paymentMethod");
 
     try {
       var request = http.MultipartRequest('POST', Uri.parse(url));
@@ -104,14 +100,12 @@ class CustomerPaymentHistoryViewModel extends ChangeNotifier {
       request.headers['Authorization'] = 'Bearer $token';
       request.headers['Accept'] = 'application/json';
 
-      // Required Form Fields
+      // 1. Mandatory Common Fields
       request.fields['loanId'] = loanId;
       request.fields['amount'] = amount.toString();
-      request.fields['bankAccountName'] = bankAccountName;
-      request.fields['bankAccountNumber'] = bankAccountNumber;
-      request.fields['bankName'] = bankName;
+      request.fields['paymentMethod'] = paymentMethod;
 
-      // Optional Fields
+      // 2. Optional Common Fields
       if (installmentId != null && installmentId.isNotEmpty) {
         request.fields['installmentId'] = installmentId;
       }
@@ -122,69 +116,58 @@ class CustomerPaymentHistoryViewModel extends ChangeNotifier {
         request.fields['remarks'] = remarks;
       }
 
-      // Receipt File Inspection & Validation
-      if (!await receiptFile.exists()) {
-        throw Exception("Receipt file does not exist at path: ${receiptFile.path}");
+      // 3. Conditional Method Fields
+      if (paymentMethod == 'BANK') {
+        if (bankAccountName != null) request.fields['bankAccountName'] = bankAccountName;
+        if (bankAccountNumber != null) request.fields['bankAccountNumber'] = bankAccountNumber;
+        if (bankName != null) request.fields['bankName'] = bankName;
+      } else if (paymentMethod == 'BKASH') {
+        if (senderMobileNumber != null) request.fields['senderMobileNumber'] = senderMobileNumber;
       }
 
-      int fileSizeInBytes = await receiptFile.length();
-      double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-      String ext = receiptFile.path.split('.').last.toLowerCase();
+      // 4. File Attachment Handling
+      if (receiptFile != null && await receiptFile.exists()) {
+        String ext = receiptFile.path.split('.').last.toLowerCase();
+        MediaType contentType = MediaType(
+          'image',
+          ext == 'png' ? 'png' : (ext == 'webp' ? 'webp' : 'jpeg'),
+        );
 
-      debugPrint("📋 Form Fields: ${request.fields}");
-      debugPrint("📁 Receipt File Path: ${receiptFile.path}");
-      debugPrint("📏 Receipt File Size: ${fileSizeInMB.toStringAsFixed(2)} MB");
-      debugPrint("🏷️ File Extension: $ext");
-
-      if (fileSizeInMB > 5.0) {
-        debugPrint("⚠️ Warning: File size exceeds 5 MB limit!");
+        request.files.add(await http.MultipartFile.fromPath(
+          'receipt',
+          receiptFile.path,
+          contentType: contentType,
+        ));
       }
 
-      MediaType contentType = MediaType(
-        'image',
-        ext == 'png' ? 'png' : (ext == 'webp' ? 'webp' : 'jpeg'),
-      );
-
-      request.files.add(await http.MultipartFile.fromPath(
-        'receipt',
-        receiptFile.path,
-        contentType: contentType,
-      ));
-
-      debugPrint("🚀 Sending Multipart Request...");
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
       debugPrint("📥 Status Code: ${response.statusCode}");
-      debugPrint("📦 Response Headers: ${response.headers}");
-      debugPrint("📦 Raw Response Body: ${response.body}");
+      debugPrint("📦 Response Body: ${response.body}");
 
-      // Safe Parsing Logic
       if (response.headers['content-type']?.contains('application/json') ?? false) {
         final data = jsonDecode(response.body);
 
         if (response.statusCode == 201 || (response.statusCode == 200 && data['success'] == true)) {
-          debugPrint("✅ Bank Payment Submitted Successfully!");
+          debugPrint("✅ Payment Submitted Successfully!");
+
+          // Refresh list after success
+          await fetchPaymentHistory();
           return true;
         } else {
-          _errorMessage = data['message'] ?? data['error']?['message'] ?? "Bank payment submission failed";
-          debugPrint("⚠️ API Returned Error: $_errorMessage");
+          _errorMessage = data['message'] ?? "Payment submission failed";
           return false;
         }
       } else {
-        // If Server returned HTML (e.g. 404/500 internal server error page)
-        _errorMessage = "Server error (${response.statusCode}). Endpoint not found or Server crash.";
-        debugPrint("🚨 [Non-JSON Response] Backend returned HTML/Text response instead of JSON!");
+        _errorMessage = "Server error (${response.statusCode}). Non-JSON response.";
         return false;
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _errorMessage = e.toString();
-      debugPrint("🚨 [Submit Bank Exception]: $e");
-      debugPrint("🔍 StackTrace: $stackTrace");
       return false;
     } finally {
       _isSubmitting = false;
-      debugPrint("================ 📤 [SUBMIT BANK PAYMENT END] ==================\n");
       notifyListeners();
     }
   }

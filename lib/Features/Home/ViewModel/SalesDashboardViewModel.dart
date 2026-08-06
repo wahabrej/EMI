@@ -43,7 +43,7 @@ class SalesDashboardViewModel extends ChangeNotifier {
 
       final url = ApiEndPoint.salesDashboardSummary(userId);
 
-      debugPrint('================= 🌐 API REQUEST 🌐 =================');
+      debugPrint('=================  API REQUEST  =================');
       debugPrint('URL: $url');
       debugPrint('Headers: Authorization: Bearer $token');
 
@@ -64,7 +64,7 @@ class SalesDashboardViewModel extends ChangeNotifier {
 
         if (salesModel.success == true) {
           _dashboardData = salesModel.data;
-          debugPrint('✅ [SalesDashboardViewModel] Parsing Successful!');
+          debugPrint(' [SalesDashboardViewModel] Parsing Successful!');
         } else {
           _errorMessage = 'Failed to load dashboard data.';
         }
@@ -76,7 +76,7 @@ class SalesDashboardViewModel extends ChangeNotifier {
       }
     } catch (e, stackTrace) {
       _errorMessage = 'Network connection failed: ${e.toString()}';
-      debugPrint('💥 Exception Caught: $e');
+      debugPrint(' Exception Caught: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

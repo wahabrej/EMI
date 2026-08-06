@@ -50,7 +50,7 @@ class CheckoutViewModel extends ChangeNotifier {
       debugPrint("🔑 [CheckoutVM] Using Passed Token: $userToken");
     } else {
       userToken = await _tokenStorage.getToken() ?? "";
-      debugPrint("🔑 [CheckoutVM] Retrieved Token from AppStorage: $userToken");
+      debugPrint(" [CheckoutVM] Retrieved Token from AppStorage: $userToken");
     }
     await fetchShops();
   }
@@ -77,7 +77,7 @@ class CheckoutViewModel extends ChangeNotifier {
     int currentIndex = steps.indexOf(_currentStep);
     if (currentIndex < steps.length - 1) {
       _currentStep = steps[currentIndex + 1];
-      debugPrint("➡️ [CheckoutVM] Step Forward to Index: $_currentStep");
+      debugPrint(" [CheckoutVM] Step Forward to Index: $_currentStep");
       notifyListeners();
     }
   }
@@ -87,7 +87,7 @@ class CheckoutViewModel extends ChangeNotifier {
     int currentIndex = steps.indexOf(_currentStep);
     if (currentIndex > 0) {
       _currentStep = steps[currentIndex - 1];
-      debugPrint("⬅️ [CheckoutVM] Step Backward to Index: $_currentStep");
+      debugPrint("[CheckoutVM] Step Backward to Index: $_currentStep");
       notifyListeners();
     }
   }
@@ -243,28 +243,129 @@ class CheckoutViewModel extends ChangeNotifier {
   }
 
   Future<void> onSalesPersonSelected(String? salesPersonId) async {
-    debugPrint(" [CheckoutVM] Sales Person Selected: $salesPersonId");
+    debugPrint("═══════════════════════════════════════════════════");
+    debugPrint(" [CheckoutVM] onSalesPersonSelected() CALLED");
+    debugPrint(" Sales Person ID: $salesPersonId");
+    debugPrint("═══════════════════════════════════════════════════");
+
+    // ─── ১. Sales Person ID  ───
     checkoutData.salesPersonId = salesPersonId;
+    debugPrint(" [CheckoutVM] checkoutData.salesPersonId set to: ${checkoutData.salesPersonId}");
+
+    // ─── ২. ───
     DropdownItemModel? currentProduct;
     if (checkoutData.productId != null) {
-      currentProduct = productList.firstWhere((p) => p.id == checkoutData.productId, orElse: () => productList.first);
+      debugPrint(" [CheckoutVM] Current Product ID: ${checkoutData.productId}");
+      try {
+        currentProduct = productList.firstWhere(
+              (p) => p.id == checkoutData.productId,
+          orElse: () {
+            debugPrint(" [CheckoutVM] Current product not found in list!");
+            return productList.isNotEmpty ? productList.first : DropdownItemModel(id: '', name: 'Not Found', rawJson: {});
+          },
+        );
+        debugPrint(" [CheckoutVM] Current Product Name: ${currentProduct?.name}");
+      } catch (e) {
+        debugPrint(" [CheckoutVM] Error finding current product: $e");
+      }
+    } else {
+      debugPrint(" [CheckoutVM] No product selected yet.");
     }
+
+    // ─── ৩. প্রোডাক্ট লিস্ট ক্লিয়ার করা ───
+    debugPrint("🗑️ [CheckoutVM] Clearing productList...");
     productList.clear();
     notifyListeners();
-    if (salesPersonId == null) return;
+    debugPrint("✅ [CheckoutVM] productList cleared. Length: ${productList.length}");
+
+    // ─── ৪. Sales Person ID NULL চেক ───
+    if (salesPersonId == null) {
+      debugPrint("⚠️ [CheckoutVM] Sales Person ID is NULL. Skipping API call.");
+      debugPrint("═══════════════════════════════════════════════════");
+      notifyListeners();
+      return;
+    }
+
+    // ─── ৫. API URL তৈরি ───
+    final String apiUrl = "${ApiEndPoint.products}?salesPersonId=$salesPersonId";
+    debugPrint("🌐 [CheckoutVM] API URL: $apiUrl");
+
+    // ─── ৬. API কল ───
     try {
-      final res = await http.get(Uri.parse("${ApiEndPoint.products}?salesPersonId=$salesPersonId"), headers: _headers);
-      final data = jsonDecode(res.body);
-      if (res.statusCode == 200 && data['success'] == true) {
-        productList = (data['data'] as List).map((e) => DropdownItemModel.fromJson(e)).toList();
-        if (currentProduct != null && !productList.any((p) => p.id == currentProduct!.id)) {
-          productList.add(currentProduct);
-        }
+      debugPrint("⏳ [CheckoutVM] Calling API...");
+      final stopwatch = Stopwatch()..start();
+
+      final res = await http.get(
+        Uri.parse(apiUrl),
+        headers: _headers,
+      );
+
+      stopwatch.stop();
+      debugPrint("⏱️ [CheckoutVM] API Response Time: ${stopwatch.elapsedMilliseconds}ms");
+      debugPrint("📡 [CheckoutVM] Response Status Code: ${res.statusCode}");
+
+      // ─── ৭. রেসপন্স বডি ডিবাগ ───
+      debugPrint("📄 [CheckoutVM] Raw Response Body (first 500 chars):");
+      if (res.body.length > 500) {
+        debugPrint("   ${res.body.substring(0, 500)}...");
+      } else {
+        debugPrint("   $res.body");
       }
-    } catch (e) { debugPrint(" [CheckoutVM] onSalesPersonSelected Error: $e"); }
+
+      final data = jsonDecode(res.body);
+
+      // ─── ৮. সাকসেস চেক ───
+      if (res.statusCode == 200 && data['success'] == true) {
+        debugPrint("✅ [CheckoutVM] API call SUCCESSFUL!");
+
+        final List rawList = data['data'] ?? [];
+        debugPrint("📊 [CheckoutVM] Total Products in Response: ${rawList.length}");
+
+        // ─── ৯. প্রোডাক্ট লিস্ট পার্স ───
+        productList = rawList.map((e) {
+          final item = DropdownItemModel.fromJson(e);
+          debugPrint("   📱 Product: ${item.id} | ${item.name} | Price: ${item.price}");
+          return item;
+        }).toList();
+
+        debugPrint("✅ [CheckoutVM] Parsed ${productList.length} products successfully.");
+
+        // ─── ১০. প্রিভিয়াস প্রোডাক্ট রিস্টোর ───
+        if (currentProduct != null &&
+            currentProduct!.id.isNotEmpty &&
+            !productList.any((p) => p.id == currentProduct!.id)) {
+          debugPrint("🔄 [CheckoutVM] Restoring previous product: ${currentProduct!.name}");
+          productList.add(currentProduct);
+          debugPrint("✅ [CheckoutVM] Product restored. Total products now: ${productList.length}");
+        } else if (currentProduct != null) {
+          debugPrint("✅ [CheckoutVM] Previous product already in list.");
+        }
+
+        // ─── ১১. প্রোডাক্ট লিস্টের সারাংশ ───
+        debugPrint("📋 [CheckoutVM] FINAL PRODUCT LIST SUMMARY:");
+        for (int i = 0; i < productList.length; i++) {
+          final p = productList[i];
+          debugPrint("   ${i+1}. ID: ${p.id} | Name: ${p.name} | Price: ${p.price}");
+        }
+
+      } else {
+        debugPrint("❌ [CheckoutVM] API call FAILED!");
+        debugPrint("   Success: ${data['success']}");
+        debugPrint("   Message: ${data['message'] ?? 'No error message'}");
+        debugPrint("   Status Code: ${res.statusCode}");
+      }
+
+    } catch (e, stackTrace) {
+      debugPrint("❌ [CheckoutVM] EXCEPTION CAUGHT!");
+      debugPrint("   Error: $e");
+      debugPrint("   StackTrace: $stackTrace");
+    }
+
+    debugPrint("✅ [CheckoutVM] onSalesPersonSelected() COMPLETED");
+    debugPrint("═══════════════════════════════════════════════════");
+
     notifyListeners();
   }
-
   Future<void> onProductSelected(String? productId) async {
     debugPrint(" [CheckoutVM] Product Selected: $productId");
     checkoutData.productId = productId;
