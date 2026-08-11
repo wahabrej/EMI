@@ -50,7 +50,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: Consumer<ProfileProvider>(
         builder: (context, provider, child) {
-          // লোডিং স্টেট
           if (provider.isLoading) {
             return const Center(
               child: Column(

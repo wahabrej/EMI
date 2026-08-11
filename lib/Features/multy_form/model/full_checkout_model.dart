@@ -1,3 +1,4 @@
+// lib/model/full_checkout_model.dart
 import 'dart:io';
 
 class FullCheckoutModel {
@@ -10,7 +11,7 @@ class FullCheckoutModel {
   String? productId;
   String? productModelId;
   String? productModel;
-  String? brandName; // 💡 Added brand name
+  String? brandName;
   double mrp = 0.0;
 
   // Sale Type
@@ -40,10 +41,9 @@ class FullCheckoutModel {
   String? cashbackAmount;
   String newPlanNote = '';
 
-  // ── Remaining Balance ──
+  // ── Remaining Balance / Custom EMI ──
   double customUpfrontPayment = 0.0;
   int customEmiDurationMonths = 6;
-  String customAppEmiChargeType = 'RATE';
   String customAppEmiChargeRate = '0';
   String customCashbackRate = '0';
   String customEmiNote = '';
@@ -55,10 +55,12 @@ class FullCheckoutModel {
   String password = '';
   String presentAddress = '';
   String permanentAddress = '';
+  String customerIdType = 'NID'; // NID | Passport
   String nidPassportNumber = '';
   String sourceOfIncome = 'Business';
   double monthlyIncome = 0.0;
 
+  // Alias for compatibility
   String get incomeSource => sourceOfIncome;
   set incomeSource(String? value) {
     if (value != null) sourceOfIncome = value;
@@ -69,6 +71,7 @@ class FullCheckoutModel {
   File? nidFront;
   File? nidBack;
   File? incomeProof;
+  File? customerVideo;
   String incomeProofDocumentType = 'INCOME_PROOF_BANK_STATEMENT';
 
   // ── Guarantors ──
@@ -84,6 +87,14 @@ class FullCheckoutModel {
   String? bankName;
   String? downPaymentReferenceNumber;
   File? bankReceipt;
+
+  // ── EMI Calculation Results & State ──
+  double appEmiCharge = 0.0;
+  double cashbackEarned = 0.0;
+  double financedAmount = 0.0;
+  double totalPayable = 0.0;
+  double? selectedCashbackRate;
+  List<Map<String, dynamic>> downPaymentComponents = [];
 }
 
 class GuarantorInfo {
@@ -91,6 +102,7 @@ class GuarantorInfo {
   String name;
   String phone;
   String relationship;
+  String idType; // NID | Passport
   String nidPassportNumber;
   File? nidFront;
   File? nidBack;
@@ -100,6 +112,7 @@ class GuarantorInfo {
     this.name = '',
     this.phone = '',
     this.relationship = '',
+    this.idType = 'NID',
     this.nidPassportNumber = '',
     this.nidFront,
     this.nidBack,
@@ -111,6 +124,7 @@ class GuarantorInfo {
       "name": name,
       "phone": phone,
       "relationship": relationship,
+      "idType": idType,
       "nidPassportNumber": nidPassportNumber,
     };
   }

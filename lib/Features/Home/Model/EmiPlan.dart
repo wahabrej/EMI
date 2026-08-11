@@ -1,3 +1,6 @@
+// lib/models/EmiPlan.dart
+import 'package:flutter/material.dart';
+
 class EmiPlan {
   final String id;
   final String productId;
@@ -96,6 +99,27 @@ class EmiPlan {
       'product': product?.toJson(),
     };
   }
+
+  // ─── Helper Methods ───
+  double getDownPaymentAmount() {
+    return double.tryParse(downPaymentAmount ?? '0') ?? 0.0;
+  }
+
+  double getDownPaymentPercent() {
+    return double.tryParse(displayDownPaymentPercent) ?? 0.0;
+  }
+
+  double getAppEmiChargeRate() {
+    return double.tryParse(appEmiChargeRate) ?? 0.0;
+  }
+
+  double getCashbackRate() {
+    return double.tryParse(cashbackRate) ?? 0.0;
+  }
+
+  List<DownPaymentComponent> getDownPaymentComponents() {
+    return downPaymentComponents ?? [];
+  }
 }
 
 class DownPaymentComponent {
@@ -168,6 +192,10 @@ class Product {
       'brand': brand?.toJson(),
     };
   }
+
+  double getSellingPrice() {
+    return double.tryParse(sellingPrice ?? '0') ?? 0.0;
+  }
 }
 
 class Brand {
@@ -195,5 +223,89 @@ class Brand {
       'code': code,
       'name': name,
     };
+  }
+}
+
+class PhoneProductModel {
+  final bool success;
+  final List<Data> data;
+
+  PhoneProductModel({
+    required this.success,
+    required this.data,
+  });
+
+  factory PhoneProductModel.fromJson(Map<String, dynamic> json) {
+    return PhoneProductModel(
+      success: json['success'] ?? false,
+      data: json['data'] != null
+          ? (json['data'] as List).map((e) => Data.fromJson(e)).toList()
+          : [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'data': data.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
+class Data {
+  final String? id;
+  final String? code;
+  final String? name;
+  final String? model;
+  final String? sellingPrice;
+  final String? status;
+  final Brand? brand;
+  final String? imageUrl;
+  final List<EmiPlan>? emiPlans;
+
+  Data({
+    this.id,
+    this.code,
+    this.name,
+    this.model,
+    this.sellingPrice,
+    this.status,
+    this.brand,
+    this.imageUrl,
+    this.emiPlans,
+  });
+
+  factory Data.fromJson(Map<String, dynamic> json) {
+    return Data(
+      id: json['id']?.toString(),
+      code: json['code']?.toString(),
+      name: json['name']?.toString(),
+      model: json['model']?.toString(),
+      sellingPrice: json['sellingPrice']?.toString(),
+      status: json['status']?.toString(),
+      brand: json['brand'] != null ? Brand.fromJson(json['brand']) : null,
+      imageUrl: json['imageUrl']?.toString(),
+      emiPlans: json['emiPlans'] != null
+          ? (json['emiPlans'] as List).map((e) => EmiPlan.fromJson(e)).toList()
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'code': code,
+      'name': name,
+      'model': model,
+      'sellingPrice': sellingPrice,
+      'status': status,
+      'brand': brand?.toJson(),
+      'imageUrl': imageUrl,
+      'emiPlans': emiPlans?.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  double getSellingPrice() {
+    return double.tryParse(sellingPrice ?? '0') ?? 0.0;
   }
 }

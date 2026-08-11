@@ -1,19 +1,49 @@
+// lib/features/checkout/screens/order_review_step.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/Features/multy_form/viewModel/multyform_provider.dart';
-import '../../../../core/constant/App_Colors.dart';
-import 'model/dropdown_item_model.dart';
+import 'package:smart_pay_app/core/constant/App_Colors.dart';
 import 'package:intl/intl.dart';
 
-class OrderReviewStep extends StatelessWidget {
+import 'model/dropdown_item_model.dart';
+
+
+class OrderReviewStep extends StatefulWidget {
   final VoidCallback onNext;
 
   const OrderReviewStep({super.key, required this.onNext});
 
   @override
+  State<OrderReviewStep> createState() => _OrderReviewStepState();
+}
+
+class _OrderReviewStepState extends State<OrderReviewStep> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = Provider.of<CheckoutViewModel>(context, listen: false);
+      debugPrint("📌 [OrderReviewStep] initState - Checking product");
+
+      // 🔥 যদি প্রোডাক্ট ইতিমধ্যে সিলেক্টেড থাকে, তাহলে EMI প্ল্যান লোড করুন
+      if (vm.checkoutData.productId != null && vm.checkoutData.productId!.isNotEmpty) {
+        debugPrint("📌 [OrderReviewStep] Product already selected: ${vm.checkoutData.productId}");
+        // EMI প্ল্যান লোড করুন
+        vm.loadEmiPlansForExistingProduct(vm.checkoutData.productId!);
+      } else {
+        debugPrint("📌 [OrderReviewStep] No product selected, calling initializePlanData");
+        vm.initializePlanData();
+      }
+    });
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     final vm = Provider.of<CheckoutViewModel>(context);
     final order = vm.checkoutData;
+
+    debugPrint("📊 [OrderReviewStep] build - monthlyEmi: ${order.monthlyEmi}, downPayment: ${order.downPayment}");
 
     if (vm.isFetchingDropdowns) {
       return const Center(
@@ -44,7 +74,6 @@ class OrderReviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // 🔹 1. Store Assignment Section
           _buildSectionTitle("Store Assignment"),
           const SizedBox(height: 16),
           CustomDropdownField(
@@ -88,12 +117,11 @@ class OrderReviewStep extends StatelessWidget {
             onChanged: (val) => vm.onSalesPersonSelected(val),
             icon: Icons.badge_outlined,
           ),
-          
+
           const SizedBox(height: 32),
           _buildSectionTitle("Product Selection"),
           const SizedBox(height: 16),
 
-          // 🔹 2. Product Selection
           CustomDropdownField(
             label: 'Select Product *',
             value: order.productId,
@@ -103,16 +131,15 @@ class OrderReviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // 🔹 📦 Summary Card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
-              ]
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+                ]
             ),
             child: Column(
               children: [
@@ -125,8 +152,6 @@ class OrderReviewStep extends StatelessWidget {
                   _buildSummaryRow(Icons.calendar_today_outlined, 'Tenure:', '${order.emiTenureMonths} Months'),
                   const SizedBox(height: 12),
                   _buildSummaryRow(Icons.payments_outlined, 'Downpayment:', '৳${NumberFormat('#,##,###').format(order.downPayment)}'),
-                  const SizedBox(height: 12),
-                  _buildSummaryRow(Icons.percent_rounded, 'Charge Rate:', '${order.appEmiChargeRate}%'),
                   const Divider(height: 24, thickness: 0.5, color: Color(0xFFF1F5F9)),
                   _buildSummaryRow(Icons.account_balance_wallet_outlined, 'Monthly EMI:', '৳${NumberFormat('#,##,###').format(order.monthlyEmi)}', isBold: true, isBlue: true),
                 ],
@@ -135,7 +160,6 @@ class OrderReviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // 🔹 3. Payment Flow Selection
           _buildSectionTitle("Payment Flow"),
           const SizedBox(height: 16),
           Row(
@@ -167,19 +191,17 @@ class OrderReviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          //  4. EMI Configuration
           if (order.saleType == 'EMI') ...[
             _buildEmiCalculationOptions(vm, order),
           ],
 
           const SizedBox(height: 40),
 
-          //  Next Step Action
           SizedBox(
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: onNext,
+              onPressed: widget.onNext,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
                 elevation: 0,
@@ -235,11 +257,27 @@ class OrderReviewStep extends StatelessWidget {
   }
 
   Widget _buildEmiCalculationOptions(CheckoutViewModel vm, var order) {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📊 [OrderReview] EMI Section");
+    debugPrint("   emiMode: ${order.emiMode}");
+    debugPrint("   emiPlanList.length: ${vm.emiPlanList.length}");
+    debugPrint("   order.emiPlanId: ${order.emiPlanId}");
+    debugPrint("   order.productId: ${order.productId}");
+    debugPrint("   order.mrp: ${order.mrp}");
+    debugPrint("   monthlyEmi: ${order.monthlyEmi}");
+    debugPrint("   downPayment: ${order.downPayment}");
+
+    for (int i = 0; i < vm.emiPlanList.length; i++) {
+      debugPrint("   Plan $i: ${vm.emiPlanList[i].name} (ID: ${vm.emiPlanList[i].id})");
+    }
+    debugPrint("═══════════════════════════════════════");
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle("EMI Configuration"),
         const SizedBox(height: 16),
+
         _buildEmiOptionRadio(
           title: 'Existing EMI Plan',
           subtitle: 'Use pre-defined shop duration & rates',
@@ -247,9 +285,26 @@ class OrderReviewStep extends StatelessWidget {
           groupValue: order.emiMode,
           onChanged: (val) {
             order.emiMode = val!;
+            debugPrint("🔄 [OrderReview] EMI Mode changed to: ${order.emiMode}");
+
+            if (order.emiMode == 'EXISTING_PLAN') {
+              if (order.emiPlanId != null && order.emiPlanId!.isNotEmpty) {
+                vm.onEmiPlanSelected(order.emiPlanId).then((_) {
+                  vm.notifyListeners();
+                });
+              } else if (vm.emiPlanList.isNotEmpty) {
+                final firstPlan = vm.emiPlanList.first;
+                order.emiPlanId = firstPlan.id;
+                vm.onEmiPlanSelected(firstPlan.id).then((_) {
+                  vm.notifyListeners();
+                });
+              }
+            }
+
             vm.notify();
           },
         ),
+
         _buildEmiOptionRadio(
           title: 'Custom EMI Plan',
           subtitle: 'Create a new plan for this customer',
@@ -257,9 +312,12 @@ class OrderReviewStep extends StatelessWidget {
           groupValue: order.emiMode,
           onChanged: (val) {
             order.emiMode = val!;
-            vm.notify();
+            debugPrint("🔄 [OrderReview] EMI Mode changed to: ${order.emiMode}");
+            vm.recalculateEmi();
+            vm.notifyListeners();
           },
         ),
+
         _buildEmiOptionRadio(
           title: 'Remaining Balance EMI',
           subtitle: 'Calculate based on custom upfront',
@@ -267,35 +325,78 @@ class OrderReviewStep extends StatelessWidget {
           groupValue: order.emiMode,
           onChanged: (val) {
             order.emiMode = val!;
-            vm.notify();
+            debugPrint("🔄 [OrderReview] EMI Mode changed to: ${order.emiMode}");
+            vm.recalculateEmi();
+            vm.notifyListeners();
           },
         ),
         const SizedBox(height: 20),
 
         if (order.emiMode == 'EXISTING_PLAN') ...[
+          if (vm.emiPlanList.isEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'No EMI plans available. Please select a product first.',
+                      style: TextStyle(fontSize: 12, color: Colors.amber),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           CustomDropdownField(
             label: 'Choose EMI Plan *',
             value: order.emiPlanId,
             items: vm.emiPlanList,
-            onChanged: (val) => vm.onEmiPlanSelected(val),
+            onChanged: (val) async {
+              debugPrint("🔄 [OrderReview] EMI Plan Selected: $val");
+              if (val != null && val.isNotEmpty) {
+                await vm.onEmiPlanSelected(val);
+                vm.notifyListeners();
+              }
+            },
             icon: Icons.assignment_outlined,
           ),
           const SizedBox(height: 16),
+
           Row(
             children: [
-              Expanded(child: _buildSummaryBox('Down Payment', '৳${NumberFormat('#,###').format(order.downPayment)}')),
+              Expanded(
+                child: _buildSummaryBox(
+                  'Down Payment',
+                  '৳${NumberFormat('#,###').format(order.downPayment)}',
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _buildSummaryBox('Monthly EMI', '৳${NumberFormat('#,###').format(order.monthlyEmi)}')),
+              Expanded(
+                child: _buildSummaryBox(
+                  'Monthly EMI',
+                  '৳${NumberFormat('#,###').format(order.monthlyEmi)}',
+                ),
+              ),
             ],
           ),
         ],
 
         if (order.emiMode == 'CREATE_NEW_PLAN') ...[
-           _buildCustomPlanFields(vm, order),
+          _buildCustomPlanFields(vm, order),
         ],
 
         if (order.emiMode == 'REMAINING_BALANCE') ...[
-           _buildRemainingBalanceFields(vm, order),
+          _buildRemainingBalanceFields(vm, order),
         ],
       ],
     );
@@ -355,16 +456,6 @@ class OrderReviewStep extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildTextField(
-            label: 'Charge Rate (%)',
-            hint: '5',
-            keyboardType: TextInputType.number,
-            initialValue: order.appEmiChargeRate,
-            onChanged: (v) {
-              order.appEmiChargeRate = v;
-              vm.notify();
-            },
-          ),
           const Divider(height: 32, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -556,7 +647,7 @@ class OrderReviewStep extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// 🔹 CUSTOM DROPDOWN — Strictly anchors menu below input field
+// 🔹 CUSTOM DROPDOWN
 // ══════════════════════════════════════════════════════════════════════
 
 class CustomDropdownField extends StatefulWidget {
@@ -610,7 +701,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
           CompositedTransformFollower(
             link: _layerLink,
             showWhenUnlinked: false,
-            offset: Offset(0, fieldSize.height + 6), // 🔹 Always strictly below with a small gap
+            offset: Offset(0, fieldSize.height + 6),
             child: Material(
               color: Colors.transparent,
               child: Container(

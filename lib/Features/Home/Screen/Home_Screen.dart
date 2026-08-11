@@ -21,8 +21,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SalesDashboardViewModel>(context, listen: false)
-          .fetchSalesDashboard();
+      Provider.of<SalesDashboardViewModel>(
+        context,
+        listen: false,
+      ).fetchSalesDashboard();
     });
   }
 
@@ -45,18 +47,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.errorRed),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.errorRed,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       viewModel.errorMessage!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.black, fontSize: 14),
+                      style: const TextStyle(
+                        color: AppColors.black,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                      ),
                       onPressed: () => viewModel.fetchSalesDashboard(),
-                      child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Retry',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -73,19 +87,22 @@ class _HomeScreenState extends State<HomeScreen> {
           final payments = data?.payments ?? [];
 
           // 🔹 লজিক আপডেট: APPROVED, ACTIVE, এবং DISBURSED সবগুলোকে Active Loan হিসেবে গণনা করা হচ্ছে
-          final int activeLoansCount = loans
-              .where((l) {
-                final status = (l.status ?? '').toUpperCase();
-                return status == 'ACTIVE' || status == 'DISBURSED' || status == 'APPROVED';
-              })
-              .length;
+          final int activeLoansCount = loans.where((l) {
+            final status = (l.status ?? '').toUpperCase();
+            return status == 'ACTIVE' ||
+                status == 'DISBURSED' ||
+                status == 'APPROVED';
+          }).length;
 
           final int overdueLoansCount = loans.where((l) {
             if (l.installments == null) return false;
-            return l.installments!.any((i) =>
-            (i.status ?? '').toUpperCase() == 'PENDING' &&
-                i.dueDate != null &&
-                DateTime.tryParse(i.dueDate!)?.isBefore(DateTime.now()) == true);
+            return l.installments!.any(
+              (i) =>
+                  (i.status ?? '').toUpperCase() == 'PENDING' &&
+                  i.dueDate != null &&
+                  DateTime.tryParse(i.dueDate!)?.isBefore(DateTime.now()) ==
+                      true,
+            );
           }).length;
 
           final int pendingAppsCount = applications
@@ -196,55 +213,67 @@ class _HomeScreenState extends State<HomeScreen> {
               Image.asset(
                 'assets/icons/logo.png',
                 height: 50,
-                errorBuilder: (context, error, stackTrace) =>
-                const Text('SMART PAY',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18)),
+                errorBuilder: (context, error, stackTrace) => const Text(
+                  'SMART PAY',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
               ),
               Row(
                 children: [
-                  // GestureDetector(
-                  //   onTap: () => Navigator.pushNamed(context, RouteName.customerNotificationScreen),
-                  //   child: Stack(
-                  //     children: [
-                  //       Container(
-                  //         width: 42,
-                  //         height: 42,
-                  //         decoration: BoxDecoration(
-                  //           color: Colors.white.withValues(alpha: 0.18),
-                  //           shape: BoxShape.circle,
-                  //         ),
-                  //         child: const Icon(Icons.notifications_outlined,
-                  //             color: Colors.white, size: 22),
-                  //       ),
-                  //       if (pendingCount > 0)
-                  //         Positioned(
-                  //           right: 6,
-                  //           top: 6,
-                  //           child: Container(
-                  //             width: 16,
-                  //             height: 16,
-                  //             decoration: const BoxDecoration(
-                  //                 color: AppColors.errorRed, shape: BoxShape.circle),
-                  //             child: Center(
-                  //               child: Text(
-                  //                 '$pendingCount',
-                  //                 style: const TextStyle(
-                  //                     color: Colors.white,
-                  //                     fontSize: 9,
-                  //                     fontWeight: FontWeight.bold),
-                  //               ),
-                  //             ),
-                  //           ),
-                  //         ),
-                  //     ],
-                  //   ),
-                  // ),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      RouteName.sellerNotificationScreen,
+                    ),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                        if (pendingCount > 0)
+                          Positioned(
+                            right: 9,
+                            top: 6,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: AppColors.errorRed,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, RouteName.profileScreen),
+                    onTap: () =>
+                        Navigator.pushNamed(context, RouteName.profileScreen),
                     child: Container(
                       width: 42,
                       height: 42,
@@ -252,8 +281,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.white.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.person_outline,
-                          color: Colors.white, size: 22),
+                      child: const Icon(
+                        Icons.person_outline,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ],
@@ -264,9 +296,10 @@ class _HomeScreenState extends State<HomeScreen> {
           const Text(
             'Welcome back,',
             style: TextStyle(
-                color: Color(0xFFBFD4FF),
-                fontSize: 14,
-                fontWeight: FontWeight.w400),
+              color: Color(0xFFBFD4FF),
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
           ),
           const SizedBox(height: 4),
           FutureBuilder<String?>(
@@ -330,27 +363,36 @@ class _HomeScreenState extends State<HomeScreen> {
               const Text(
                 'Portfolio Overview',
                 style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.black),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.black,
+                ),
               ),
               Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.bgGrey,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
                   children: [
-                    Text('This Month',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.greyText,
-                            fontWeight: FontWeight.w500)),
+                    Text(
+                      'This Month',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.greyText,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     SizedBox(width: 3),
-                    Icon(Icons.keyboard_arrow_down,
-                        size: 16, color: AppColors.greyText),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: AppColors.greyText,
+                    ),
                   ],
                 ),
               ),
@@ -366,8 +408,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppColors.infoBlue,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.people_alt_outlined,
-                    color: AppColors.primaryBlue, size: 26),
+                child: const Icon(
+                  Icons.people_alt_outlined,
+                  color: AppColors.primaryBlue,
+                  size: 26,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -376,31 +421,35 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     '$totalCustomers',
                     style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.black,
-                        height: 1),
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.black,
+                      height: 1,
+                    ),
                   ),
                   const SizedBox(height: 2),
-                  const Text('Total Customers',
-                      style:
-                      TextStyle(fontSize: 11, color: AppColors.greyText)),
+                  const Text(
+                    'Total Customers',
+                    style: TextStyle(fontSize: 11, color: AppColors.greyText),
+                  ),
                 ],
               ),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Total Collection",
-                      style:
-                      TextStyle(fontSize: 11, color: AppColors.greyText)),
+                  const Text(
+                    "Total Collection",
+                    style: TextStyle(fontSize: 11, color: AppColors.greyText),
+                  ),
                   const SizedBox(height: 2),
                   Text(
-                    '৳$totalCollections',
+                    '৳${totalCollections.toStringAsFixed(2)}',
                     style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryBlue),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryBlue,
+                    ),
                   ),
                 ],
               ),
@@ -414,9 +463,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       '$percentage%',
                       style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.black),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.black,
+                      ),
                     ),
                   ),
                 ),
@@ -430,8 +480,9 @@ class _HomeScreenState extends State<HomeScreen> {
               value: progressRatio,
               minHeight: 7,
               backgroundColor: AppColors.borderGrey,
-              valueColor:
-              const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primaryBlue,
+              ),
             ),
           ),
         ],
@@ -461,7 +512,8 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Total Customers',
           count: '$totalCustomers',
           subtitle: 'Active',
-          onTap: () => Navigator.pushNamed(context, RouteName.totalCustomerScreen),
+          onTap: () =>
+              Navigator.pushNamed(context, RouteName.totalCustomerScreen),
         ),
         _buildStatusCard(
           icon: Icons.warning_amber_rounded,
@@ -470,7 +522,8 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Over Dues',
           count: '$overdueLoans',
           subtitle: 'Loans',
-          onTap: () => Navigator.pushNamed(context, RouteName.overdueLoanScreen),
+          onTap: () =>
+              Navigator.pushNamed(context, RouteName.overdueLoanScreen),
         ),
         _buildStatusCard(
           icon: Icons.description_outlined,
@@ -488,7 +541,8 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Pending Approval',
           count: '$pendingApps',
           subtitle: 'Apps',
-          onTap: () => Navigator.pushNamed(context, RouteName.pendingApprovalScreen),
+          onTap: () =>
+              Navigator.pushNamed(context, RouteName.pendingApprovalScreen),
         ),
       ],
     );
@@ -524,8 +578,10 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               width: 36,
               height: 36,
-              decoration:
-              BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 8),
@@ -539,9 +595,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: iconColor),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: iconColor,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -549,9 +606,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         count,
                         style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.black),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.black,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -560,7 +618,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontSize: 10, color: AppColors.greyText),
+                            fontSize: 10,
+                            color: AppColors.greyText,
+                          ),
                         ),
                       ),
                     ],
@@ -585,26 +645,34 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         height: 56,
         decoration: BoxDecoration(
-            color: AppColors.primaryBlue,
-            borderRadius: BorderRadius.circular(16)),
+          color: AppColors.primaryBlue,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Row(
           children: [
             const SizedBox(width: 16),
             Container(
               width: 32,
               height: 32,
-              decoration:
-              const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: const Icon(Icons.add, color: AppColors.primaryBlue, size: 20),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add,
+                color: AppColors.primaryBlue,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 14),
             const Expanded(
               child: Text(
                 'Create New Customer',
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700),
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             const Icon(Icons.chevron_right, color: Colors.white, size: 24),
@@ -623,9 +691,10 @@ class _HomeScreenState extends State<HomeScreen> {
         const Text(
           'Quick Actions',
           style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.black),
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.black,
+          ),
         ),
         const SizedBox(height: 12),
         Row(
@@ -634,7 +703,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildQABtn(
               Icons.smartphone_outlined,
               'New Loan',
-              () => Navigator.pushNamed(context, RouteName.brandSelectionScreen),
+              () =>
+                  Navigator.pushNamed(context, RouteName.brandSelectionScreen),
             ),
             _buildQABtn(
               Icons.payments_outlined,
@@ -644,12 +714,14 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildQABtn(
               Icons.article_outlined,
               'Applications',
-              () => Navigator.pushNamed(context, RouteName.pendingApprovalScreen),
+              () =>
+                  Navigator.pushNamed(context, RouteName.pendingApprovalScreen),
             ),
             _buildQABtn(
               Icons.person_add_alt_1_outlined,
               'Create\nCustomer',
-              () => Navigator.pushNamed(context, RouteName.brandSelectionScreen),
+              () =>
+                  Navigator.pushNamed(context, RouteName.brandSelectionScreen),
             ),
           ],
         ),
@@ -670,9 +742,10 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: AppColors.borderGrey),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 6,
-                offset: const Offset(0, 3)),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
           ],
         ),
         child: Column(
@@ -684,10 +757,11 @@ class _HomeScreenState extends State<HomeScreen> {
               label,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.black,
-                  height: 1.15),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.black,
+                height: 1.15,
+              ),
             ),
           ],
         ),
@@ -705,41 +779,44 @@ class _HomeScreenState extends State<HomeScreen> {
         const Text(
           'Recent Applications',
           style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.black),
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.black,
+          ),
         ),
         const SizedBox(height: 12),
         recent.isEmpty
             ? _buildEmptyBox('No Recent Applications')
             : Container(
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderGrey),
-          ),
-          child: Column(
-            children: List.generate(recent.length, (index) {
-              final app = recent[index];
-              final name = app.name ?? app.customer?.name ?? 'Unknown';
-              final status = app.status ?? 'PENDING';
-              final isPending = status.toUpperCase() == 'PENDING';
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.borderGrey),
+                ),
+                child: Column(
+                  children: List.generate(recent.length, (index) {
+                    final app = recent[index];
+                    final name = app.name ?? app.customer?.name ?? 'Unknown';
+                    final status = app.status ?? 'PENDING';
+                    final isPending = status.toUpperCase() == 'PENDING';
 
-              return _buildListTile(
-                initials: name.isNotEmpty ? name[0].toUpperCase() : 'C',
-                title: name,
-                subtitle: 'MRP: ৳${app.mrp ?? 0} • ${app.planMonths ?? 0} mo',
-                badgeText: status,
-                badgeBg: isPending
-                    ? const Color(0xFFFFF7ED)
-                    : AppColors.successBg,
-                badgeColor:
-                isPending ? Colors.orange : AppColors.successGreen,
-                isLast: index == recent.length - 1,
-              );
-            }),
-          ),
-        ),
+                    return _buildListTile(
+                      initials: name.isNotEmpty ? name[0].toUpperCase() : 'C',
+                      title: name,
+                      subtitle:
+                          'MRP: ৳${app.mrp ?? 0} • ${app.planMonths ?? 0} mo',
+                      badgeText: status,
+                      badgeBg: isPending
+                          ? const Color(0xFFFFF7ED)
+                          : AppColors.successBg,
+                      badgeColor: isPending
+                          ? Colors.orange
+                          : AppColors.successGreen,
+                      isLast: index == recent.length - 1,
+                    );
+                  }),
+                ),
+              ),
       ],
     );
   }
@@ -754,38 +831,39 @@ class _HomeScreenState extends State<HomeScreen> {
         const Text(
           'Recent Loans',
           style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.black),
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.black,
+          ),
         ),
         const SizedBox(height: 12),
         recent.isEmpty
             ? _buildEmptyBox('No Recent Loans')
             : Container(
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderGrey),
-          ),
-          child: Column(
-            children: List.generate(recent.length, (index) {
-              final loan = recent[index];
-              final name = loan.customer?.name ?? 'Customer';
-              final status = loan.status ?? 'N/A';
-              final emi = loan.calculationSnapshot?.monthlyEmi ?? '0';
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.borderGrey),
+                ),
+                child: Column(
+                  children: List.generate(recent.length, (index) {
+                    final loan = recent[index];
+                    final name = loan.customer?.name ?? 'Customer';
+                    final status = loan.status ?? 'N/A';
+                    final emi = loan.calculationSnapshot?.monthlyEmi ?? '0';
 
-              return _buildListTile(
-                initials: name.isNotEmpty ? name[0].toUpperCase() : 'L',
-                title: name,
-                subtitle: 'EMI: ৳$emi/mo • ${loan.displayId ?? ''}',
-                badgeText: status,
-                badgeBg: AppColors.infoBlue,
-                badgeColor: AppColors.primaryBlue,
-                isLast: index == recent.length - 1,
-              );
-            }),
-          ),
-        ),
+                    return _buildListTile(
+                      initials: name.isNotEmpty ? name[0].toUpperCase() : 'L',
+                      title: name,
+                      subtitle: 'EMI: ৳$emi/mo • ${loan.displayId ?? ''}',
+                      badgeText: status,
+                      badgeBg: AppColors.infoBlue,
+                      badgeColor: AppColors.primaryBlue,
+                      isLast: index == recent.length - 1,
+                    );
+                  }),
+                ),
+              ),
       ],
     );
   }
@@ -812,9 +890,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   initials,
                   style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryBlue),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -825,30 +904,38 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       title,
                       style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.black),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.black,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: const TextStyle(
-                          fontSize: 11, color: AppColors.greyText),
+                        fontSize: 11,
+                        color: AppColors.greyText,
+                      ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
-                    color: badgeBg, borderRadius: BorderRadius.circular(20)),
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Text(
                   badgeText,
                   style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: badgeColor),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: badgeColor,
+                  ),
                 ),
               ),
             ],
@@ -870,8 +957,10 @@ class _HomeScreenState extends State<HomeScreen> {
         border: Border.all(color: AppColors.borderGrey),
       ),
       child: Center(
-        child: Text(message,
-            style: const TextStyle(color: AppColors.greyText, fontSize: 13)),
+        child: Text(
+          message,
+          style: const TextStyle(color: AppColors.greyText, fontSize: 13),
+        ),
       ),
     );
   }

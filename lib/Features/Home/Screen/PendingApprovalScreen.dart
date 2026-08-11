@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constant/App_Colors.dart';
+import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
 
 class PendingApprovalScreen extends StatefulWidget {
@@ -46,6 +47,41 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       return '0';
     } catch (e) {
       return '0';
+    }
+  }
+
+  // ─── Document Verification Status ───
+  bool _isDocumentVerified(dynamic app) {
+    try {
+      // Check if documents exist
+      final docs = app.documents;
+      if (docs == null) return false;
+
+      // If documents is a List
+      if (docs is List) {
+        if (docs.isEmpty) return false;
+
+        // Check if all documents are verified
+        for (var doc in docs) {
+          if (doc != null) {
+            final status = doc['status']?.toString().toUpperCase() ?? '';
+            if (status != 'VERIFIED' && status != 'APPROVED') {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+
+      // If documents is a Map
+      if (docs is Map) {
+        final status = docs['status']?.toString().toUpperCase() ?? '';
+        return status == 'VERIFIED' || status == 'APPROVED';
+      }
+
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -120,7 +156,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, RouteName.brandSelectionScreen);
+        },
         backgroundColor: const Color(0xFF0052CC),
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -170,19 +208,25 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
               ),
               Stack(
                 children: [
-                  const Icon(Icons.notifications_none_rounded,
-                      color: Colors.white, size: 28),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      RouteName.sellerNotificationScreen,
+                    ),
+                    child: const Icon(Icons.notifications_none_rounded,
+                        color: Colors.white, size: 28),
+                  ),
                   Positioned(
                     right: 0,
                     top: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(3.5),
+                      padding: const EdgeInsets.all(4.5),
                       decoration: const BoxDecoration(
                         color: Color(0xFFEF4444),
                         shape: BoxShape.circle,
                       ),
                       child: const Text(
-                        '7',
+                        '',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -461,6 +505,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     final mrp = double.tryParse((app.mrp ?? '0').toString()) ?? 0;
     final tenure = app.planMonths ?? 12;
     final downPayment = double.tryParse(_getDownPayment(app)) ?? 0;
+    final isVerified = _isDocumentVerified(app);
 
     String product = 'Smartphone';
     try {
@@ -507,15 +552,69 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                          color: Color(0xFF0F172A),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                color: Color(0xFF0F172A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // ─── DOCUMENT VERIFICATION STATUS ───
+                          isVerified
+                              ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green.withOpacity(0.3)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_rounded, color: Colors.green, size: 12),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Docs Verified',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                              : Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.pending_rounded, color: Colors.orange, size: 12),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Docs Pending',
+                                  style: TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -589,14 +688,46 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
             ),
             child: Row(
               children: [
-                Expanded(child: _outlineBtn(Icons.visibility_outlined, 'View App')),
-                const SizedBox(width: 8),
-                Expanded(child: _outlineBtn(Icons.verified_user_outlined, 'Verify Docs')),
+                Expanded(
+                  child: _outlineBtn(
+                    Icons.visibility_outlined,
+                    'View App',
+                    onTap: () {
+                      debugPrint('🚀 [PendingApprovalScreen] View App Clicked');
+                      debugPrint('🆔 Application ID: ${app.id}');
+
+                      if (app.id != null && app.id.toString().isNotEmpty) {
+                        try {
+                          Navigator.pushNamed(
+                            context,
+                            RouteName.loanApplicationDetailsScreen,
+                            arguments: app.id.toString(),
+                          );
+                          debugPrint('✅ Navigation command sent');
+                        } catch (e) {
+                          debugPrint('❌ Navigation Error: $e');
+                        }
+                      } else {
+                        debugPrint('⚠️ ID is null or empty, cannot navigate');
+                      }
+                    },
+                  ),
+                ),
+
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      debugPrint(' [PendingApprovalScreen] Review Clicked');
+                      if (app.id != null) {
+                        Navigator.pushNamed(
+                            context,
+                            RouteName.loanApplicationDetailsScreen,
+                            arguments: app.id.toString()
+                        );
+                      }
+                    },
                     icon: const Icon(Icons.edit_note_rounded, size: 16, color: Colors.white),
                     label: const Text(
                       'Review',
@@ -649,9 +780,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     );
   }
 
-  Widget _outlineBtn(IconData icon, String label) {
+  Widget _outlineBtn(IconData icon, String label, {VoidCallback? onTap}) {
     return OutlinedButton(
-      onPressed: () {},
+      onPressed: onTap,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 10),
         side: BorderSide(color: const Color(0xFF0052CC).withOpacity(0.25)),

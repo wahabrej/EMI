@@ -73,7 +73,7 @@ class _PaymentStepState extends State<PaymentStep> {
         imageQuality: 85,
       );
       if (image != null) {
-        vm.setBankReceipt(File(image.path));
+        //vm.setBankReceipt(File(image.path));
       }
     });
   }

@@ -1,106 +1,141 @@
 class ApiEndPoint {
   ApiEndPoint._();
 
-  // ── Base URLs ─────────────────────── ───────────────────────
+  // ── Base URLs ───────────────────────────────────────────────
   static const String localBaseUrl      = 'http://localhost:3001';
   static const String productionBaseUrl = 'https://api.smartpay.click';
 
-  // Active base URL (Switch to productionBaseUrl for release)
+  // Active base URL
   static const String baseUrl = productionBaseUrl;
 
-  // ── Auth ────────────────────────── ─────────────────────────
-  static const String login       = '$baseUrl/auth/login';
-  static const String currentUser = '$baseUrl/auth/me';
+  // ── API Version / Prefix ──────────────────────────────────
+  static const String apiPrefix = '/apk';  // <-- Add this line
+
+  // Helper method to add prefix
+  static String _withPrefix(String endpoint) => '$apiPrefix$endpoint';
+
+  // ── Auth ──────────────────────────────────────────────────
+  static String get login => '$baseUrl${_withPrefix('/auth/login')}';
+  static String get currentUser => '$baseUrl${_withPrefix('/auth/me')}';
 
   /// 1. Sales Person / Staff Dashboard
   static String salesDashboardSummary(String userId) =>
-      '$baseUrl/dashboard/summary/$userId';
+      '$baseUrl${_withPrefix('/dashboard/summary/$userId')}';
 
   /// 2. Customer Dashboard
   static String customerDashboardSummary(String userId) =>
-      '$baseUrl/dashboard/customer-summary/$userId';
+      '$baseUrl${_withPrefix('/dashboard/customer-summary/$userId')}';
 
-  // ── Lookup / Dropdown APIs ────────────── ───────────────────
-  static const String shops        = '$baseUrl/shops';
-  static const String agents       = '$baseUrl/agents';
-  static const String managers     = '$baseUrl/managers';
-  static const String salesPersons = '$baseUrl/sales-persons';
-  static const String products     = '$baseUrl/products';
-  static const String emiPlans     = '$baseUrl/emi-plans';
+  // ── Lookup / Dropdown APIs ──────────────────────────────
+  static String get shops => '$baseUrl${_withPrefix('/shops')}';
+  static String get agents => '$baseUrl${_withPrefix('/agents')}';
+  static String get managers => '$baseUrl${_withPrefix('/managers')}';
+  static String get salesPersons => '$baseUrl${_withPrefix('/sales-persons')}';
+  static String get products => '$baseUrl${_withPrefix('/products')}';
+  static String get emiPlans => '$baseUrl${_withPrefix('/emi-plans')}';
 
   static String emiPlansByProduct(String productId) =>
-      '$baseUrl/emi-plans/product/$productId';
+      '$baseUrl${_withPrefix('/emi-plans/product/$productId')}';
 
-  // ── EMI Quotation ─────────────────── ───────────────────────
+  // ── EMI Quotation ────────────────────────────────────────
   static String emiQuotation(String emiPlanId) =>
-      '$baseUrl/emi-plans/$emiPlanId/quotation';
+      '$baseUrl${_withPrefix('/emi-plans/$emiPlanId/quotation')}';
 
-  // ── Customer CRUD ──────────────────── ──────────────────────
-  static const String customers = '$baseUrl/customers';
-  static const String myCustomerDetails = '$baseUrl/customers/me/details';
+  // ── Customer CRUD ────────────────────────────────────────
+  static String get customers => '$baseUrl${_withPrefix('/customers')}';
+  static String get myCustomerDetails => '$baseUrl${_withPrefix('/customers/me/details')}';
 
   static String customerById(String id) =>
-      '$baseUrl/customers/$id';
+      '$baseUrl${_withPrefix('/customers/$id')}';
 
   static String customerDetails(String id) =>
-      '$baseUrl/customers/$id/details';
+      '$baseUrl${_withPrefix('/customers/$id/details')}';
 
-  // ── Customer File Uploads ─────────────── ───────────────────
+  // ── Customer File Uploads ───────────────────────────────
   static String uploadCustomerPhoto(String customerId) =>
-      '$baseUrl/customers/$customerId/photo';
+      '$baseUrl${_withPrefix('/customers/$customerId/photo')}';
 
   static String uploadCustomerDocument(String customerId) =>
-      '$baseUrl/customers/$customerId/documents';
+      '$baseUrl${_withPrefix('/customers/$customerId/documents')}';
 
   static String deleteCustomerDocument(String customerId, String docId) =>
-      '$baseUrl/customers/$customerId/documents/$docId';
+      '$baseUrl${_withPrefix('/customers/$customerId/documents/$docId')}';
 
-  // ── Guarantor Document Upload ───────────── ─────────────────
+  // ── Guarantor Document Upload ──────────────────────────
   static String uploadGuarantorDocument(String customerId, String guarantorId) =>
-      '$baseUrl/customers/$customerId/guarantors/$guarantorId/document';
+      '$baseUrl${_withPrefix('/customers/$customerId/guarantors/$guarantorId/document')}';
 
-  // ── Loan Applications ──────────────────────────────────────
-  static const String loanApplications = '$baseUrl/loan-applications';
+  // ── Loan Applications ──────────────────────────────────
+  static String get loanApplications => '$baseUrl${_withPrefix('/loan-applications')}';
 
   static String loanApplicationById(String id) =>
-      '$baseUrl/loan-applications/$id';
+      '$baseUrl${_withPrefix('/loan-applications/$id')}';
 
   static String approveLoanApplication(String id) =>
-      '$baseUrl/loan-applications/$id/approve';
+      '$baseUrl${_withPrefix('/loan-applications/$id/approve')}';
 
   static String rejectLoanApplication(String id) =>
-      '$baseUrl/loan-applications/$id/reject';
+      '$baseUrl${_withPrefix('/loan-applications/$id/reject')}';
 
-  // ── Asset URL Helper ───────────────────────────────────────
+  // ── Asset URL Helper ──────────────────────────────────
   static String assetUrl(String relativeUrl) {
     if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
       return relativeUrl;
     }
-    return '$baseUrl$relativeUrl';
+    return '$baseUrl$apiPrefix$relativeUrl';
   }
 
-  // ── Customer Panel Specific Endpoints ──────────────────────
-  static const String customerProfile = '$baseUrl/customer/profile';
-  static const String customerDashboard = '$baseUrl/customer/dashboard';
-  static const String customerLoans = '$baseUrl/customer/loans';
+  // ── Customer Panel Specific Endpoints ────────────────
+  static String get customerProfile => '$baseUrl${_withPrefix('/customer/profile')}';
+  static String get customerDashboard => '$baseUrl${_withPrefix('/customer/dashboard')}';
+  static String get customerLoans => '$baseUrl${_withPrefix('/customer/loans')}';
 
   static String customerLoanById(String loanId) =>
-      '$baseUrl/customer/loans/$loanId';
+      '$baseUrl${_withPrefix('/customer/loans/$loanId')}';
 
-  static const String customerPayments = '$baseUrl/customer/payments';
-  static const String initiateCustomerPayment = '$baseUrl/customer/payments/initiate';
-  static const String submitBankPayment = '$baseUrl/customer/payments/bank';
-  static const String customerLoanApplications = '$baseUrl/customer/loan-applications';
+  static String get customerPayments => '$baseUrl${_withPrefix('/customer/payments')}';
+  static String get initiateCustomerPayment => '$baseUrl${_withPrefix('/customer/payments/initiate')}';
+  static String get submitBankPayment => '$baseUrl${_withPrefix('/customer/payments/bank')}';
+  static String get customerLoanApplications => '$baseUrl${_withPrefix('/customer/loan-applications')}';
 
   static String customerLoanApplicationById(String id) =>
-      '$baseUrl/customer/loan-applications/$id';
+      '$baseUrl${_withPrefix('/customer/loan-applications/$id')}';
 
-  static const String customerNotifications = '$baseUrl/customer/notifications';
-  /// Order Summary (Total sold, collected amount, outstanding, etc.)
-  static const String loansSummary = '$baseUrl/loans/summary';
+  static String get customerNotifications => '$baseUrl${_withPrefix('/customer/notifications')}';
+  static String get sellerNotifications => '$baseUrl${_withPrefix('/notifications')}';
 
-  /// Payment History list endpoint
-  static const String paymentsHistory = '$baseUrl/payments';
-  static const String payInstallment = '$baseUrl/customer/installment/pay';
+  /// Order Summary
+  static String get loansSummary => '$baseUrl${_withPrefix('/loans/summary')}';
+
+  /// Payment History
+  static String get paymentsHistory => '$baseUrl${_withPrefix('/payments')}';
+  static String get payInstallment => '$baseUrl${_withPrefix('/customer/installment/pay')}';
+
+// New api
+
+
+// ── New APIs from PDF ─────────────────────────────────────────
+
+// ── NEW APIs from PDF ─────────────────────────────────────────
+
+// 1. Check Customer Eligibility (Fraud / Defaulter Check)
+  static String checkCustomerEligibility({
+    required String phone,
+    required String idPassportNumber,
+  }) =>
+      '$baseUrl${_withPrefix('/customers/check-eligibility?phone=$phone&idPassportNumber=$idPassportNumber')}';
+
+// 2. Get Pending Applications List
+  static String get pendingLoanApplications =>
+      '$baseUrl${_withPrefix('/loan-applications?status=PENDING')}';
+
+// 3. Get Pending Applications Count
+  static String get pendingCount =>
+      '$baseUrl${_withPrefix('/loan-applications/pending-count')}';
+
+// 4. Get Approved Loan Details
+  static String getLoanById(String id) =>
+      '$baseUrl${_withPrefix('/loans/$id')}';
+
 
 }

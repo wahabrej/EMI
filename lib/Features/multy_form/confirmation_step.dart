@@ -1,3 +1,4 @@
+// lib/features/checkout/screens/confirmation_step.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/Features/multy_form/viewModel/multyform_provider.dart';
@@ -52,8 +53,8 @@ class ConfirmationStep extends StatelessWidget {
             children: [
               _buildRow('Full Name', data.name ?? 'N/A'),
               _buildRow('Phone', data.phone ?? 'N/A'),
-              _buildRow('NID / Passport', data.nidPassportNumber ?? 'N/A'),
-              _buildRow('Income Source', data.incomeSource ?? 'N/A'),
+              _buildRow('ID Type', data.customerIdType ?? 'NID'),
+              _buildRow('${data.customerIdType ?? "NID"} Number', data.nidPassportNumber ?? 'N/A'),
               _buildRow('Monthly Income', '৳ ${data.monthlyIncome.toStringAsFixed(0)}'),
               _buildRow('Present Address', data.presentAddress ?? 'N/A'),
             ],
@@ -66,8 +67,13 @@ class ConfirmationStep extends StatelessWidget {
             icon: Icons.badge_outlined,
             children: [
               _buildFileStatus('Customer Image', vm.customerImageFile != null),
-              _buildFileStatus('NID Front Image', data.nidFront != null),
-              _buildFileStatus('NID Back Image', data.nidBack != null),
+              _buildFileStatus('Customer Video', vm.customerVideoFile != null),
+              if (data.customerIdType == 'NID') ...[
+                _buildFileStatus('NID Front Image', data.nidFront != null),
+                _buildFileStatus('NID Back Image', data.nidBack != null),
+              ] else ...[
+                _buildFileStatus('Passport Copy', data.nidFront != null),
+              ],
               _buildFileStatus('Income Proof Document', data.incomeProof != null),
             ],
           ),
@@ -89,8 +95,16 @@ class ConfirmationStep extends StatelessWidget {
                       'Guarantor #${idx + 1}: ${g.name ?? "N/A"} (${g.relationship ?? "N/A"})',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
+                    _buildRow('Type', g.type ?? 'N/A'),
                     _buildRow('Phone', g.phone ?? 'N/A'),
-                    _buildRow('NID Number', g.nidPassportNumber ?? 'N/A'),
+                    _buildRow('ID Type', g.idType ?? 'NID'),
+                    _buildRow('${g.idType ?? "NID"} Number', g.nidPassportNumber ?? 'N/A'),
+                    if (g.idType == 'NID') ...[
+                      _buildFileStatus('NID Front', g.nidFront != null),
+                      _buildFileStatus('NID Back', g.nidBack != null),
+                    ] else ...[
+                      _buildFileStatus('Passport Copy', g.nidFront != null),
+                    ],
                     const SizedBox(height: 4),
                   ],
                 ),
@@ -121,13 +135,90 @@ class ConfirmationStep extends StatelessWidget {
               onPressed: vm.isLoading
                   ? null
                   : () async {
-                debugPrint("🔘 [ConfirmationStep] 'Confirm & Submit' clicked");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("🔘 [ConfirmationStep] 'SUBMIT' Button Clicked");
+                debugPrint("📦 Full Order Data:");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 BASIC INFO:");
+                debugPrint("   Sale Type: ${data.saleType}");
+                debugPrint("   Customer Name: ${data.name}");
+                debugPrint("   Phone: ${data.phone}");
+                debugPrint("   Password: ${data.password.isNotEmpty ? '********' : 'empty'}");
+                debugPrint("   Present Address: ${data.presentAddress}");
+                debugPrint("   Permanent Address: ${data.permanentAddress}");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 ID & INCOME:");
+                debugPrint("   ID Type: ${data.customerIdType}");
+                debugPrint("   NID/Passport Number: ${data.nidPassportNumber}");
+                debugPrint("   Source of Income: ${data.sourceOfIncome}");
+                debugPrint("   Monthly Income: ${data.monthlyIncome}");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 PRODUCT INFO:");
+                debugPrint("   Product ID: ${data.productId}");
+                debugPrint("   Product Model: ${data.productModel}");
+                debugPrint("   Product Model ID: ${data.productModelId}");
+                debugPrint("   Brand Name: ${data.brandName}");
+                debugPrint("   MRP: ${data.mrp}");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 EMI INFO:");
+                debugPrint("   EMI Mode: ${data.emiMode}");
+                debugPrint("   EMI Plan ID: ${data.emiPlanId}");
+                debugPrint("   Tenure: ${data.emiTenureMonths}");
+                debugPrint("   Down Payment: ${data.downPayment}");
+                debugPrint("   Monthly EMI: ${data.monthlyEmi}");
+                debugPrint("   EMI Charge: ${data.emiCharge}");
+                debugPrint("   App EMI Charge: ${data.appEmiCharge}");
+                debugPrint("   Financed Amount: ${data.financedAmount}");
+                debugPrint("   Total Payable: ${data.totalPayable}");
+                debugPrint("   Cashback Earned: ${data.cashbackEarned}");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 STORE HIERARCHY:");
+                debugPrint("   Shop ID: ${data.shopId}");
+                debugPrint("   Agent ID: ${data.agentId}");
+                debugPrint("   Manager ID: ${data.managerId}");
+                debugPrint("   Sales Person ID: ${data.salesPersonId}");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 PAYMENT:");
+                debugPrint("   Payment Method: ${data.downPaymentMethod}");
+                debugPrint("   Income Proof Type: ${data.incomeProofDocumentType}");
+                debugPrint("   Down Payment Ref No: ${data.downPaymentReferenceNumber ?? 'N/A'}");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 FILE STATUS:");
+                debugPrint("   Customer Image: ${vm.customerImageFile != null ? '✅ Attached (${vm.customerImageFile!.path.split('/').last})' : '❌ Not Provided'}");
+                debugPrint("   Customer Video: ${vm.customerVideoFile != null ? '✅ Attached (${vm.customerVideoFile!.path.split('/').last})' : '❌ Not Provided'}");
+                debugPrint("   NID Front: ${data.nidFront != null ? '✅ Attached (${data.nidFront!.path.split('/').last})' : '❌ Not Provided'}");
+                debugPrint("   NID Back: ${data.nidBack != null ? '✅ Attached (${data.nidBack!.path.split('/').last})' : '❌ Not Provided'}");
+                debugPrint("   Income Proof: ${data.incomeProof != null ? '✅ Attached (${data.incomeProof!.path.split('/').last})' : '❌ Not Provided'}");
+                debugPrint("   Bank Receipt: ${data.bankReceipt != null ? '✅ Attached (${data.bankReceipt!.path.split('/').last})' : '❌ Not Provided'}");
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("📋 GUARANTORS (${data.guarantors.length}):");
+
+                debugPrint("═══════════════             *********************      ════════════════════════");
+
+
+                for (int i = 0; i < data.guarantors.length; i++) {
+                  final g = data.guarantors[i];
+                  debugPrint("   Guarantor ${i + 1}:");
+                  debugPrint("     Name: ${g.name}");
+                  debugPrint("     Phone: ${g.phone}");
+                  debugPrint("     Type: ${g.type}");
+                  debugPrint("     Relationship: ${g.relationship}");
+                  debugPrint("     ID Type: ${g.idType}");
+                  debugPrint("     ID Number: ${g.nidPassportNumber}");
+                  debugPrint("     NID Front: ${g.nidFront != null ? '✅ Attached' : '❌ Not Provided'}");
+                  debugPrint("     NID Back: ${g.nidBack != null ? '✅ Attached' : '❌ Not Provided'}");
+                }
+                debugPrint("═══════════════════════════════════════");
+                debugPrint("🔄 Calling vm.submitOrder()...");
+
                 bool success = await vm.submitOrder();
-                debugPrint("🔄 [ConfirmationStep] Submission result: $success");
+
+                debugPrint("📊 [ConfirmationStep] Submission Result: $success");
 
                 if (!context.mounted) return;
 
                 if (success) {
+                  debugPrint("✅ [ConfirmationStep] Submission SUCCESSFUL!");
                   _showResponseDialog(
                     context: context,
                     isSuccess: true,
@@ -135,6 +226,8 @@ class ConfirmationStep extends StatelessWidget {
                     vm: vm,
                   );
                 } else {
+                  debugPrint("❌ [ConfirmationStep] Submission FAILED!");
+                  debugPrint("   Error: ${vm.errorMessage}");
                   _showResponseDialog(
                     context: context,
                     isSuccess: false,
@@ -144,23 +237,23 @@ class ConfirmationStep extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.successGreen, 
+                backgroundColor: AppColors.successGreen,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
               child: vm.isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.verified_user_outlined, color: Colors.white, size: 20),
-                        SizedBox(width: 10),
-                        Text(
-                          'SUBMIT',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ],
-                    ),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.verified_user_outlined, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Text(
+                    'SUBMIT',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 30),
@@ -246,12 +339,12 @@ class ConfirmationStep extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderGrey),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
-        ]
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderGrey),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
+          ]
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -11,6 +11,9 @@ import '../../Features/Home/Screen/OverdueLoanScreen.dart';
 import '../../Features/Home/Screen/PendingApprovalScreen.dart';
 import '../../Features/Home/Screen/TotalCustomerScreen.dart';
 import '../../Features/Home/Screen/brand_selection_screen.dart';
+import '../../Features/Home/Screen/LoanApplicationDetailsScreen.dart';
+import '../../Features/Home/Screen/CustomerDetailsScreen.dart'; // Added this
+import '../../Features/Notification/view/seller_notification_screen.dart';
 import '../../Features/Parent/Screen/Parent_screen.dart';
 import '../../Features/Splash/Splash_Screen.dart';
 import '../../Features/multy_form/multyform_screen.dart';
@@ -43,6 +46,16 @@ class AppRoutes {
         const ActiveLoanScreen(),
     RouteName.overdueLoanScreen: (context) =>
         const OverdueLoanScreen(),
+    RouteName.sellerNotificationScreen: (context) =>
+        const SellerNotificationScreen(),
+    RouteName.loanApplicationDetailsScreen: (context) {
+      final id = ModalRoute.of(context)!.settings.arguments as String;
+      return LoanApplicationDetailsScreen(applicationId: id);
+    },
+    RouteName.customerDetailsScreen: (context) {
+      final id = ModalRoute.of(context)!.settings.arguments as String;
+      return CustomerDetailsScreen(customerId: id);
+    },
 
 
     // ── Customer Feature Routes ──────────────────────────

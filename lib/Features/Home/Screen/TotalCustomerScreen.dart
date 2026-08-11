@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constant/App_Colors.dart';
+import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
 import '../Model/sales_dashboard_model.dart';
 
@@ -139,7 +140,10 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, RouteName.brandSelectionScreen);
+          debugPrint('➕ Add Customer clicked');
+        },
         backgroundColor: const Color(0xFF0052CC),
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -524,7 +528,7 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () => _navigateToCustomerDetails(customer),
                     icon: const Icon(Icons.person_outline_rounded,
                         size: 16, color: Colors.white),
                     label: const Text(
@@ -547,6 +551,70 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Navigation Method ───
+  void _navigateToCustomerDetails(Customer customer) {
+    debugPrint('👤 [TotalCustomerScreen] View Details Clicked');
+    debugPrint('🆔 Customer ID: ${customer.id ?? 'N/A'}');
+    debugPrint('📋 Customer Name: ${customer.name ?? 'Unknown'}');
+    debugPrint('📞 Customer Phone: ${customer.phone ?? 'N/A'}');
+
+    if (customer.id == null || customer.id!.isEmpty) {
+      debugPrint('⚠️ Customer ID is null or empty - showing snackbar');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This is a pending applicant. Complete the application first.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      // Optionally navigate to pending application
+      // Navigator.pushNamed(context, RouteName.pendingApplicationScreen);
+      return;
+    }
+
+    try {
+      final customerId = customer.id!;
+      debugPrint(' Sending customerId: $customerId');
+
+      // Navigate to Customer Details Screen
+      Navigator.pushNamed(
+        context,
+        RouteName.customerDetailsScreen, // Make sure this route exists
+        arguments: customerId,
+      ).then((result) {
+        debugPrint(' Navigation completed. Result: $result');
+      }).catchError((error) {
+        debugPrint(' Navigation error: $error');
+        _showErrorDialog('Navigation Error', error.toString());
+      });
+
+      debugPrint(' Navigation command sent successfully');
+    } catch (e, stackTrace) {
+      debugPrint(' Navigation Exception: $e');
+      debugPrint(' StackTrace: $stackTrace');
+      _showErrorDialog('Error', 'Could not open customer details: $e');
+    }
+  }
+
+  // ─── Error Dialog ───
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),

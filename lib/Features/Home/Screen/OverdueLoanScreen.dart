@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constant/App_Colors.dart';
+import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
 
 class OverdueLoanScreen extends StatefulWidget {
@@ -24,13 +25,17 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
       body: Consumer<SalesDashboardViewModel>(
         builder: (context, viewModel, child) {
           // Filtering overdue loans
-          var overdueLoans = viewModel.dashboardData?.loans?.where((l) {
-            if (l.installments == null) return false;
-            return l.installments!.any((i) =>
-            (i.status ?? '').toUpperCase() == 'PENDING' &&
-                i.dueDate != null &&
-                DateTime.tryParse(i.dueDate!)?.isBefore(DateTime.now()) == true);
-          }).toList() ??
+          var overdueLoans =
+              viewModel.dashboardData?.loans?.where((l) {
+                if (l.installments == null) return false;
+                return l.installments!.any(
+                  (i) =>
+                      (i.status ?? '').toUpperCase() == 'PENDING' &&
+                      i.dueDate != null &&
+                      DateTime.tryParse(i.dueDate!)?.isBefore(DateTime.now()) ==
+                          true,
+                );
+              }).toList() ??
               [];
 
           // Search filter
@@ -48,7 +53,8 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
             overdueLoans = overdueLoans.where((loan) {
               int maxDays = 0;
               for (var inst in (loan.installments ?? [])) {
-                if ((inst.status ?? '').toUpperCase() == 'PENDING' && inst.dueDate != null) {
+                if ((inst.status ?? '').toUpperCase() == 'PENDING' &&
+                    inst.dueDate != null) {
                   final dt = DateTime.tryParse(inst.dueDate!);
                   if (dt != null && dt.isBefore(DateTime.now())) {
                     final days = DateTime.now().difference(dt).inDays;
@@ -78,10 +84,12 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
 
           for (var loan in overdueLoans) {
             for (var inst in (loan.installments ?? [])) {
-              if ((inst.status ?? '').toUpperCase() == 'PENDING' && inst.dueDate != null) {
+              if ((inst.status ?? '').toUpperCase() == 'PENDING' &&
+                  inst.dueDate != null) {
                 final dueDate = DateTime.tryParse(inst.dueDate!);
                 if (dueDate != null && dueDate.isBefore(DateTime.now())) {
-                  totalOverdueAmount += double.tryParse(inst.totalDue ?? '0') ?? 0;
+                  totalOverdueAmount +=
+                      double.tryParse(inst.totalDue ?? '0') ?? 0;
                   if (DateUtils.isSameDay(dueDate, DateTime.now())) {
                     dueTodayCount++;
                   }
@@ -137,7 +145,10 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                             itemBuilder: (context, index) {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
-                                child: _buildOverdueCard(overdueLoans[index], currency),
+                                child: _buildOverdueCard(
+                                  overdueLoans[index],
+                                  currency,
+                                ),
                               );
                             },
                           ),
@@ -153,7 +164,10 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, RouteName.brandSelectionScreen);
+
+        },
         backgroundColor: const Color(0xFF0052CC),
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -188,8 +202,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
             children: [
               IconButton(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const Expanded(
                 child: Text(
@@ -204,19 +221,28 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
               ),
               Stack(
                 children: [
-                  const Icon(Icons.notifications_none_rounded,
-                      color: Colors.white, size: 28),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      RouteName.sellerNotificationScreen,
+                    ),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
                   Positioned(
                     right: 0,
                     top: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(3.5),
+                      padding: const EdgeInsets.all(4.5),
                       decoration: const BoxDecoration(
                         color: Color(0xFFEF4444),
                         shape: BoxShape.circle,
                       ),
                       child: const Text(
-                        '5',
+                        '',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -245,15 +271,19 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search_rounded,
-                          color: Color(0xFF94A3B8), size: 22),
+                      const Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 22,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           onChanged: (v) => setState(() => _searchQuery = v),
                           style: const TextStyle(fontSize: 14),
                           decoration: const InputDecoration(
-                            hintText: 'Search by customer name, phone or Loan ID...',
+                            hintText:
+                                'Search by customer name, phone or Loan ID...',
                             hintStyle: TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 13,
@@ -278,7 +308,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.tune_rounded, color: Color(0xFF0052CC), size: 20),
+                    Icon(
+                      Icons.tune_rounded,
+                      color: Color(0xFF0052CC),
+                      size: 20,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'Filter',
@@ -312,12 +346,17 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
               onTap: () => setState(() => _selectedFilter = filter),
               child: Container(
                 margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected ? const Color(0xFF0052CC) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF0052CC) : const Color(0xFFE2E8F0),
+                    color: isSelected
+                        ? const Color(0xFF0052CC)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Text(
@@ -351,7 +390,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                   ),
                 ),
                 SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF64748B)),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: Color(0xFF64748B),
+                ),
               ],
             ),
           ),
@@ -494,8 +537,10 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
     final name = customer?.name ?? 'Unknown Customer';
     final phone = customer?.phone ?? 'N/A';
     final loanId = loan.displayId ?? 'LN-000000';
-    final device = loan.productModel?.name ?? loan.product?.name ?? 'Device Loan';
-    final emiAmt = double.tryParse(loan.calculationSnapshot?.monthlyEmi ?? '0') ?? 0;
+    final device =
+        loan.productModel?.name ?? loan.product?.name ?? 'Device Loan';
+    final emiAmt =
+        double.tryParse(loan.calculationSnapshot?.monthlyEmi ?? '0') ?? 0;
 
     double outstandingDue = 0;
     int overdueDays = 0;
@@ -503,7 +548,8 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
 
     if (loan.installments != null) {
       for (var inst in loan.installments) {
-        if ((inst.status ?? '').toUpperCase() == 'PENDING' && inst.dueDate != null) {
+        if ((inst.status ?? '').toUpperCase() == 'PENDING' &&
+            inst.dueDate != null) {
           final dt = DateTime.tryParse(inst.dueDate!);
           if (dt != null) {
             outstandingDue += double.tryParse(inst.totalDue ?? '0') ?? 0;
@@ -587,7 +633,10 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: tagBg,
                               borderRadius: BorderRadius.circular(20),
@@ -604,7 +653,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      _infoRow('Loan ID', loanId, valueColor: const Color(0xFF0052CC)),
+                      _infoRow(
+                        'Loan ID',
+                        loanId,
+                        valueColor: const Color(0xFF0052CC),
+                      ),
                       const SizedBox(height: 3),
                       _infoRow('Phone', phone),
                       const SizedBox(height: 3),
@@ -630,7 +683,9 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                     Text(
                       '৳${currency.format(outstandingDue)}',
                       style: TextStyle(
-                        color: isCritical ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                        color: isCritical
+                            ? const Color(0xFFEF4444)
+                            : const Color(0xFFF59E0B),
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
                       ),
@@ -685,12 +740,17 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
               children: [
                 Expanded(child: _outlineBtn(Icons.phone_rounded, 'Call')),
                 const SizedBox(width: 8),
-                Expanded(child: _outlineBtn(Icons.chat_bubble_outline_rounded, 'SMS')),
+                Expanded(
+                  child: _outlineBtn(Icons.chat_bubble_outline_rounded, 'SMS'),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: isCritical
-                      ? _outlineBtn(Icons.lock_outline_rounded, 'Lock Device',
-                      color: const Color(0xFFEF4444))
+                      ? _outlineBtn(
+                          Icons.lock_outline_rounded,
+                          'Lock Device',
+                          color: const Color(0xFFEF4444),
+                        )
                       : _outlineBtn(Icons.near_me_outlined, 'Navigate'),
                 ),
                 const SizedBox(width: 8),
@@ -698,8 +758,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
                   flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.account_balance_wallet_outlined,
-                        size: 15, color: Colors.white),
+                    icon: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 15,
+                      color: Colors.white,
+                    ),
                     label: const Text(
                       'Receive Payment',
                       style: TextStyle(
@@ -726,7 +789,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
     );
   }
 
-  Widget _infoRow(String label, String value, {Color valueColor = const Color(0xFF1E293B)}) {
+  Widget _infoRow(
+    String label,
+    String value, {
+    Color valueColor = const Color(0xFF1E293B),
+  }) {
     return RichText(
       text: TextSpan(
         children: [
@@ -751,7 +818,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
     );
   }
 
-  Widget _outlineBtn(IconData icon, String label, {Color color = const Color(0xFF0052CC)}) {
+  Widget _outlineBtn(
+    IconData icon,
+    String label, {
+    Color color = const Color(0xFF0052CC),
+  }) {
     return OutlinedButton(
       onPressed: () {},
       style: OutlinedButton.styleFrom(
@@ -785,8 +856,11 @@ class _OverdueLoanScreenState extends State<OverdueLoanScreen> {
     return Center(
       child: Column(
         children: [
-          Icon(Icons.check_circle_outline_rounded,
-              size: 64, color: Colors.green.shade200),
+          Icon(
+            Icons.check_circle_outline_rounded,
+            size: 64,
+            color: Colors.green.shade200,
+          ),
           const SizedBox(height: 16),
           Text(
             message,

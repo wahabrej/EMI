@@ -8,7 +8,6 @@ import 'model/full_checkout_model.dart';
 
 class GuarantorStep extends StatefulWidget {
   final VoidCallback onNext;
-
   const GuarantorStep({super.key, required this.onNext});
 
   @override
@@ -21,12 +20,19 @@ class _GuarantorStepState extends State<GuarantorStep> {
   final List<String> _typeOptions = ['FAMILY', 'NON_FAMILY', 'OTHER'];
 
   final List<String> _relationshipOptions = [
-    'Spouse', 'Brother', 'Sister', 'Father', 'Mother', 'Son', 'Daughter', 'Friend', 'Colleague', 'Others'
+    'Spouse',
+    'Brother',
+    'Sister',
+    'Father',
+    'Mother',
+    'Son',
+    'Daughter',
+    'Friend',
+    'Colleague',
+    'Others',
   ];
 
-  final List<String> _docTypeOptions = ['NID', 'Passport', 'Driving License'];
-
-  // 🔹 Image Source Selection Sheet
+  // 🔹 Image Source Selection Sheet (Gallery + Camera)
   Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
     showModalBottomSheet(
       context: context,
@@ -64,17 +70,12 @@ class _GuarantorStepState extends State<GuarantorStep> {
   Future<void> _pickImage(Function(File) onPicked) async {
     await _showImageSourceActionSheet(context, (source) async {
       final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: source, imageQuality: 85);
-      if (image != null) {
-        onPicked(File(image.path));
-      }
+      final XFile? image = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+      if (image != null) onPicked(File(image.path));
     });
-  }
-
-  void _saveAndNext(CheckoutViewModel vm) {
-    if (_formKey.currentState!.validate()) {
-      widget.onNext();
-    }
   }
 
   @override
@@ -91,66 +92,40 @@ class _GuarantorStepState extends State<GuarantorStep> {
           children: [
             const Text(
               'Guarantor Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-            ),
-            const SizedBox(height: 2),
-            const Text(
-              'Required for EMI sales, optional for full price',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: guarantors.length,
               separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                return _buildGuarantorCard(vm, guarantors[index], index);
-              },
+              itemBuilder: (context, index) =>
+                  _buildGuarantorCard(vm, guarantors[index], index),
             ),
-
             const SizedBox(height: 16),
-
-            InkWell(
-              onTap: () => vm.addGuarantor(),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add, color: AppColors.primaryBlue, size: 20),
-                    SizedBox(width: 6),
-                    Text(
-                      'Add Guarantor',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                    ),
-                  ],
-                ),
+            ElevatedButton.icon(
+              onPressed: () => vm.addGuarantor(),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Guarantor'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 45),
               ),
             ),
-
             const SizedBox(height: 24),
-
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () => _saveAndNext(vm),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) widget.onNext();
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: const Text(
                   'Next Step',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ),
@@ -160,204 +135,130 @@ class _GuarantorStepState extends State<GuarantorStep> {
     );
   }
 
-  Widget _buildGuarantorCard(CheckoutViewModel vm, GuarantorInfo item, int index) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Guarantor ${index + 1}',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              if (vm.checkoutData.guarantors.length > 1)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-                  onPressed: () => vm.removeGuarantor(index),
-                ),
-            ],
-          ),
-          const Divider(color: Color(0xFFF1F5F9), height: 16),
-
-          _buildDropdown(
-            label: 'Type',
-            value: _typeOptions.contains(item.type) ? item.type : _typeOptions.first,
-            items: _typeOptions,
-            onChanged: (val) {
-              if (val != null) {
-                item.type = val;
-                vm.notify();
-              }
-            },
-          ),
-          const SizedBox(height: 12),
-
-          _buildTextField(
-            label: 'Name',
-            hint: 'Enter guarantor name',
-            initialValue: item.name,
-            onChanged: (val) {
-              item.name = val.trim();
-              vm.notify();
-            },
-            validator: (v) => (vm.checkoutData.saleType == 'EMI' && (v == null || v.isEmpty)) ? 'Required' : null,
-          ),
-          const SizedBox(height: 12),
-
-          _buildTextField(
-            label: 'Phone Number',
-            hint: 'Enter guarantor phone number',
-            keyboardType: TextInputType.phone,
-            initialValue: item.phone,
-            onChanged: (val) {
-              item.phone = val.trim();
-              vm.notify();
-            },
-            validator: (v) => (vm.checkoutData.saleType == 'EMI' && (v == null || v.isEmpty)) ? 'Required' : null,
-          ),
-          const SizedBox(height: 12),
-
-          _buildDropdown(
-            label: 'Relationship',
-            value: _relationshipOptions.contains(item.relationship) ? item.relationship : _relationshipOptions.first,
-            items: _relationshipOptions,
-            onChanged: (val) {
-              if (val != null) {
-                item.relationship = val;
-                vm.notify();
-              }
-            },
-          ),
-          const SizedBox(height: 12),
-
-          _buildTextField(
-            label: 'NID or Passport Number',
-            hint: 'Enter NID number',
-            initialValue: item.nidPassportNumber,
-            onChanged: (val) {
-              item.nidPassportNumber = val.trim();
-              vm.notify();
-            },
-            validator: (v) => (vm.checkoutData.saleType == 'EMI' && (v == null || v.isEmpty)) ? 'Required' : null,
-          ),
-          const SizedBox(height: 16),
-
-          const Text(
-            'KYC Documents',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 10),
-
-          DropdownButtonFormField<String>(
-            value: 'NID',
-            isExpanded: true,
-            items: _docTypeOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13)))).toList(),
-            onChanged: (v) {},
-            decoration: _inputDecoration(),
-          ),
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildDocUploadBox(
-                  title: 'Front Side',
-                  file: item.nidFront,
-                  onTap: () => _pickImage((file) => vm.setGuarantorNidFront(index, file)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildDocUploadBox(
-                  title: 'Back Side',
-                  file: item.nidBack,
-                  onTap: () => _pickImage((file) => vm.setGuarantorNidBack(index, file)),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocUploadBox({required String title, required File? file, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: file != null ? AppColors.primaryBlue : const Color(0xFFCBD5E1)),
-        ),
-        child: Row(
+  Widget _buildGuarantorCard(
+      CheckoutViewModel vm,
+      GuarantorInfo item,
+      int index,
+      ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 32,
-              height: 26,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: file != null
-                  ? ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image.file(file, fit: BoxFit.cover),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Guarantor ${index + 1}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                if (vm.checkoutData.guarantors.length > 1)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => vm.removeGuarantor(index),
+                  ),
+              ],
+            ),
+
+            // ─── Type Dropdown ───
+            _buildDropdown(
+              label: 'Type',
+              value: _typeOptions.contains(item.type) ? item.type : _typeOptions.first,
+              items: _typeOptions,
+              onChanged: (val) {
+                if (val != null) {
+                  item.type = val;
+                  vm.notify();
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+
+            TextFormField(
+              initialValue: item.name,
+              decoration: const InputDecoration(labelText: 'Name'),
+              onChanged: (v) => item.name = v,
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              initialValue: item.phone,
+              decoration: const InputDecoration(labelText: 'Phone'),
+              onChanged: (v) => item.phone = v,
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 12),
+
+            // ─── Relationship Dropdown ───
+            _buildDropdown(
+              label: 'Relationship',
+              value: _relationshipOptions.contains(item.relationship) ? item.relationship : _relationshipOptions.first,
+              items: _relationshipOptions,
+              onChanged: (val) {
+                if (val != null) {
+                  item.relationship = val;
+                  vm.notify();
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+
+            DropdownButtonFormField<String>(
+              value: item.idType,
+              decoration: const InputDecoration(labelText: 'ID Document Type'),
+              items: [
+                'NID',
+                'Passport',
+              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (v) {
+                if (v != null) vm.setGuarantorIdType(index, v);
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              initialValue: item.nidPassportNumber,
+              decoration: InputDecoration(labelText: '${item.idType} Number'),
+              onChanged: (v) => item.nidPassportNumber = v,
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Upload ID Documents',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+
+            if (item.idType == 'NID')
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDocBox(
+                      'NID Front',
+                      item.nidFront,
+                          () =>
+                          _pickImage((f) => vm.setGuarantorNidFront(index, f)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildDocBox(
+                      'NID Back',
+                      item.nidBack,
+                          () => _pickImage((f) => vm.setGuarantorNidBack(index, f)),
+                    ),
+                  ),
+                ],
               )
-                  : const Icon(Icons.badge_outlined, color: AppColors.primaryBlue, size: 18),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            else
+              _buildDocBox(
+                'Passport Copy',
+                item.nidFront,
+                    () => _pickImage((f) => vm.setGuarantorNidFront(index, f)),
               ),
-            ),
-            Icon(
-              file != null ? Icons.check_circle : Icons.check_circle_outline,
-              color: file != null ? AppColors.primaryBlue : const Color(0xFFCBD5E1),
-              size: 18,
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    required String hint,
-    required String initialValue,
-    required Function(String) onChanged,
-    String? Function(String?)? validator,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF475569))),
-        const SizedBox(height: 4),
-        TextFormField(
-          initialValue: initialValue,
-          keyboardType: keyboardType,
-          onChanged: onChanged,
-          validator: validator,
-          style: const TextStyle(fontSize: 13),
-          decoration: _inputDecoration(hint: hint),
-        ),
-      ],
     );
   }
 
@@ -370,30 +271,43 @@ class _GuarantorStepState extends State<GuarantorStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF475569))),
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
           value: value,
           isExpanded: true,
           items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13)))).toList(),
           onChanged: onChanged,
-          decoration: _inputDecoration(),
+          decoration: const InputDecoration(
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(),
+          ),
         ),
       ],
     );
   }
 
-  InputDecoration _inputDecoration({String? hint}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primaryBlue)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red)),
-      filled: true,
-      fillColor: Colors.white,
+  Widget _buildDocBox(String title, File? file, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: file != null ? Colors.blue : Colors.grey),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              file != null ? Icons.check_circle : Icons.upload_file,
+              color: file != null ? Colors.green : Colors.blue,
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 12))),
+          ],
+        ),
+      ),
     );
   }
 }

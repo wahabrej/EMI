@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constant/App_Colors.dart';
+import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
 
 class ActiveLoanScreen extends StatefulWidget {
@@ -182,7 +183,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
       // Floating Action Button
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Navigate to New Loan screen
+          Navigator.pushNamed(context, RouteName.brandSelectionScreen);
         },
         backgroundColor: const Color(0xFF0052CC),
         elevation: 6,
@@ -235,19 +236,25 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
               ),
               Stack(
                 children: [
-                  const Icon(Icons.notifications_none_rounded,
-                      color: Colors.white, size: 28),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      RouteName.sellerNotificationScreen,
+                    ),
+                    child: const Icon(Icons.notifications_none_rounded,
+                        color: Colors.white, size: 28),
+                  ),
                   Positioned(
                     right: 0,
                     top: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(3.5),
+                      padding: const EdgeInsets.all(4.5),
                       decoration: const BoxDecoration(
                         color: Color(0xFFEF4444),
                         shape: BoxShape.circle,
                       ),
                       child: const Text(
-                        '5',
+                        '',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -538,7 +545,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
     );
   }
 
-  // ───────────────────── LOAN CARD (matches image) ─────────────────────
+  // ───────────────────── LOAN CARD ─────────────────────
   Widget _buildLoanCard(dynamic loan, NumberFormat currency) {
     final customer = loan.customer;
     final name = customer?.name ?? 'Customer Name';
@@ -817,7 +824,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
             ),
           ),
 
-          // ── Bottom Action Buttons (fixed overflow) ──
+          // ── Bottom Action Buttons ──
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: const BoxDecoration(
@@ -827,15 +834,48 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
             ),
             child: Row(
               children: [
-                Expanded(child: _actionButton(
-                    Icons.description_outlined, 'View Details')),
-                Expanded(child: _actionButton(
-                    Icons.history_rounded, 'Payment History')),
-                Expanded(child: _actionButton(
-                    Icons.lock_outline_rounded, 'Collect Payment',
-                    isGreen: true)),
-                Expanded(child: _actionButton(
-                    Icons.phone_in_talk_outlined, 'Contact')),
+                // View Details
+                Expanded(
+                  child: _actionButton(
+                    Icons.description_outlined,
+                    'View Details',
+                    onTap: () => _navigateToLoanDetails(loan),
+                  ),
+                ),
+                // Payment History
+                // Expanded(
+                //   child: _actionButton(
+                //     Icons.history_rounded,
+                //     'Payment History',
+                //     onTap: () {
+                //       debugPrint('📜 Payment History clicked for loan: ${loan.id}');
+                //       _showComingSoon(context, 'Payment History');
+                //     },
+                //   ),
+                // ),
+                // // Collect Payment
+                // Expanded(
+                //   child: _actionButton(
+                //     Icons.lock_outline_rounded,
+                //     'Collect Payment',
+                //     isGreen: true,
+                //     onTap: () {
+                //       debugPrint('💰 Collect Payment clicked for loan: ${loan.id}');
+                //       _showComingSoon(context, 'Collect Payment');
+                //     },
+                //   ),
+                // ),
+                // // Contact
+                Expanded(
+                  child: _actionButton(
+                    Icons.phone_in_talk_outlined,
+                    'Contact',
+                    onTap: () {
+                      debugPrint('📞 Contact clicked for loan: ${loan.id}');
+                      _makePhoneCall(phone);
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -844,11 +884,110 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
     );
   }
 
-  Widget _actionButton(IconData icon, String label, {bool isGreen = false}) {
+  // ─── Navigation Method ───
+// ActiveLoanScreen.dart
+
+  void _navigateToLoanDetails(dynamic loan) {
+    debugPrint('🚀 [ActiveLoanScreen] View Details Clicked');
+    debugPrint('🆔 Loan ID: ${loan.id}');
+    debugPrint('📋 Customer: ${loan.customer?.name}');
+    debugPrint('📋 Loan Display ID: ${loan.displayId}');
+
+    if (loan.id == null || loan.id.toString().isEmpty) {
+      debugPrint('⚠️ Loan ID is null or empty');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid Loan ID'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final loanId = loan.id.toString();
+      debugPrint('📤 Sending loanId: $loanId');
+
+      // 🔥 LoanApplicationDetailsScreen এ loanId পাঠান
+      Navigator.pushNamed(
+        context,
+        RouteName.loanApplicationDetailsScreen,
+        arguments: loanId,
+      ).then((result) {
+        debugPrint('✅ Navigation completed. Result: $result');
+      }).catchError((error) {
+        debugPrint('❌ Navigation error: $error');
+        _showErrorDialog('Navigation Error', error.toString());
+      });
+
+      debugPrint('✅ Navigation command sent successfully');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Navigation Exception: $e');
+      debugPrint('📚 StackTrace: $stackTrace');
+      _showErrorDialog('Error', 'Could not open loan details: $e');
+    }
+  }
+  // ─── Coming Soon Dialog ───
+  void _showComingSoon(BuildContext context, String feature) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Coming Soon'),
+        content: Text('$feature feature will be available soon.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Make Phone Call ───
+  void _makePhoneCall(String phoneNumber) {
+    if (phoneNumber == 'N/A' || phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Phone number not available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    debugPrint('📞 Making call to: $phoneNumber');
+    // TODO: Implement phone call functionality
+    // Use url_launcher package
+    // launchUrl(Uri.parse('tel:$phoneNumber'));
+  }
+
+  // ─── Error Dialog ───
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton(
+      IconData icon,
+      String label, {
+        bool isGreen = false,
+        VoidCallback? onTap,
+      }) {
     final color = isGreen ? const Color(0xFF16A34A) : const Color(0xFF0052CC);
 
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -873,7 +1012,6 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
       ),
     );
   }
-
 
   Widget _buildEmptyState(String message) {
     return Center(

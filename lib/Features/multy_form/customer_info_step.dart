@@ -60,11 +60,16 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
   Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Select Photo Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
             ListTile(
-              leading: const Icon(Icons.photo_library),
+              leading: const Icon(Icons.photo_library, color: Colors.blue),
               title: const Text('Gallery'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -72,13 +77,48 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt),
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
               title: const Text('Camera'),
               onTap: () {
                 Navigator.of(context).pop();
                 onSourceSelected(ImageSource.camera);
               },
             ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showVideoSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Select Video Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_library, color: Colors.blue),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam, color: Colors.blue),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSourceSelected(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -94,9 +134,20 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
       );
 
       if (image != null) {
-        final file = File(image.path);
-        vm.setCustomerImage(file);
-        vm.checkoutData.customerPhoto = file;
+        vm.setCustomerImage(File(image.path));
+      }
+    });
+  }
+
+  Future<void> _pickVideo(CheckoutViewModel vm) async {
+    await _showVideoSourceActionSheet(context, (source) async {
+      final ImagePicker picker = ImagePicker();
+      final XFile? video = await picker.pickVideo(
+        source: source,
+      );
+
+      if (video != null) {
+        vm.setCustomerVideo(File(video.path));
       }
     });
   }
@@ -164,6 +215,7 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
             ),
             const SizedBox(height: 16),
 
+            // ─── Customer Image Upload ───
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -215,6 +267,74 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                           SizedBox(height: 4),
                           Text(
                             'Upload image',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ─── Customer Video Upload ───
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Customer Video',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Upload a short video for verification',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => _pickVideo(vm),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      child: vm.customerVideoFile != null
+                          ? Row(
+                        children: [
+                          const Icon(Icons.video_file, color: Colors.blue, size: 20),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Video Attached',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                        ],
+                      )
+                          : Column(
+                        children: const [
+                          Icon(Icons.video_call_outlined, color: Color(0xFF2563EB)),
+                          SizedBox(height: 4),
+                          Text(
+                            'Upload video',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                           ),
                         ],

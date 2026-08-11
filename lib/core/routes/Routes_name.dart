@@ -14,6 +14,9 @@ class RouteName {
   static const pendingApprovalScreen = "pendingApprovalScreen";
   static const activeLoanScreen = "activeLoanScreen";
   static const overdueLoanScreen = "overdueLoanScreen";
+  static const sellerNotificationScreen = "sellerNotificationScreen";
+  static const loanApplicationDetailsScreen = "loanApplicationDetailsScreen";
+  static const customerDetailsScreen = "customerDetailsScreen"; // Added this
 
   // ── Customer Feature Routes ──────────────────────────
   static const customerParentScreen = "customerParentScreen";
