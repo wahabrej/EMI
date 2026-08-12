@@ -10,7 +10,12 @@ import '../Model/PhoneProductModel.dart' hide Data;
 import '../ViewModel/Brand_Selection_Model.dart';
 
 class BrandSelectionScreen extends StatefulWidget {
-  const BrandSelectionScreen({super.key});
+  final String? source; // 👈 Add source parameter
+
+  const BrandSelectionScreen({
+    super.key,
+    this.source,
+  });
 
   @override
   State<BrandSelectionScreen> createState() => _BrandSelectionScreenState();
@@ -28,6 +33,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<BrandSelectionViewModel>();
+    final bool isFromHome = widget.source == 'fromHome';
 
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
@@ -45,14 +51,15 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
         backgroundColor: AppColors.accentBlue,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
+        leading: isFromHome
+            ? IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
             color: Colors.white,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
-        ),
+        ) : null
       ),
       body: vm.isLoading
           ? const Center(

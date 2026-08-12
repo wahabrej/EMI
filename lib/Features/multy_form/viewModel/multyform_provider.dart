@@ -899,15 +899,26 @@ class CheckoutViewModel extends ChangeNotifier {
   // ─────────────── Submission Logic ───────────────
   // lib/viewmodels/CheckoutViewModel.dart
 
+  // lib/viewmodels/CheckoutViewModel.dart
+
+// ─────────────── Submission Logic ───────────────
+
   Future<bool> submitOrder() async {
     debugPrint("═══════════════════════════════════════");
     debugPrint("🚀 [submitOrder] CALLED");
-    debugPrint("   saleType: ${checkoutData.saleType}");
-    debugPrint("   emiMode: ${checkoutData.emiMode}");
-    debugPrint("   productId: ${checkoutData.productId}");
-    debugPrint("   emiPlanId: ${checkoutData.emiPlanId}");
-    debugPrint("   customerName: ${checkoutData.name}");
-    debugPrint("   phone: ${checkoutData.phone}");
+    debugPrint("   📌 saleType: ${checkoutData.saleType}");
+    debugPrint("   📌 emiMode: ${checkoutData.emiMode}");
+    debugPrint("   📌 productId: ${checkoutData.productId}");
+    debugPrint("   📌 emiPlanId: ${checkoutData.emiPlanId}");
+    debugPrint("   📌 customerName: ${checkoutData.name}");
+    debugPrint("   📌 phone: ${checkoutData.phone}");
+    debugPrint("   📌 mrp: ${checkoutData.mrp}");
+    debugPrint("   📌 downPayment: ${checkoutData.downPayment}");
+    debugPrint("   📌 monthlyEmi: ${checkoutData.monthlyEmi}");
+    debugPrint("   📌 shopId: ${checkoutData.shopId}");
+    debugPrint("   📌 agentId: ${checkoutData.agentId}");
+    debugPrint("   📌 managerId: ${checkoutData.managerId}");
+    debugPrint("   📌 salesPersonId: ${checkoutData.salesPersonId}");
     debugPrint("═══════════════════════════════════════");
 
     _isLoading = true;
@@ -917,10 +928,17 @@ class CheckoutViewModel extends ChangeNotifier {
     try {
       // ─── Selling Price ───
       if (checkoutData.saleType == 'Selling Price') {
-        debugPrint(" [submitOrder] Sale Type: Selling Price");
-        debugPrint(" Calling _submitSellingPriceCustomer()...");
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        debugPrint("📌 [submitOrder] Sale Type: Selling Price");
+        debugPrint("📌 [submitOrder] Calling _submitSellingPriceCustomer()...");
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
         final result = await _submitSellingPriceCustomer();
-        debugPrint(" _submitSellingPriceCustomer() result: $result");
+
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        debugPrint("📊 [submitOrder] _submitSellingPriceCustomer() result: $result");
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
         _isLoading = false;
         notifyListeners();
         return result;
@@ -928,29 +946,55 @@ class CheckoutViewModel extends ChangeNotifier {
 
       // ─── Create New EMI Plan ───
       if (checkoutData.emiMode == 'CREATE_NEW_PLAN') {
-        debugPrint(" [submitOrder] EMI Mode: CREATE_NEW_PLAN");
-        debugPrint(" Calling createNewEmiPlan()...");
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        debugPrint("📌 [submitOrder] EMI Mode: CREATE_NEW_PLAN");
+        debugPrint("📌 [submitOrder] Calling createNewEmiPlan()...");
+        debugPrint("   📌 newPlanName: ${checkoutData.newPlanName}");
+        debugPrint("   📌 newPlanMonths: ${checkoutData.newPlanMonths}");
+        debugPrint("   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}");
+        debugPrint("   📌 appEmiChargeRate: ${checkoutData.appEmiChargeRate}");
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
         final newId = await createNewEmiPlan();
-        debugPrint(" createNewEmiPlan() result: $newId");
+
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        debugPrint("📊 [submitOrder] createNewEmiPlan() result: $newId");
+
         if (newId == null) {
-          debugPrint(" [submitOrder] Failed to create new EMI plan");
+          debugPrint("❌ [submitOrder] Failed to create new EMI plan");
+          debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           _isLoading = false;
           notifyListeners();
           return false;
         }
-        debugPrint(" [submitOrder] New EMI Plan created with ID: $newId");
+        debugPrint("✅ [submitOrder] New EMI Plan created with ID: $newId");
+        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       }
 
       // ─── Submit Loan Application ───
-      debugPrint(" [submitOrder] Submitting Loan Application");
-      debugPrint(" Calling _submitLoanApplication()...");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      debugPrint("📌 [submitOrder] Submitting Loan Application");
+      debugPrint("📌 [submitOrder] Calling _submitLoanApplication()...");
+      debugPrint("   📌 emiPlanId: ${checkoutData.emiPlanId}");
+      debugPrint("   📌 emiTenureMonths: ${checkoutData.emiTenureMonths}");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
       final result = await _submitLoanApplication();
-      debugPrint(" _submitLoanApplication() result: $result");
+
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      debugPrint("📊 [submitOrder] _submitLoanApplication() result: $result");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
       _isLoading = false;
       notifyListeners();
       return result;
-    } catch (e) {
-      debugPrint("❌ [submitOrder] EXCEPTION: $e");
+
+    } catch (e, stackTrace) {
+      debugPrint("═══════════════════════════════════════");
+      debugPrint("❌ [submitOrder] EXCEPTION CAUGHT");
+      debugPrint("   Error: $e");
+      debugPrint("   StackTrace: $stackTrace");
+      debugPrint("═══════════════════════════════════════");
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -959,27 +1003,40 @@ class CheckoutViewModel extends ChangeNotifier {
   }
 
   Future<String?> createNewEmiPlan() async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("🔨 [createNewEmiPlan] STARTED");
+    debugPrint("   📌 productId: ${checkoutData.productId}");
+    debugPrint("   📌 newPlanName: ${checkoutData.newPlanName}");
+    debugPrint("   📌 newPlanMonths: ${checkoutData.newPlanMonths}");
+    debugPrint("   📌 downPaymentCalculationType: RATE");
+    debugPrint("   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}");
+    debugPrint("   📌 appEmiChargeType: RATE");
+    debugPrint("   📌 appEmiChargeRate: ${checkoutData.appEmiChargeRate}");
+    debugPrint("   📌 isActive: true");
+    debugPrint("   📌 sortOrder: 0");
+    debugPrint("═══════════════════════════════════════");
+
     final body = {
       "productId": checkoutData.productId,
       "name": checkoutData.newPlanName.isEmpty
           ? "${checkoutData.newPlanMonths} Month Plan"
           : checkoutData.newPlanName,
       "months": checkoutData.newPlanMonths,
-
       "downPaymentCalculationType": "RATE",
       "downPaymentCalculationRate": checkoutData.downPaymentCalculationRate,
-
       "appEmiChargeType": "RATE",
       "appEmiChargeRate": checkoutData.appEmiChargeRate,
-
       "isActive": true,
       "sortOrder": 0,
     };
 
-    debugPrint("========== CREATE EMI PLAN ==========");
-    debugPrint("URL: ${ApiEndPoint.emiPlans}");
-    debugPrint("HEADERS: $_headers");
-    debugPrint("REQUEST BODY: ${jsonEncode(body)}");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("🌐 [createNewEmiPlan] API Request");
+    debugPrint("   URL: ${ApiEndPoint.emiPlans}");
+    debugPrint("   METHOD: POST");
+    debugPrint("   HEADERS: $_headers");
+    debugPrint("   REQUEST BODY: ${jsonEncode(body)}");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     try {
       final res = await http.post(
@@ -988,9 +1045,11 @@ class CheckoutViewModel extends ChangeNotifier {
         body: jsonEncode(body),
       );
 
-      debugPrint("========== EMI PLAN RESPONSE ==========");
-      debugPrint("STATUS CODE: ${res.statusCode}");
-      debugPrint("RESPONSE BODY: ${res.body}");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      debugPrint("📥 [createNewEmiPlan] API Response");
+      debugPrint("   STATUS CODE: ${res.statusCode}");
+      debugPrint("   RESPONSE BODY: ${res.body}");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       final data = jsonDecode(res.body);
 
@@ -1000,74 +1059,175 @@ class CheckoutViewModel extends ChangeNotifier {
         checkoutData.emiPlanId = id;
         checkoutData.emiTenureMonths = checkoutData.newPlanMonths;
 
-        debugPrint("EMI PLAN CREATED SUCCESSFULLY");
-        debugPrint("EMI PLAN ID: $id");
-        debugPrint("EMI TENURE: ${checkoutData.emiTenureMonths} MONTHS");
+        debugPrint("✅ [createNewEmiPlan] SUCCESS");
+        debugPrint("   EMI PLAN ID: $id");
+        debugPrint("   EMI TENURE: ${checkoutData.emiTenureMonths} MONTHS");
+        debugPrint("   ✅ New EMI Plan created successfully!");
+        debugPrint("═══════════════════════════════════════");
 
         return id;
       } else {
         _errorMessage = data['error']?['message'] ?? 'Failed to create plan';
 
-        debugPrint("EMI PLAN CREATION FAILED");
-        debugPrint("ERROR MESSAGE: $_errorMessage");
+        debugPrint("❌ [createNewEmiPlan] FAILED");
+        debugPrint("   ERROR MESSAGE: $_errorMessage");
+        debugPrint("   STATUS CODE: ${res.statusCode}");
+        debugPrint("   FULL RESPONSE: ${res.body}");
+        debugPrint("═══════════════════════════════════════");
 
         return null;
       }
     } catch (e, stackTrace) {
-      debugPrint("========== EMI PLAN EXCEPTION ==========");
-      debugPrint("ERROR: $e");
-      debugPrint("STACK TRACE: $stackTrace");
-
+      debugPrint("═══════════════════════════════════════");
+      debugPrint("❌ [createNewEmiPlan] EXCEPTION CAUGHT");
+      debugPrint("   Error: $e");
+      debugPrint("   StackTrace: $stackTrace");
+      debugPrint("═══════════════════════════════════════");
       return null;
     }
   }
 
   Future<bool> _submitSellingPriceCustomer() async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📤 [_submitSellingPriceCustomer] STARTED");
+    debugPrint("   📌 API URL: ${ApiEndPoint.customers}");
+    debugPrint("   📌 METHOD: POST (Multipart)");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     final request = http.MultipartRequest(
       'POST',
       Uri.parse(ApiEndPoint.customers),
     );
     request.headers['Authorization'] = 'Bearer $userToken';
+
+    debugPrint("   📌 HEADERS: Authorization: Bearer $userToken");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📋 [Selling Price - Fields] Adding Common Fields...");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     _addCommonFields(request);
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📎 [Selling Price - Files] Attaching Files...");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     await _attachAllFiles(request);
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("🚀 [_submitSellingPriceCustomer] Sending Request...");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📥 [_submitSellingPriceCustomer] Response Received");
+    debugPrint("   STATUS CODE: ${response.statusCode}");
+    debugPrint("   RESPONSE BODY: $responseBody");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+
+    if (isSuccess) {
+      debugPrint("✅ [_submitSellingPriceCustomer] SUCCESS!");
+      debugPrint("   ✅ Customer created/updated successfully!");
+    } else {
+      debugPrint("❌ [_submitSellingPriceCustomer] FAILED!");
+      debugPrint("   ❌ Status Code: ${response.statusCode}");
+      debugPrint("   ❌ Response: $responseBody");
+    }
+
     _isLoading = false;
     notifyListeners();
-    return response.statusCode == 200 || response.statusCode == 201;
+    debugPrint("═══════════════════════════════════════");
+    return isSuccess;
   }
 
   Future<bool> _submitLoanApplication() async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📤 [_submitLoanApplication] STARTED");
+    debugPrint("   📌 API URL: ${ApiEndPoint.loanApplications}");
+    debugPrint("   📌 METHOD: POST (Multipart)");
+    debugPrint("   📌 emiPlanId: ${checkoutData.emiPlanId}");
+    debugPrint("   📌 planMonths: ${checkoutData.emiTenureMonths}");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     final request = http.MultipartRequest(
       'POST',
       Uri.parse(ApiEndPoint.loanApplications),
     );
     request.headers['Authorization'] = 'Bearer $userToken';
+
+    debugPrint("   📌 HEADERS: Authorization: Bearer $userToken");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📋 [Loan Application - Fields] Adding Common Fields...");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     _addCommonFields(request);
+
     if (checkoutData.emiPlanId != null) {
       request.fields['emiPlanId'] = checkoutData.emiPlanId!;
+      debugPrint("   📌 emiPlanId added: ${checkoutData.emiPlanId}");
     }
     request.fields['planMonths'] = checkoutData.emiTenureMonths.toString();
+    debugPrint("   📌 planMonths added: ${checkoutData.emiTenureMonths}");
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📎 [Loan Application - Files] Attaching Files...");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     await _attachAllFiles(request);
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("🚀 [_submitLoanApplication] Sending Request...");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📥 [_submitLoanApplication] Response Received");
+    debugPrint("   STATUS CODE: ${response.statusCode}");
+    debugPrint("   RESPONSE BODY: $responseBody");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+
+    if (isSuccess) {
+      debugPrint("✅ [_submitLoanApplication] SUCCESS!");
+      debugPrint("   ✅ Loan Application submitted successfully!");
+    } else {
+      debugPrint("❌ [_submitLoanApplication] FAILED!");
+      debugPrint("   ❌ Status Code: ${response.statusCode}");
+      debugPrint("   ❌ Response: $responseBody");
+    }
+
     _isLoading = false;
     notifyListeners();
-    return response.statusCode == 200 || response.statusCode == 201;
+    debugPrint("═══════════════════════════════════════");
+    return isSuccess;
   }
 
-  // lib/viewmodels/CheckoutViewModel.dart
-
   void _addCommonFields(http.MultipartRequest request) {
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📋 [_addCommonFields] STARTED - Adding All Fields");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     // ─── Basic Info ───
-    request.fields['issueDate'] = DateTime.now().toIso8601String().split(
-      'T',
-    )[0];
+    request.fields['issueDate'] = DateTime.now().toIso8601String().split('T')[0];
     request.fields['name'] = checkoutData.name;
     request.fields['phone'] = checkoutData.phone;
-    request.fields['password'] = checkoutData.password.isEmpty
-        ? '12345678'
-        : checkoutData.password;
+    request.fields['password'] = checkoutData.password.isEmpty ? '12345678' : checkoutData.password;
     request.fields['presentAddress'] = checkoutData.presentAddress;
     request.fields['permanentAddress'] = checkoutData.permanentAddress;
+
+    debugPrint("   📌 [Basic Info]");
+    debugPrint("      issueDate: ${request.fields['issueDate']}");
+    debugPrint("      name: ${request.fields['name']}");
+    debugPrint("      phone: ${request.fields['phone']}");
+    debugPrint("      password: ${request.fields['password']}");
+    debugPrint("      presentAddress: ${request.fields['presentAddress']}");
+    debugPrint("      permanentAddress: ${request.fields['permanentAddress']}");
 
     // ─── ID & Income Info ───
     request.fields['idType'] = checkoutData.customerIdType;
@@ -1075,10 +1235,21 @@ class CheckoutViewModel extends ChangeNotifier {
     request.fields['sourceOfIncome'] = checkoutData.sourceOfIncome;
     request.fields['monthlyIncome'] = checkoutData.monthlyIncome.toString();
 
+    debugPrint("   📌 [ID & Income]");
+    debugPrint("      idType: ${request.fields['idType']}");
+    debugPrint("      nidPassportNumber: ${request.fields['nidPassportNumber']}");
+    debugPrint("      sourceOfIncome: ${request.fields['sourceOfIncome']}");
+    debugPrint("      monthlyIncome: ${request.fields['monthlyIncome']}");
+
     // ─── Product Info ───
     request.fields['productId'] = checkoutData.productId ?? '';
     request.fields['productModelId'] = checkoutData.productModelId ?? '';
     request.fields['mrp'] = checkoutData.mrp.toString();
+
+    debugPrint("   📌 [Product Info]");
+    debugPrint("      productId: ${request.fields['productId']}");
+    debugPrint("      productModelId: ${request.fields['productModelId']}");
+    debugPrint("      mrp: ${request.fields['mrp']}");
 
     // ─── Store Hierarchy ───
     request.fields['shopId'] = checkoutData.shopId ?? '';
@@ -1086,37 +1257,74 @@ class CheckoutViewModel extends ChangeNotifier {
     request.fields['managerId'] = checkoutData.managerId ?? '';
     request.fields['salesPersonId'] = checkoutData.salesPersonId ?? '';
 
+    debugPrint("   📌 [Store Hierarchy]");
+    debugPrint("      shopId: ${request.fields['shopId']}");
+    debugPrint("      agentId: ${request.fields['agentId']}");
+    debugPrint("      managerId: ${request.fields['managerId']}");
+    debugPrint("      salesPersonId: ${request.fields['salesPersonId']}");
+
     // ─── Payment Info ───
     request.fields['downPaymentMethod'] = checkoutData.downPaymentMethod;
-    request.fields['incomeProofDocumentType'] =
-        checkoutData.incomeProofDocumentType;
+    request.fields['incomeProofDocumentType'] = checkoutData.incomeProofDocumentType;
     request.fields['downPayment'] = checkoutData.downPayment.toString();
     request.fields['emiCharge'] = checkoutData.emiCharge.toString();
     request.fields['monthlyEmi'] = checkoutData.monthlyEmi.toString();
     request.fields['emiTenureMonths'] = checkoutData.emiTenureMonths.toString();
 
-    // 🔥 Bank Receipt - ডিফল্ট মান পাঠান
+    debugPrint("   📌 [Payment Info]");
+    debugPrint("      downPaymentMethod: ${request.fields['downPaymentMethod']}");
+    debugPrint("      incomeProofDocumentType: ${request.fields['incomeProofDocumentType']}");
+    debugPrint("      downPayment: ${request.fields['downPayment']}");
+    debugPrint("      emiCharge: ${request.fields['emiCharge']}");
+    debugPrint("      monthlyEmi: ${request.fields['monthlyEmi']}");
+    debugPrint("      emiTenureMonths: ${request.fields['emiTenureMonths']}");
+
+    // 🔥 Bank Receipt
     if (checkoutData.downPaymentMethod == 'BANK') {
-      request.fields['bankReceiptStatus'] = checkoutData.bankReceipt != null
-          ? 'UPLOADED'
-          : 'NOT_PROVIDED';
+      request.fields['bankReceiptStatus'] = checkoutData.bankReceipt != null ? 'UPLOADED' : 'NOT_PROVIDED';
     } else {
       request.fields['bankReceiptStatus'] = 'NOT_APPLICABLE';
     }
 
     if (checkoutData.downPaymentReferenceNumber != null) {
-      request.fields['downPaymentReferenceNumber'] =
-          checkoutData.downPaymentReferenceNumber!;
+      request.fields['downPaymentReferenceNumber'] = checkoutData.downPaymentReferenceNumber!;
     }
+
+    debugPrint("   📌 [Bank Info]");
+    debugPrint("      bankReceiptStatus: ${request.fields['bankReceiptStatus']}");
+    debugPrint("      downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber'] ?? 'N/A'}");
 
     // ─── Guarantors ───
     final guarantors = checkoutData.guarantors.map((g) => g.toJson()).toList();
     request.fields['guarantors'] = jsonEncode(guarantors);
+
+    debugPrint("   📌 [Guarantors]");
+    debugPrint("      total: ${guarantors.length}");
+    for (int i = 0; i < guarantors.length; i++) {
+      debugPrint("      Guarantor #${i+1}: ${jsonEncode(guarantors[i])}");
+    }
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("✅ [_addCommonFields] All fields added successfully");
+    debugPrint("   TOTAL FIELDS: ${request.fields.length}");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   }
 
   Future<void> _attachAllFiles(http.MultipartRequest request) async {
-    Future<void> attach(String fieldName, File? file) async {
-      if (file == null || !file.existsSync()) return;
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📎 [_attachAllFiles] STARTED - Attaching All Files");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    int attachedCount = 0;
+    int skippedCount = 0;
+
+    // ─── ইমেজ ফাইল আটাচ করার ফাংশন ───
+    Future<void> attachImage(String fieldName, File? file) async {
+      if (file == null || !file.existsSync()) {
+        debugPrint("   ⚠️ [SKIP] $fieldName: File not found or null");
+        skippedCount++;
+        return;
+      }
       String ext = file.path.split('.').last.toLowerCase();
       String mimeSubtype = (ext == 'png') ? 'png' : 'jpeg';
       request.files.add(
@@ -1126,40 +1334,164 @@ class CheckoutViewModel extends ChangeNotifier {
           contentType: MediaType('image', mimeSubtype),
         ),
       );
+      attachedCount++;
+      debugPrint("   🖼️ [IMAGE] $fieldName: ${file.path.split('/').last} (image/$mimeSubtype)");
+    }
+
+    // ─── ভিডিও ফাইল আটাচ করার ফাংশন ───
+    Future<void> attachVideo(String fieldName, File? file) async {
+      if (file == null || !file.existsSync()) {
+        debugPrint("   ⚠️ [SKIP] $fieldName: File not found or null");
+        skippedCount++;
+        return;
+      }
+
+      String ext = file.path.split('.').last.toLowerCase();
+      String mimeType;
+
+      // ভিডিও ফরম্যাট অনুযায়ী সঠিক MIME টাইপ সেট করুন
+      switch (ext) {
+        case 'mp4':
+          mimeType = 'video/mp4';
+          break;
+        case 'webm':
+          mimeType = 'video/webm';
+          break;
+        case 'mov':
+          mimeType = 'video/quicktime';
+          break;
+        case 'avi':
+          mimeType = 'video/x-msvideo';
+          break;
+        case 'mkv':
+          mimeType = 'video/x-matroska';
+          break;
+        case 'flv':
+          mimeType = 'video/x-flv';
+          break;
+        case 'wmv':
+          mimeType = 'video/x-ms-wmv';
+          break;
+        case '3gp':
+          mimeType = 'video/3gpp';
+          break;
+        default:
+        // ডিফল্ট হিসেবে mp4 সেট করুন
+          mimeType = 'video/mp4';
+          debugPrint("   ⚠️ [WARNING] Unknown video extension: $ext, using video/mp4");
+      }
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          fieldName,
+          file.path,
+          contentType: MediaType.parse(mimeType),
+        ),
+      );
+      attachedCount++;
+      debugPrint("   🎬 [VIDEO] $fieldName: ${file.path.split('/').last} ($mimeType)");
+    }
+
+    // ─── PDF বা অন্যান্য ডকুমেন্ট আটাচ করার ফাংশন (ভবিষ্যতের জন্য) ───
+    Future<void> attachDocument(String fieldName, File? file) async {
+      if (file == null || !file.existsSync()) {
+        debugPrint("   ⚠️ [SKIP] $fieldName: File not found or null");
+        skippedCount++;
+        return;
+      }
+
+      String ext = file.path.split('.').last.toLowerCase();
+      String mimeType;
+
+      switch (ext) {
+        case 'pdf':
+          mimeType = 'application/pdf';
+          break;
+        case 'doc':
+          mimeType = 'application/msword';
+          break;
+        case 'docx':
+          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          break;
+        case 'xls':
+          mimeType = 'application/vnd.ms-excel';
+          break;
+        case 'xlsx':
+          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          break;
+        default:
+          mimeType = 'application/octet-stream';
+      }
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          fieldName,
+          file.path,
+          contentType: MediaType.parse(mimeType),
+        ),
+      );
+      attachedCount++;
+      debugPrint("   📄 [DOCUMENT] $fieldName: ${file.path.split('/').last} ($mimeType)");
     }
 
     // ─── Customer Image ───
-    await attach('customerImage', customerImageFile);
+    debugPrint("   📌 [Customer Photo]");
+    await attachImage('customerImage', customerImageFile);
 
-    // ─── Customer Video ───
-    await attach('customerVideo', checkoutData.customerVideo);
+    // ─── Customer Video (ভিডিও হিসেবে আটাচ করুন) ───
+    debugPrint("   📌 [Customer Video]");
+    await attachVideo('customerVideo', checkoutData.customerVideo);
 
     // ─── Customer NID/Passport ───
+    debugPrint("   📌 [Customer ID Document]");
     if (checkoutData.customerIdType == 'NID') {
-      await attach('customerNidFront', checkoutData.nidFront);
-      await attach('customerNidBack', checkoutData.nidBack);
+      await attachImage('customerNidFront', checkoutData.nidFront);
+      await attachImage('customerNidBack', checkoutData.nidBack);
     } else {
-      await attach('customerNidFront', checkoutData.nidFront);
+      await attachImage('customerNidFront', checkoutData.nidFront);
     }
 
     // ─── Income Proof ───
-    await attach('incomeProofDocument', checkoutData.incomeProof);
+    debugPrint("   📌 [Income Proof]");
+    await attachImage('incomeProofDocument', checkoutData.incomeProof);
 
-    // 🔥 Bank Receipt - শুধুমাত্র ফাইল থাকলেই আপলোড করুন
-    if (checkoutData.downPaymentMethod == 'BANK' &&
-        checkoutData.bankReceipt != null) {
-      await attach('bankReceipt', checkoutData.bankReceipt);
+    // 🔥 Bank Receipt
+    debugPrint("   📌 [Bank Receipt]");
+    if (checkoutData.downPaymentMethod == 'BANK' && checkoutData.bankReceipt != null) {
+      await attachImage('bankReceipt', checkoutData.bankReceipt);
+    } else {
+      debugPrint("   ⚠️ [SKIP] bankReceipt: Not applicable or file missing");
+      skippedCount++;
     }
 
     // ─── Guarantors ───
+    debugPrint("   📌 [Guarantor Documents]");
     for (int i = 0; i < checkoutData.guarantors.length; i++) {
       final g = checkoutData.guarantors[i];
+      debugPrint("      📌 Guarantor #${i+1}: ${g.name}");
       if (g.idType == 'NID') {
-        await attach('guarantor${i}NidFront', g.nidFront);
-        await attach('guarantor${i}NidBack', g.nidBack);
+        await attachImage('guarantor${i}NidFront', g.nidFront);
+        await attachImage('guarantor${i}NidBack', g.nidBack);
       } else {
-        await attach('guarantor${i}NidFront', g.nidFront);
+        await attachImage('guarantor${i}NidFront', g.nidFront);
       }
     }
+
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📊 [_attachAllFiles] SUMMARY");
+    debugPrint("   ✅ Attached: $attachedCount file(s)");
+    debugPrint("   ⚠️ Skipped: $skippedCount file(s)");
+    debugPrint("   📌 Total Files: ${request.files.length}");
+
+    // ফাইলের বিস্তারিত তালিকা দেখান
+    if (request.files.isNotEmpty) {
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      debugPrint("📋 [FILE DETAILS]");
+      for (int i = 0; i < request.files.length; i++) {
+        final file = request.files[i];
+        debugPrint("   ${i+1}. ${file.field}: ${file.filename} (${file.contentType})");
+      }
+    }
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   }
 }

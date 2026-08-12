@@ -5,6 +5,8 @@ import '../../../core/Common_Widget/Custom_TextField.dart';
 import '../../../core/constant/App_Colors.dart';
 import '../../../core/routes/Routes_name.dart';
 import '../ModelView/Auth_Screen_Provider.dart';
+import '../../Parent/ViewModel/Parent_screen_provider.dart';
+import '../../../CustomerFeature/parent/viewModel/customerParentViewModel.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,12 +48,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      // 🛡️ Redirect based on Role
+      // 🛡️ Redirect based on Role and Reset Index to 0 (Home)
       if (authProvider.userRole == 'CUSTOMER') {
         debugPrint("🚀 Redirecting to Customer Portal");
+        Provider.of<CustomerParentViewModel>(context, listen: false).setIndex(0);
         Navigator.pushNamedAndRemoveUntil(context, RouteName.customerParentScreen, (route) => false);
       } else {
         debugPrint("🚀 Redirecting to Staff/Admin Portal");
+        Provider.of<ParentScreenProvider>(context, listen: false).setIndex(0);
         Navigator.pushNamedAndRemoveUntil(context, RouteName.parentScreen, (route) => false);
       }
     } else {

@@ -842,29 +842,51 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                     onTap: () => _navigateToLoanDetails(loan),
                   ),
                 ),
-                // Payment History
-                // Expanded(
-                //   child: _actionButton(
-                //     Icons.history_rounded,
-                //     'Payment History',
-                //     onTap: () {
-                //       debugPrint('📜 Payment History clicked for loan: ${loan.id}');
-                //       _showComingSoon(context, 'Payment History');
-                //     },
-                //   ),
-                // ),
-                // // Collect Payment
-                // Expanded(
-                //   child: _actionButton(
-                //     Icons.lock_outline_rounded,
-                //     'Collect Payment',
-                //     isGreen: true,
-                //     onTap: () {
-                //       debugPrint('💰 Collect Payment clicked for loan: ${loan.id}');
-                //       _showComingSoon(context, 'Collect Payment');
-                //     },
-                //   ),
-                // ),
+            //    Payment History
+                Expanded(
+                  child: _actionButton(
+                    Icons.history_rounded,
+                    'Payment History',
+                    onTap: () {
+                     Navigator.pushNamed(context, RouteName.paymentScreen);
+                    },
+                  ),
+                ),
+                // Collect Payment
+                Expanded(
+                  child: _actionButton(
+                    Icons.lock_outline_rounded,
+                    'Collect Payment',
+                    isGreen: true,
+                    onTap: () {
+                      debugPrint('═══════════════════════════════════════════════════');
+                      debugPrint('💰 [Collect Payment] ========== BUTTON CLICKED ==========');
+                      debugPrint('💰 [Collect Payment] Loan ID: ${loan.id}');
+                      debugPrint('💰 [Collect Payment] Loan Display ID: ${loan.displayId}');
+                      debugPrint('💰 [Collect Payment] Customer Name: ${loan.customer?.name}');
+                      debugPrint('💰 [Collect Payment] Customer Phone: ${loan.customer?.phone}');
+
+                      // ─── Navigate to Single Loan Detail Screen ───
+                      if (loan.id != null && loan.id.toString().isNotEmpty) {
+                        Navigator.pushNamed(
+                          context,
+                          RouteName.singleLoanDetailScreen,
+                          arguments: loan.id.toString(),
+                        );
+                        debugPrint('✅ Navigation to SingleLoanDetailScreen with ID: ${loan.id}');
+                      } else {
+                        debugPrint('❌ Loan ID is null or empty');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Invalid Loan ID'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                      debugPrint('═══════════════════════════════════════════════════');
+                    },
+                  ),
+                ),
                 // // Contact
                 Expanded(
                   child: _actionButton(

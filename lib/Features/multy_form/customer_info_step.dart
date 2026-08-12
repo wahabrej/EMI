@@ -293,7 +293,7 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
                         Text(
-                          'Customer Video',
+                          'Customer Video(Optional)',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                         ),
                         SizedBox(height: 4),

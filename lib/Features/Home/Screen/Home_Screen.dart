@@ -639,7 +639,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCreateCustomerButton() {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, RouteName.brandSelectionScreen);
+        Navigator.pushNamed(
+          context,
+          RouteName.brandSelectionScreen,
+          arguments: 'fromHome', // 👈 Pass this string
+        );
       },
       child: Container(
         width: double.infinity,

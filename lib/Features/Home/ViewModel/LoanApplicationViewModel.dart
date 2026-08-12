@@ -17,10 +17,14 @@ class LoanApplicationViewModel extends ChangeNotifier {
   LoanDetailData? _applicationDetails;
   LoanDetailData? get applicationDetails => _applicationDetails;
 
+  Map<String, dynamic>? _rawData;
+  Map<String, dynamic>? get rawData => _rawData;
+
   Future<void> fetchApplicationDetails(String id) async {
     _isLoading = true;
     _errorMessage = null;
     _applicationDetails = null;
+    _rawData = null;
     notifyListeners();
 
     debugPrint('🔍 [ViewModel] ========== FETCH START ==========');
@@ -28,8 +32,6 @@ class LoanApplicationViewModel extends ChangeNotifier {
 
     try {
       final token = await _tokenStorage.getToken();
-      debugPrint('🔑 [ViewModel] Token: ${token != null ? 'Available' : 'NULL'}');
-
       if (token == null) {
         _errorMessage = 'Authentication required';
         _isLoading = false;
@@ -42,252 +44,92 @@ class LoanApplicationViewModel extends ChangeNotifier {
         'Content-Type': 'application/json',
       };
 
-      // Try both endpoints
+      // 🔥 ১ম: Loan Application এন্ডপয়েন্ট (Pending Applications)
       final url1 = ApiEndPoint.loanApplicationById(id);
-      final url2 = ApiEndPoint.getLoanById(id);
+      debugPrint('🌐 [ViewModel] URL 1 (Loan App): $url1');
 
-      debugPrint('🌐 [ViewModel] URL 1: $url1');
-      debugPrint('🌐 [ViewModel] URL 2: $url2');
-
-      // Try first endpoint - /loan-applications/:id (for pending applications)
-      debugPrint('📡 [ViewModel] Trying URL 1...');
       var response = await http.get(
         Uri.parse(url1),
         headers: headers,
       );
 
       debugPrint('📊 [ViewModel] URL 1 Status: ${response.statusCode}');
-      if (response.body.isNotEmpty) {
-        debugPrint('📄 [ViewModel] URL 1 Response Preview: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}');
-      }
 
-      // If first fails, try second endpoint - /loans/:id (for active loans)
-      if (response.statusCode != 200) {
-        debugPrint('⚠️ [ViewModel] URL 1 failed, trying URL 2...');
+      // 🔥 ২য়: যদি 404 বা 400 আসে, Loan এন্ডপয়েন্ট (Active Loans)
+      if (response.statusCode == 404 || response.statusCode == 400) {
+        final url2 = ApiEndPoint.getLoanById(id);
+        debugPrint('🌐 [ViewModel] URL 2 (Active Loan): $url2');
+
         response = await http.get(
           Uri.parse(url2),
           headers: headers,
         );
         debugPrint('📊 [ViewModel] URL 2 Status: ${response.statusCode}');
-        if (response.body.isNotEmpty) {
-          debugPrint('📄 [ViewModel] URL 2 Response Preview: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}');
-        }
       }
-
-      // --- START: FULL RESPONSE LOGGING ---
-      debugPrint('📦 [ViewModel] ========== FULL API RESPONSE ==========');
-      debugPrint('📦 [ViewModel] Status Code: ${response.statusCode}');
-      debugPrint('📦 [ViewModel] Headers: ${response.headers}');
-
-      // Pretty print the JSON response
-      try {
-        final decoded = jsonDecode(response.body);
-        const encoder = JsonEncoder.withIndent('  ');
-        final prettyString = encoder.convert(decoded);
-        debugPrint('📦 [ViewModel] Full Response Body (Pretty):\n$prettyString');
-
-        // Log all top-level keys
-        debugPrint('📦 [ViewModel] Top-level Keys: ${decoded.keys.join(', ')}');
-
-        // Log data structure in detail
-        if (decoded['success'] != null) {
-          debugPrint('📦 [ViewModel] Success: ${decoded['success']}');
-        }
-
-        if (decoded['data'] != null) {
-          debugPrint('📦 [ViewModel] Data Keys: ${decoded['data'].keys.join(', ')}');
-
-          // Log each field in data
-          final data = decoded['data'];
-          debugPrint('📦 [ViewModel] ========== DATA FIELDS ==========');
-
-          // Basic fields
-          if (data['id'] != null) debugPrint('📦 [ViewModel] id: ${data['id']} (${data['id'].runtimeType})');
-          if (data['displayId'] != null) debugPrint('📦 [ViewModel] displayId: ${data['displayId']} (${data['displayId'].runtimeType})');
-          if (data['name'] != null) debugPrint('📦 [ViewModel] name: ${data['name']} (${data['name'].runtimeType})');
-          if (data['phone'] != null) debugPrint('📦 [ViewModel] phone: ${data['phone']} (${data['phone'].runtimeType})');
-          if (data['presentAddress'] != null) debugPrint('📦 [ViewModel] presentAddress: ${data['presentAddress']} (${data['presentAddress'].runtimeType})');
-          if (data['permanentAddress'] != null) debugPrint('📦 [ViewModel] permanentAddress: ${data['permanentAddress']} (${data['permanentAddress'].runtimeType})');
-          if (data['nidPassportNumber'] != null) debugPrint('📦 [ViewModel] nidPassportNumber: ${data['nidPassportNumber']} (${data['nidPassportNumber'].runtimeType})');
-          if (data['sourceOfIncome'] != null) debugPrint('📦 [ViewModel] sourceOfIncome: ${data['sourceOfIncome']} (${data['sourceOfIncome'].runtimeType})');
-          if (data['monthlyIncome'] != null) debugPrint('📦 [ViewModel] monthlyIncome: ${data['monthlyIncome']} (${data['monthlyIncome'].runtimeType})');
-          if (data['status'] != null) debugPrint('📦 [ViewModel] status: ${data['status']} (${data['status'].runtimeType})');
-          if (data['issueDate'] != null) debugPrint('📦 [ViewModel] issueDate: ${data['issueDate']} (${data['issueDate'].runtimeType})');
-          if (data['createdAt'] != null) debugPrint('📦 [ViewModel] createdAt: ${data['createdAt']} (${data['createdAt'].runtimeType})');
-
-          // Document fields
-          if (data['customerImage'] != null) debugPrint('📦 [ViewModel] customerImage: ${data['customerImage']} (${data['customerImage'].runtimeType})');
-          if (data['customerNidFront'] != null) debugPrint('📦 [ViewModel] customerNidFront: ${data['customerNidFront']} (${data['customerNidFront'].runtimeType})');
-          if (data['customerNidBack'] != null) debugPrint('📦 [ViewModel] customerNidBack: ${data['customerNidBack']} (${data['customerNidBack'].runtimeType})');
-          if (data['incomeProofDocument'] != null) debugPrint('📦 [ViewModel] incomeProofDocument: ${data['incomeProofDocument']} (${data['incomeProofDocument'].runtimeType})');
-          if (data['incomeProofDocumentType'] != null) debugPrint('📦 [ViewModel] incomeProofDocumentType: ${data['incomeProofDocumentType']} (${data['incomeProofDocumentType'].runtimeType})');
-
-          // Loan fields
-          if (data['mrp'] != null) debugPrint('📦 [ViewModel] mrp: ${data['mrp']} (${data['mrp'].runtimeType})');
-          if (data['downPayment'] != null) debugPrint('📦 [ViewModel] downPayment: ${data['downPayment']} (${data['downPayment'].runtimeType})');
-          if (data['downPaymentMethod'] != null) debugPrint('📦 [ViewModel] downPaymentMethod: ${data['downPaymentMethod']} (${data['downPaymentMethod'].runtimeType})');
-          if (data['planMonths'] != null) debugPrint('📦 [ViewModel] planMonths: ${data['planMonths']} (${data['planMonths'].runtimeType})');
-          if (data['monthlyEmi'] != null) debugPrint('📦 [ViewModel] monthlyEmi: ${data['monthlyEmi']} (${data['monthlyEmi'].runtimeType})');
-
-          // Remarks fields
-          if (data['rejectionReason'] != null) debugPrint('📦 [ViewModel] rejectionReason: ${data['rejectionReason']} (${data['rejectionReason'].runtimeType})');
-          if (data['approvalRemarks'] != null) debugPrint('📦 [ViewModel] approvalRemarks: ${data['approvalRemarks']} (${data['approvalRemarks'].runtimeType})');
-
-          // Product
-          if (data['product'] != null) {
-            debugPrint('📦 [ViewModel] ========== PRODUCT DATA ==========');
-            final product = data['product'];
-            if (product['id'] != null) debugPrint('📦 [ViewModel] product.id: ${product['id']} (${product['id'].runtimeType})');
-            if (product['name'] != null) debugPrint('📦 [ViewModel] product.name: ${product['name']} (${product['name'].runtimeType})');
-            if (product['code'] != null) debugPrint('📦 [ViewModel] product.code: ${product['code']} (${product['code'].runtimeType})');
-            if (product['price'] != null) debugPrint('📦 [ViewModel] product.price: ${product['price']} (${product['price'].runtimeType})');
-            if (product['category'] != null) debugPrint('📦 [ViewModel] product.category: ${product['category']} (${product['category'].runtimeType})');
-            // Log all product fields
-            debugPrint('📦 [ViewModel] All product keys: ${product.keys.join(', ')}');
-          }
-
-          // Guarantors
-          if (data['guarantors'] != null) {
-            final guarantors = data['guarantors'] as List;
-            debugPrint('📦 [ViewModel] ========== GUARANTORS (${guarantors.length}) ==========');
-            for (int i = 0; i < guarantors.length; i++) {
-              final g = guarantors[i];
-              debugPrint('📦 [ViewModel] Guarantor ${i + 1}:');
-              if (g['name'] != null) debugPrint('📦 [ViewModel]   name: ${g['name']} (${g['name'].runtimeType})');
-              if (g['phone'] != null) debugPrint('📦 [ViewModel]   phone: ${g['phone']} (${g['phone'].runtimeType})');
-              if (g['relationship'] != null) debugPrint('📦 [ViewModel]   relationship: ${g['relationship']} (${g['relationship'].runtimeType})');
-              if (g['nidFront'] != null) debugPrint('📦 [ViewModel]   nidFront: ${g['nidFront']} (${g['nidFront'].runtimeType})');
-              if (g['nidBack'] != null) debugPrint('📦 [ViewModel]   nidBack: ${g['nidBack']} (${g['nidBack'].runtimeType})');
-              if (g['email'] != null) debugPrint('📦 [ViewModel]   email: ${g['email']} (${g['email'].runtimeType})');
-              if (g['address'] != null) debugPrint('📦 [ViewModel]   address: ${g['address']} (${g['address'].runtimeType})');
-              // Log all guarantor keys
-              debugPrint('📦 [ViewModel]   All guarantor keys: ${g.keys.join(', ')}');
-            }
-          }
-
-          // Any additional fields not covered
-          final allKeys = data.keys.toList();
-          final coveredKeys = [
-            'id', 'displayId', 'name', 'phone', 'presentAddress', 'permanentAddress',
-            'nidPassportNumber', 'sourceOfIncome', 'monthlyIncome', 'status', 'issueDate',
-            'createdAt', 'customerImage', 'customerNidFront', 'customerNidBack',
-            'incomeProofDocument', 'incomeProofDocumentType', 'mrp', 'downPayment',
-            'downPaymentMethod', 'planMonths', 'monthlyEmi', 'rejectionReason',
-            'approvalRemarks', 'product', 'guarantors'
-          ];
-          final missingKeys = allKeys.where((k) => !coveredKeys.contains(k)).toList();
-          if (missingKeys.isNotEmpty) {
-            debugPrint('📦 [ViewModel] ⚠️ Additional fields found: ${missingKeys.join(', ')}');
-            for (var key in missingKeys) {
-              debugPrint('📦 [ViewModel]   $key: ${data[key]} (${data[key].runtimeType})');
-            }
-          }
-        }
-
-        // Check for errors
-        if (decoded['error'] != null) {
-          debugPrint('📦 [ViewModel] Error field: ${decoded['error']}');
-          if (decoded['error']['message'] != null) {
-            debugPrint('📦 [ViewModel] Error message: ${decoded['error']['message']}');
-          }
-        }
-        if (decoded['message'] != null) {
-          debugPrint('📦 [ViewModel] Message: ${decoded['message']}');
-        }
-
-      } catch (e) {
-        debugPrint('❌ [ViewModel] Error parsing JSON: $e');
-        debugPrint('📄 [ViewModel] Raw response: ${response.body}');
-      }
-
-      debugPrint('📦 [ViewModel] ========== END FULL RESPONSE ==========');
-      // --- END: FULL RESPONSE LOGGING ---
 
       final data = jsonDecode(response.body);
       debugPrint('📦 [ViewModel] Response Keys: ${data.keys}');
 
       if (response.statusCode == 200) {
-        // Check different response structures
         dynamic detailData;
 
-        if (data['success'] == true) {
-          if (data.containsKey('data')) {
-            detailData = data['data'];
-            debugPrint('✅ [ViewModel] Using data["data"]');
-          } else {
-            detailData = data;
-            debugPrint('✅ [ViewModel] Using root data');
-          }
+        if (data['success'] == true && data.containsKey('data')) {
+          detailData = data['data'];
         } else if (data.containsKey('data')) {
           detailData = data['data'];
-          debugPrint('✅ [ViewModel] Using data["data"] without success flag');
         } else {
           detailData = data;
-          debugPrint('✅ [ViewModel] Using root data');
         }
 
         if (detailData != null) {
+          // Raw Data সংরক্ষণ করুন
+          if (detailData is Map<String, dynamic>) {
+            _rawData = detailData;
+          } else {
+            try {
+              _rawData = detailData.toJson() as Map<String, dynamic>;
+            } catch (_) {
+              _rawData = {};
+            }
+          }
+
+          // 🔥 Active Loan হলে ডকুমেন্ট ম্যাপিং করুন
+          if (_rawData != null) {
+            final status = _rawData!['status']?.toString().toUpperCase() ?? '';
+            if (status == 'APPROVED' || status == 'ACTIVE' || status == 'DISBURSED') {
+              debugPrint('🔄 [ViewModel] Active Loan detected, mapping documents...');
+              _rawData = _mapActiveLoanFields(_rawData!);
+            }
+          }
+
           _applicationDetails = LoanDetailData.fromJson(detailData);
           _errorMessage = null;
 
           debugPrint('✅ [ViewModel] ========== PARSED MODEL ==========');
           debugPrint('📋 [ViewModel] ID: ${_applicationDetails?.id}');
-          debugPrint('📋 [ViewModel] Display ID: ${_applicationDetails?.displayId}');
-          debugPrint('📋 [ViewModel] Name: ${_applicationDetails?.name}');
-          debugPrint('📋 [ViewModel] Phone: ${_applicationDetails?.phone}');
           debugPrint('📋 [ViewModel] Status: ${_applicationDetails?.status}');
-          debugPrint('📋 [ViewModel] Present Address: ${_applicationDetails?.presentAddress}');
-          debugPrint('📋 [ViewModel] Permanent Address: ${_applicationDetails?.permanentAddress}');
-          debugPrint('📋 [ViewModel] NID/Passport: ${_applicationDetails?.nidPassportNumber}');
-          debugPrint('📋 [ViewModel] Source of Income: ${_applicationDetails?.sourceOfIncome}');
-          debugPrint('📋 [ViewModel] Monthly Income: ${_applicationDetails?.monthlyIncome}');
-          debugPrint('📋 [ViewModel] Issue Date: ${_applicationDetails?.issueDate}');
-          debugPrint('📋 [ViewModel] Created At: ${_applicationDetails?.createdAt}');
-          debugPrint('📋 [ViewModel] MRP: ${_applicationDetails?.mrp}');
-          debugPrint('📋 [ViewModel] Down Payment: ${_applicationDetails?.downPayment}');
-          debugPrint('📋 [ViewModel] Down Payment Method: ${_applicationDetails?.downPaymentMethod}');
-          debugPrint('📋 [ViewModel] Plan Months: ${_applicationDetails?.planMonths}');
-          debugPrint('📋 [ViewModel] Monthly EMI: ${_applicationDetails?.monthlyEmi}');
-          debugPrint('📋 [ViewModel] Rejection Reason: ${_applicationDetails?.rejectionReason}');
-          debugPrint('📋 [ViewModel] Approval Remarks: ${_applicationDetails?.approvalRemarks}');
-          debugPrint('📋 [ViewModel] Customer Image: ${_applicationDetails?.customerImage}');
-          debugPrint('📋 [ViewModel] NID Front: ${_applicationDetails?.customerNidFront}');
-          debugPrint('📋 [ViewModel] NID Back: ${_applicationDetails?.customerNidBack}');
-          debugPrint('📋 [ViewModel] Income Proof: ${_applicationDetails?.incomeProofDocument}');
-          debugPrint('📋 [ViewModel] Income Proof Type: ${_applicationDetails?.incomeProofDocumentType}');
+          debugPrint('📋 [ViewModel] Name: ${_applicationDetails?.name}');
+          debugPrint('📋 [ViewModel] Raw Data Keys: ${_rawData?.keys.join(', ')}');
 
-          if (_applicationDetails?.product != null) {
-            debugPrint('📋 [ViewModel] Product ID: ${_applicationDetails?.product?.id}');
-            debugPrint('📋 [ViewModel] Product Name: ${_applicationDetails?.product?.name}');
-            debugPrint('📋 [ViewModel] Product Code: ${_applicationDetails?.product?.code}');
+          if (_rawData != null) {
+            debugPrint('📄 [ViewModel] customerImageUrl: ${_rawData!['customerImageUrl']}');
+            debugPrint('📄 [ViewModel] customerVideoUrl: ${_rawData!['customerVideoUrl']}');
+            debugPrint('📄 [ViewModel] incomeProofUrl: ${_rawData!['incomeProofUrl']}');
+            debugPrint('📄 [ViewModel] customerDocuments: ${_rawData!['customerDocuments']}');
+            debugPrint('📄 [ViewModel] guarantorDocuments: ${_rawData!['guarantorDocuments']}');
           }
 
-          if (_applicationDetails?.guarantors != null) {
-            debugPrint('📋 [ViewModel] Guarantors Count: ${_applicationDetails?.guarantors?.length}');
-            for (int i = 0; i < (_applicationDetails?.guarantors?.length ?? 0); i++) {
-              final g = _applicationDetails!.guarantors![i];
-              debugPrint('📋 [ViewModel] Guarantor ${i + 1}:');
-              debugPrint('📋 [ViewModel]   Name: ${g.name}');
-              debugPrint('📋 [ViewModel]   Phone: ${g.phone}');
-              debugPrint('📋 [ViewModel]   Relationship: ${g.relationship}');
-              debugPrint('📋 [ViewModel]   NID Front: ${g.nidFront}');
-              debugPrint('📋 [ViewModel]   NID Back: ${g.nidBack}');
-            }
-          }
           debugPrint('✅ [ViewModel] ========== END PARSED MODEL ==========');
         } else {
           _errorMessage = 'No data found';
-          debugPrint('❌ [ViewModel] No data found');
         }
       } else {
         _errorMessage = data['message'] ?? data['error']?['message'] ?? "Failed to load details (${response.statusCode})";
         debugPrint('❌ [ViewModel] Error: $_errorMessage');
-        debugPrint('📄 [ViewModel] Full Response: ${response.body}');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _errorMessage = e.toString();
       debugPrint('❌ [ViewModel] Exception: $e');
-      debugPrint('📚 [ViewModel] StackTrace: $stackTrace');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -295,6 +137,197 @@ class LoanApplicationViewModel extends ChangeNotifier {
     }
   }
 
+  // ─── Active Loan Fields Map ───
+  Map<String, dynamic> _mapActiveLoanFields(Map<String, dynamic> data) {
+    debugPrint('🔄 [ViewModel] Mapping Active Loan fields...');
+
+    if (data['customer'] != null && data['customer'] is Map<String, dynamic>) {
+      final customer = data['customer'] as Map<String, dynamic>;
+      debugPrint('📄 [ViewModel] Customer keys: ${customer.keys.join(', ')}');
+
+      List<Map<String, dynamic>> docs = [];
+
+      // 🔥 1. customerImageUrl
+      if (customer['customerImageUrl'] != null && customer['customerImageUrl'].toString().isNotEmpty) {
+        docs.add({'url': customer['customerImageUrl'].toString(), 'documentType': 'CUSTOMER_PHOTO'});
+      }
+
+      // 🔥 2. customerVideoUrl
+      if (customer['customerVideoUrl'] != null && customer['customerVideoUrl'].toString().isNotEmpty) {
+        docs.add({'url': customer['customerVideoUrl'].toString(), 'documentType': 'CUSTOMER_VIDEO'});
+      }
+
+      // 🔥 3. customerNidFront / NID Front
+      if (customer['customerNidFront'] != null && customer['customerNidFront'].toString().isNotEmpty) {
+        docs.add({'url': customer['customerNidFront'].toString(), 'documentType': 'NID_FRONT'});
+      }
+
+      // 🔥 4. customerNidBack / NID Back
+      if (customer['customerNidBack'] != null && customer['customerNidBack'].toString().isNotEmpty) {
+        docs.add({'url': customer['customerNidBack'].toString(), 'documentType': 'NID_BACK'});
+      }
+
+      // 🔥 5. incomeProofDocument / incomeProofUrl
+      if (customer['incomeProofDocument'] != null && customer['incomeProofDocument'].toString().isNotEmpty) {
+        docs.add({'url': customer['incomeProofDocument'].toString(), 'documentType': 'INCOME_PROOF'});
+      }
+      if (customer['incomeProofUrl'] != null && customer['incomeProofUrl'].toString().isNotEmpty) {
+        bool exists = docs.any((d) => d['url'] == customer['incomeProofUrl'].toString());
+        if (!exists) {
+          docs.add({'url': customer['incomeProofUrl'].toString(), 'documentType': 'INCOME_PROOF'});
+        }
+      }
+
+      // 🔥 6. bankReceiptUrl / bankReceipt
+      if (customer['bankReceiptUrl'] != null && customer['bankReceiptUrl'].toString().isNotEmpty) {
+        docs.add({'url': customer['bankReceiptUrl'].toString(), 'documentType': 'BANK_RECEIPT'});
+      }
+      if (customer['bankReceipt'] != null && customer['bankReceipt'].toString().isNotEmpty) {
+        bool exists = docs.any((d) => d['url'] == customer['bankReceipt'].toString());
+        if (!exists) {
+          docs.add({'url': customer['bankReceipt'].toString(), 'documentType': 'BANK_RECEIPT'});
+        }
+      }
+
+      // 🔥 7. MOST IMPORTANT: customer['documents'] থেকে ডকুমেন্ট নিন
+      if (customer['documents'] != null && customer['documents'] is List) {
+        debugPrint('📄 [ViewModel] Found documents in customer: ${customer['documents']}');
+        for (var doc in customer['documents']) {
+          String url = doc['url'] ?? doc['fileUrl'] ?? doc['path'] ?? '';
+          String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
+          if (url.isNotEmpty) {
+            bool exists = docs.any((d) => d['url'] == url);
+            if (!exists) {
+              docs.add({'url': url, 'documentType': docType});
+              debugPrint('📄 [ViewModel] Added doc from customer.documents: $docType -> $url');
+            }
+          }
+        }
+      }
+
+      // 🔥 8. customerDocuments (যদি থাকে)
+      if (customer['customerDocuments'] != null && customer['customerDocuments'] is List) {
+        for (var doc in customer['customerDocuments']) {
+          String url = doc['url'] ?? doc['fileUrl'] ?? '';
+          String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
+          if (url.isNotEmpty) {
+            bool exists = docs.any((d) => d['url'] == url);
+            if (!exists) {
+              docs.add({'url': url, 'documentType': docType});
+            }
+          }
+        }
+      }
+
+      data['customerDocuments'] = docs;
+      debugPrint('📄 [ViewModel] Created customerDocuments: ${docs.length} items');
+
+      // ─── customer থেকে URL গুলো data তে যোগ করুন ───
+      if (customer['customerImageUrl'] != null) data['customerImageUrl'] = customer['customerImageUrl'];
+      if (customer['customerVideoUrl'] != null) data['customerVideoUrl'] = customer['customerVideoUrl'];
+      if (customer['customerNidFront'] != null) data['customerNidFront'] = customer['customerNidFront'];
+      if (customer['customerNidBack'] != null) data['customerNidBack'] = customer['customerNidBack'];
+      if (customer['incomeProofUrl'] != null) data['incomeProofUrl'] = customer['incomeProofUrl'];
+      if (customer['bankReceiptUrl'] != null) data['bankReceiptUrl'] = customer['bankReceiptUrl'];
+
+      // customer info
+      if (customer['name'] != null) data['name'] = customer['name'];
+      if (customer['phone'] != null) data['phone'] = customer['phone'];
+      if (customer['nidPassportNumber'] != null) data['nidPassportNumber'] = customer['nidPassportNumber'];
+      if (customer['sourceOfIncome'] != null) data['sourceOfIncome'] = customer['sourceOfIncome'];
+      if (customer['monthlyIncome'] != null) data['monthlyIncome'] = customer['monthlyIncome'];
+      if (customer['presentAddress'] != null) data['presentAddress'] = customer['presentAddress'];
+      if (customer['permanentAddress'] != null) data['permanentAddress'] = customer['permanentAddress'];
+
+      // 🔥 MOST IMPORTANT: Guarantor Documents
+      List<Map<String, dynamic>> guarantorDocs = [];
+
+      // customer['guarantors'] থেকে ডকুমেন্ট নিন
+      if (customer['guarantors'] != null && customer['guarantors'] is List) {
+        debugPrint('📄 [ViewModel] Found guarantors in customer: ${customer['guarantors']}');
+        for (int i = 0; i < customer['guarantors'].length; i++) {
+          final g = customer['guarantors'][i];
+
+          // Guarantor এর নিজস্ব ডকুমেন্ট
+          if (g['nidFront'] != null && g['nidFront'].toString().isNotEmpty) {
+            guarantorDocs.add({
+              'url': g['nidFront'].toString(),
+              'documentType': 'NID_FRONT',
+              'guarantorIndex': i
+            });
+            debugPrint('📄 [ViewModel] Added guarantor $i NID FRONT');
+          }
+
+          if (g['nidBack'] != null && g['nidBack'].toString().isNotEmpty) {
+            guarantorDocs.add({
+              'url': g['nidBack'].toString(),
+              'documentType': 'NID_BACK',
+              'guarantorIndex': i
+            });
+            debugPrint('📄 [ViewModel] Added guarantor $i NID BACK');
+          }
+
+          // Guarantor এর documents ফিল্ড (যদি থাকে)
+          if (g['documents'] != null && g['documents'] is List) {
+            for (var doc in g['documents']) {
+              String url = doc['url'] ?? doc['fileUrl'] ?? '';
+              String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
+              if (url.isNotEmpty) {
+                bool exists = guarantorDocs.any((d) => d['url'] == url);
+                if (!exists) {
+                  guarantorDocs.add({
+                    'url': url,
+                    'documentType': docType,
+                    'guarantorIndex': i
+                  });
+                  debugPrint('📄 [ViewModel] Added guarantor $i doc: $docType');
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // data['guarantors'] থেকেও ডকুমেন্ট নিন (যদি customer এর ভিতরে না থাকে)
+      if (data['guarantors'] != null && data['guarantors'] is List) {
+        for (int i = 0; i < data['guarantors'].length; i++) {
+          final g = data['guarantors'][i];
+
+          if (g['nidFront'] != null && g['nidFront'].toString().isNotEmpty) {
+            bool exists = guarantorDocs.any((d) => d['url'] == g['nidFront'].toString() && d['guarantorIndex'] == i);
+            if (!exists) {
+              guarantorDocs.add({
+                'url': g['nidFront'].toString(),
+                'documentType': 'NID_FRONT',
+                'guarantorIndex': i
+              });
+            }
+          }
+
+          if (g['nidBack'] != null && g['nidBack'].toString().isNotEmpty) {
+            bool exists = guarantorDocs.any((d) => d['url'] == g['nidBack'].toString() && d['guarantorIndex'] == i);
+            if (!exists) {
+              guarantorDocs.add({
+                'url': g['nidBack'].toString(),
+                'documentType': 'NID_BACK',
+                'guarantorIndex': i
+              });
+            }
+          }
+        }
+      }
+
+      data['guarantorDocuments'] = guarantorDocs;
+      debugPrint('📄 [ViewModel] Created guarantorDocuments: ${guarantorDocs.length} items');
+
+    } else {
+      // ─── customer অবজেক্ট না থাকলে সরাসরি data থেকে নিন ───
+      // ... আগের কোড ...
+    }
+
+    return data;
+  }
+  // ─── Approve Application ───
   Future<bool> approveApplication(String id, String remarks) async {
     debugPrint('✅ [ViewModel] Approving application: $id');
     _isLoading = true;
@@ -331,14 +364,6 @@ class LoanApplicationViewModel extends ChangeNotifier {
       debugPrint('📊 [ViewModel] Approve Status: ${response.statusCode}');
       debugPrint('📄 [ViewModel] Approve Response: ${response.body}');
 
-      try {
-        final decoded = jsonDecode(response.body);
-        const encoder = JsonEncoder.withIndent('  ');
-        debugPrint('📄 [ViewModel] Approve Response Pretty:\n${encoder.convert(decoded)}');
-      } catch (e) {
-        // Ignore
-      }
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         _errorMessage = null;
@@ -359,6 +384,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
     }
   }
 
+  // ─── Reject Application ───
   Future<bool> rejectApplication(String id, String reason, String remarks) async {
     debugPrint('❌ [ViewModel] Rejecting application: $id');
     _isLoading = true;
@@ -399,14 +425,6 @@ class LoanApplicationViewModel extends ChangeNotifier {
       debugPrint('📊 [ViewModel] Reject Status: ${response.statusCode}');
       debugPrint('📄 [ViewModel] Reject Response: ${response.body}');
 
-      try {
-        final decoded = jsonDecode(response.body);
-        const encoder = JsonEncoder.withIndent('  ');
-        debugPrint('📄 [ViewModel] Reject Response Pretty:\n${encoder.convert(decoded)}');
-      } catch (e) {
-        // Ignore
-      }
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         _errorMessage = null;
@@ -431,6 +449,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
     _applicationDetails = null;
     _errorMessage = null;
     _isLoading = false;
+    _rawData = null;
     notifyListeners();
   }
 }

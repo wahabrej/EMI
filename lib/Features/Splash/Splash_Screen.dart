@@ -24,56 +24,66 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1500),
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _controller.forward();
 
-    // 🚀 Check Authentication and Role for Redirection
+    // 🚀 Redirection Logic
     _checkAuthAndNavigate();
   }
 
   Future<void> _checkAuthAndNavigate() async {
+    // লোগো দেখার জন্য ২ সেকেন্ড ওয়েট করুন
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
     final storage = AppStorage();
-    final token = await storage.getToken();
-    final role = await storage.getUserRole();
+
+    // 🔥 Token এবং Role উভয়ই রিড করুন
+    final String? token = await storage.getToken();
+    final String? role = await storage.getUserRole();
+
+    debugPrint('🔍 [Splash] Token: ${token != null ? "Present" : "NULL"}');
+    debugPrint('🔍 [Splash] Role: $role');
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
-      // 🟢 Logged In -> Redirect based on Role
+    // ✅ নিরাপদ চেক: টোকেন এবং রোল—উভয়ই থাকলে পোর্টালে যাবে
+    if (token != null && token.isNotEmpty && role != null && role.isNotEmpty) {
+      debugPrint("✅ Authenticated session found.");
+
       if (role == 'CUSTOMER') {
-        debugPrint("🏠 Splash: Redirecting to Customer Portal");
         Navigator.pushNamedAndRemoveUntil(
           context,
           RouteName.customerParentScreen,
-          (route) => false,
+              (route) => false,
         );
       } else {
-        debugPrint("🏠 Splash: Redirecting to Staff/Admin Portal");
+        // Staff/Admin Roles (MANAGER, AGENT, SHOP, etc.)
         Navigator.pushNamedAndRemoveUntil(
           context,
           RouteName.parentScreen,
-          (route) => false,
+              (route) => false,
         );
       }
     } else {
-      // 🔴 Not Logged In -> Go to Login
+      // ❌ টোকেন বা রোল কোনো একটি মিসিং থাকলে সরাসরি লগইন স্ক্রিন
+      debugPrint("🚪 Session missing or incomplete. Redirecting to Login.");
+
+      // ডেটা অসম্পূর্ণ থাকলে ক্লিনআপ করে নেওয়া নিরাপদ
+      if (token != null || role != null) {
+        await storage.clearAll();
+      }
+
       Navigator.pushNamedAndRemoveUntil(
         context,
         RouteName.loginScreen,
-        (route) => false,
+            (route) => false,
       );
     }
   }
@@ -94,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen>
               'assets/images/back.png',
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
+              const SizedBox.shrink(),
             ),
           ),
           Center(
@@ -105,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset("assets/icons/logo.png"),
+                    Image.asset("assets/icons/logo.png", height: 120),
                     const SizedBox(height: 24),
                   ],
                 ),

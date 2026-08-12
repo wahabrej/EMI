@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import '../../../core/constant/Api_End_point.dart';
 import '../../../core/constant/Token_storage.dart';
+import '../../Parent/ViewModel/Parent_screen_provider.dart';
+import '../../../CustomerFeature/parent/viewModel/customerParentViewModel.dart';
+import '../../../core/routes/Routes_name.dart';
 
 class AuthScreenProvider extends ChangeNotifier {
   final AppStorage _tokenStorage = AppStorage();
@@ -41,20 +45,15 @@ class AuthScreenProvider extends ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final userData = data['data']?['user'];
         final token = data['token'] ?? data['data']?['token'] ?? data['accessToken'];
-        
-        final userId = data['id'] ??
-            data['userId'] ??
-            data['data']?['id'] ??
-            data['data']?['userId'] ??
-            userData?['id'];
-        final userEmail = userData?['email'] ?? data['email'] ?? data['data']?['email'];
-        final userName = userData?['name'] ?? data['name'] ?? data['data']?['name'];
+
+        final userId = data['id'] ?? userData?['id'];
+        final userEmail = userData?['email'] ?? data['email'];
+        final userName = userData?['name'] ?? data['name'];
 
         // 🛡️ Extract and Save Role Name
         final roles = userData?['roles'] as List?;
         if (roles != null && roles.isNotEmpty) {
           _userRole = roles[0]['role']?['name']?.toString().toUpperCase();
-          debugPrint("👤 User Role Detected: $_userRole");
           await _tokenStorage.saveUserRole(_userRole!);
         }
 
@@ -66,25 +65,34 @@ class AuthScreenProvider extends ChangeNotifier {
 
           _setLoading(false);
           return true;
-        } else {
-          _errorMessage = "Token not found in response body.";
         }
       } else {
-        _errorMessage = data['message'] ?? "Login failed. Status: ${response.statusCode}";
+        _errorMessage = data['message'] ?? "Login failed.";
       }
     } catch (e) {
-      _errorMessage = "Network error: ${e.toString()}";
+      _errorMessage = "Network error.";
     }
 
     _setLoading(false);
     return false;
   }
 
-  // 🔹 Logout Method
+  // 🔹 Logout Method: Resets indices and navigates directly to Login
   Future<void> logout(BuildContext context) async {
-    await _tokenStorage.clearAll(); // Clears all SharedPreferences data
+    await _tokenStorage.clearAll(); 
+    
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+      // 🔄 Reset Bottom Navigation Indices to 0 (Home) before logging out
+      // This ensures the next login starts at Home, not Profile
+      Provider.of<ParentScreenProvider>(context, listen: false).setIndex(0);
+      try {
+        Provider.of<CustomerParentViewModel>(context, listen: false).setIndex(0);
+      } catch (e) {
+        debugPrint("CustomerParentViewModel not initialized or skipped");
+      }
+
+      // 🚪 Navigate directly to Login Screen (Skipping Splash)
+      Navigator.pushNamedAndRemoveUntil(context, RouteName.loginScreen, (route) => false);
     }
   }
 

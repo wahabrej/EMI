@@ -2,6 +2,7 @@ import 'package:provider/provider.dart';
 
 import '../../Features/Auth/ModelView/Auth_Screen_Provider.dart';
 import '../../Features/Home/ViewModel/Brand_Selection_Model.dart';
+import '../../Features/Home/ViewModel/PaymentViewModel.dart';
 import '../../Features/Home/ViewModel/SalesDashboardViewModel.dart';
 import '../../Features/Home/ViewModel/LoanApplicationViewModel.dart';
 import '../../Features/Home/ViewModel/CustomerDetailViewModel.dart'; // Added this
@@ -81,6 +82,9 @@ class AppProviders {
 
       ChangeNotifierProvider<SellerNotificationProvider>(
         create: (context) => SellerNotificationProvider(),
+      ),
+      ChangeNotifierProvider<PaymentViewModel>(
+        create: (context) => PaymentViewModel(),
       ),
     ];
   }

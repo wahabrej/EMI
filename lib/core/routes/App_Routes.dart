@@ -7,14 +7,17 @@ import '../../Features/Auth/Screen/Login_Screen.dart';
 import '../../Features/Auth/Screen/Sign_Up_Screen.dart';
 import '../../Features/EMI/Screen/EmiRepaymentScheduleScreen.dart';
 import '../../Features/Home/Screen/ActiveLoanScreen.dart';
+import '../../Features/Home/Screen/CollectPaymentScreen.dart';
 import '../../Features/Home/Screen/OverdueLoanScreen.dart';
 import '../../Features/Home/Screen/PendingApprovalScreen.dart';
 import '../../Features/Home/Screen/TotalCustomerScreen.dart';
 import '../../Features/Home/Screen/brand_selection_screen.dart';
 import '../../Features/Home/Screen/LoanApplicationDetailsScreen.dart';
 import '../../Features/Home/Screen/CustomerDetailsScreen.dart'; // Added this
+import '../../Features/Home/Screen/singleLoanDetailScreen.dart';
 import '../../Features/Notification/view/seller_notification_screen.dart';
 import '../../Features/Parent/Screen/Parent_screen.dart';
+import '../../Features/Payment/Screen/Payment_Screen.dart';
 import '../../Features/Splash/Splash_Screen.dart';
 import '../../Features/multy_form/multyform_screen.dart';
 import '../../CustomerFeature/parent/view/customerParentScreen.dart';
@@ -38,8 +41,27 @@ class AppRoutes {
     RouteName.emiRepaymentScheduleScreen: (context) =>
         const EmiRepaymentScheduleScreen(),
 
+    RouteName.collectPaymentScreen: (context) =>
+        const CollectPaymentScreen(),
+
+    RouteName.singleLoanDetailScreen: (context) {
+      // arguments থেকে loanId নিন
+      final arguments = ModalRoute.of(context)?.settings.arguments;
+      if (arguments is String) {
+        return SingleLoanDetailScreen(loanId: arguments);
+      }
+      // Fallback - যদি arguments না আসে
+      return const Scaffold(
+        body: Center(
+          child: Text('No Loan ID provided'),
+        ),
+      );
+    },
+
     RouteName.totalCustomerScreen: (context) =>
         const TotalCustomerScreen(),
+    RouteName.paymentScreen: (context) =>
+        const PaymentScreen(),
     RouteName.pendingApprovalScreen: (context) =>
         const PendingApprovalScreen(),
     RouteName.activeLoanScreen: (context) =>
