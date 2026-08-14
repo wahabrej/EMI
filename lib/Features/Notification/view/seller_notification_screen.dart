@@ -9,18 +9,24 @@ class SellerNotificationScreen extends StatefulWidget {
   const SellerNotificationScreen({super.key});
 
   @override
-  State<SellerNotificationScreen> createState() => _SellerNotificationScreenState();
+  State<SellerNotificationScreen> createState() =>
+      _SellerNotificationScreenState();
 }
 
-class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
+class _SellerNotificationScreenState extends State<SellerNotificationScreen>
+    with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 1;
   bool _isLoadingMore = false;
   bool _hasMoreData = true;
 
+  // Tab controller for Unread/Read/All tabs
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _loadNotifications();
     _scrollController.addListener(_onScroll);
   }
@@ -28,6 +34,7 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -99,6 +106,24 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
     await _loadNotifications(isRefresh: true);
   }
 
+  // ─── Mark Notification as Read ──────────────────────────────────
+  Future<void> _markAsRead(String notificationId) async {
+    await context.read<SellerNotificationProvider>().markAsRead(notificationId);
+  }
+
+  // ─── Mark All as Read ────────────────────────────────────────────
+  Future<void> _markAllAsRead() async {
+    await context.read<SellerNotificationProvider>().markAllAsRead();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('All notifications marked as read'),
+        backgroundColor: AppColors.successGreen,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,6 +137,36 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFF0052CC),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFF0052CC),
+          indicatorWeight: 3,
+          tabs: [
+            Consumer<SellerNotificationProvider>(
+              builder: (context, provider, _) {
+                return Tab(
+                  text: 'Unread (${provider.unreadCount})',
+                );
+              },
+            ),
+            Consumer<SellerNotificationProvider>(
+              builder: (context, provider, _) {
+                return Tab(
+                  text: 'Read (${provider.readNotifications.length})',
+                );
+              },
+            ),
+            Consumer<SellerNotificationProvider>(
+              builder: (context, provider, _) {
+                return Tab(
+                  text: 'All (${provider.allNotifications.length})',
+                );
+              },
+            ),
+          ],
+        ),
         actions: [
           // Mark all as read button
           Consumer<SellerNotificationProvider>(
@@ -120,36 +175,9 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
                 return const SizedBox.shrink();
               }
               return IconButton(
-                onPressed: () => _showMarkAllReadDialog(context, provider),
+                onPressed: () => _showMarkAllReadDialog(context),
                 icon: const Icon(Icons.done_all_rounded),
                 tooltip: 'Mark all as read',
-              );
-            },
-          ),
-          // Unread count badge
-          Consumer<SellerNotificationProvider>(
-            builder: (context, provider, _) {
-              if (provider.unreadCount == 0) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.errorRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.errorRed.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      '${provider.unreadCount} New',
-                      style: TextStyle(
-                        color: AppColors.errorRed,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ),
               );
             },
           ),
@@ -158,7 +186,7 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
       ),
       body: Consumer<SellerNotificationProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading && provider.notifications.isEmpty) {
+          if (provider.isLoading && provider.allNotifications.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -171,12 +199,13 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
             );
           }
 
-          if (provider.errorMessage != null && provider.notifications.isEmpty) {
+          if (provider.errorMessage != null && provider.allNotifications.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline_rounded, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.error_outline_rounded,
+                      size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
                     provider.errorMessage!,
@@ -191,7 +220,8 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0052CC),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -202,7 +232,7 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
             );
           }
 
-          if (provider.notifications.isEmpty) {
+          if (provider.allNotifications.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -237,19 +267,28 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
           return RefreshIndicator(
             onRefresh: _onRefresh,
             color: const Color(0xFF0052CC),
-            child: ListView.separated(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _getItemCount(provider),
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                if (index < provider.notifications.length) {
-                  final item = provider.notifications[index];
-                  return _buildNotificationItem(context, item, provider);
-                } else {
-                  return _buildLoadingMoreIndicator();
-                }
-              },
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // ─── Unread Tab ──────────────────────────────────
+                _buildNotificationList(
+                  context,
+                  provider.unreadNotifications,
+                  provider,
+                ),
+                // ─── Read Tab ────────────────────────────────────
+                _buildNotificationList(
+                  context,
+                  provider.readNotifications,
+                  provider,
+                ),
+                // ─── All Tab ─────────────────────────────────────
+                _buildNotificationList(
+                  context,
+                  provider.allNotifications,
+                  provider,
+                ),
+              ],
             ),
           );
         },
@@ -257,14 +296,69 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
     );
   }
 
+  // ─── Build Notification List ──────────────────────────────────
+  Widget _buildNotificationList(
+      BuildContext context,
+      List<Items> notifications,
+      SellerNotificationProvider provider,
+      ) {
+    if (notifications.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 64,
+              color: Colors.grey[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No notifications in this tab',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: _getItemCount(notifications, provider),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        if (index < notifications.length) {
+          final item = notifications[index];
+          return _buildNotificationItem(
+            context,
+            item,
+            provider,
+            // Read callback
+            onMarkRead: () async {
+              if (item.id != null && !(item.read ?? false)) {
+                await _markAsRead(item.id!);
+              }
+            },
+          );
+        } else {
+          return _buildLoadingMoreIndicator();
+        }
+      },
+    );
+  }
+
   // ─── Get Item Count ─────────────────────────────────────────────
-  int _getItemCount(SellerNotificationProvider provider) {
-    if (_isLoadingMore) {
-      return provider.notifications.length + 1;
+  int _getItemCount(List<Items> notifications, SellerNotificationProvider provider) {
+    if (_isLoadingMore && _hasMoreData) {
+      return notifications.length + 1;
     } else if (_hasMoreData) {
-      return provider.notifications.length + 1;
+      return notifications.length + 1;
     } else {
-      return provider.notifications.length;
+      return notifications.length;
     }
   }
 
@@ -272,14 +366,15 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
   Widget _buildNotificationItem(
       BuildContext context,
       Items item,
-      SellerNotificationProvider provider,
-      ) {
+      SellerNotificationProvider provider, {
+        required VoidCallback onMarkRead,
+      }) {
     final isUnread = !(item.read ?? true);
 
     return GestureDetector(
       onTap: () {
         debugPrint('🔔 [Notification] Tapped: ${item.title}');
-        
+
         // 1. Extract Application ID
         String? targetId = _extractTargetId(item);
 
@@ -295,10 +390,9 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
             );
             debugPrint('✅ [Notification] Navigating to Details Screen');
 
-            // 3. Mark as read
-            if (isUnread) {
-              item.read = true;
-              provider.notifyListeners();
+            // 3. Mark as read if unread
+            if (isUnread && item.id != null) {
+              _markAsRead(item.id!);
             }
           } catch (e) {
             debugPrint('❌ [Notification] Navigation Error: $e');
@@ -311,6 +405,7 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
+          // ⭐ KEY CHANGE: Unread = Blue BG, Read = White BG
           color: isUnread ? const Color(0xFFEFF6FF) : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
@@ -331,7 +426,8 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
           leading: Stack(
             children: [
               CircleAvatar(
-                backgroundColor: _getSeverityColor(item.severity).withOpacity(0.15),
+                backgroundColor:
+                _getSeverityColor(item.severity).withOpacity(0.15),
                 radius: 24,
                 child: Icon(
                   _getCategoryIcon(item.category),
@@ -339,13 +435,14 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
                   size: 22,
                 ),
               ),
+              // ⭐ Unread = Blue Dot, Read = No Dot (বা চেক মার্ক)
               if (isUnread)
                 Positioned(
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    width: 12,
-                    height: 12,
+                    width: 14,
+                    height: 14,
                     decoration: const BoxDecoration(
                       color: Color(0xFF0052CC),
                       shape: BoxShape.circle,
@@ -355,7 +452,7 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
                         '•',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 8,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -371,9 +468,12 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
                 child: Text(
                   item.title ?? 'No Title',
                   style: TextStyle(
+                    // ⭐ Unread = Bold, Read = Normal
                     fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
                     fontSize: 14,
-                    color: isUnread ? const Color(0xFF0F172A) : const Color(0xFF1E293B),
+                    color: isUnread
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF1E293B),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -397,48 +497,96 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
                 item.body ?? '',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isUnread ? const Color(0xFF334155) : const Color(0xFF64748B),
+                  color: isUnread
+                      ? const Color(0xFF334155)
+                      : const Color(0xFF64748B),
                   height: 1.4,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0052CC).withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.open_in_new_rounded,
-                      size: 12,
-                      color: Color(0xFF0052CC),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0052CC).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      'View & Action',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF0052CC),
-                        fontWeight: FontWeight.w600,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.open_in_new_rounded,
+                          size: 12,
+                          color: Color(0xFF0052CC),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'View Details',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF0052CC),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // ⭐ Unread = "Mark as Read" বাটন
+                  if (isUnread) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: onMarkRead,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.successGreen.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 12,
+                              color: AppColors.successGreen,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Mark as Read',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.successGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
             ],
           ),
           trailing: isUnread
-              ? const Icon(
-            Icons.circle,
-            size: 8,
-            color: Color(0xFF0052CC),
+              ? Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Color(0xFF0052CC),
+              shape: BoxShape.circle,
+            ),
           )
-              : null,
+              : Icon(
+            Icons.check_circle,
+            color: Colors.green.shade400,
+            size: 20,
+          ),
         ),
       ),
     );
@@ -479,7 +627,7 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
   }
 
   // ─── Show Mark All Read Dialog ──────────────────────────────────
-  void _showMarkAllReadDialog(BuildContext context, SellerNotificationProvider provider) {
+  void _showMarkAllReadDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -503,15 +651,7 @@ class _SellerNotificationScreenState extends State<SellerNotificationScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await _loadNotifications(isRefresh: true);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All notifications marked as read'),
-                  backgroundColor: AppColors.successGreen,
-                  duration: Duration(seconds: 2),
-                ),
-              );
+              await _markAllAsRead();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0052CC),

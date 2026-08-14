@@ -177,4 +177,6 @@ class ApiEndPoint {
   // ─── Payments (Staff/Collection) ───
   static String get collectPayment =>
       '$baseUrl${_withPrefix('/payments/collect')}';
+  static String get assignedProducts => '$baseUrl${_withPrefix('/assigned-products')}';
+
 }

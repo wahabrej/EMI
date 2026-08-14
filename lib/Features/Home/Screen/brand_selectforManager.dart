@@ -1,4 +1,4 @@
-// lib/screens/BrandSelectionScreen.dart
+// lib/screens/BrandSelectForManager.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/core/routes/Routes_name.dart';
@@ -7,217 +7,151 @@ import '../../../core/constant/App_Colors.dart';
 import '../../multy_form/viewModel/multyform_provider.dart';
 import '../Model/EmiPlan.dart';
 import '../Model/PhoneProductModel.dart' hide Data;
-import '../ViewModel/Brand_Selection_Model.dart';
+import '../ViewModel/BrandSelectModelForManager.dart';
 
-class BrandSelectionScreen extends StatefulWidget {
-  final String? source; // 👈 Add source parameter
+class BrandSelectForManager extends StatefulWidget {
+  final String? source;
 
-  const BrandSelectionScreen({
-    super.key,
-    this.source,
-  });
+  const BrandSelectForManager({super.key, this.source});
 
   @override
-  State<BrandSelectionScreen> createState() => _BrandSelectionScreenState();
+  State<BrandSelectForManager> createState() => _BrandSelectForManagerState();
 }
 
-class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
-  String? _source; // 👈 Store the source here
-
+class _BrandSelectForManagerState extends State<BrandSelectForManager> {
+  String? _source;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    //  Move argument extraction to didChangeDependencies or postFrameCallback
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Extract argument after context is ready
       final args = ModalRoute.of(context)?.settings.arguments;
 
       if (args is String) {
         setState(() {
           _source = args;
         });
-        debugPrint(' [BrandSelection] Source from arguments: $_source');
-      } else {
-        _source = null;
-        debugPrint(' [BrandSelection] No source argument found');
+        debugPrint('📌 [BrandSelectForManager] Source: $_source');
       }
 
-      // Fetch products
-      context.read<BrandSelectionViewModel>().fetchProductsForCurrentUser();
+      // Fetch assigned products for Manager
+      final vm = context.read<BrandSelectModelForManager>();
+      vm.fetchAssignedProducts();
     });
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<BrandSelectionViewModel>();
-    //  Check if source is 'fromHome'
+    final vm = context.watch<BrandSelectModelForManager>();
     final bool showBackButton = _source == 'fromHome';
-
-    debugPrint(" [BrandSelection] Source: '$_source'");
-    debugPrint(" [BrandSelection] Show Back Button: $showBackButton");
 
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          "Device Catalog",
-          style: TextStyle(
-            color: AppColors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 20,
-            letterSpacing: 0.5,
-          ),
+      appBar: _buildAppBar(showBackButton),
+      body: _buildBody(vm),
+    );
+  }
+
+  // ===================== APP BAR =====================
+  PreferredSizeWidget _buildAppBar(bool showBackButton) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      title: const Text(
+        "Device Catalog Manager",
+        style: TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 20,
+          letterSpacing: 0.5,
         ),
-        backgroundColor: AppColors.accentBlue,
-        elevation: 0,
-        centerTitle: true,
-        leading: showBackButton
-            ? IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        )
-            : null,  //  No back button when from other screens
       ),
+      backgroundColor: AppColors.accentBlue,
+      elevation: 0,
+      centerTitle: true,
+      leading: showBackButton
+          ? IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: () => Navigator.pop(context),
+            )
+          : null,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+          onPressed: () {
+            context.read<BrandSelectModelForManager>().fetchAssignedProducts();
+          },
+        ),
+      ],
+    );
+  }
 
-      body: vm.isLoading
-          ? const Center(
+  // ===================== BODY =====================
+  Widget _buildBody(BrandSelectModelForManager vm) {
+    if (vm.isLoading) {
+      return const Center(
         child: CircularProgressIndicator(color: AppColors.primaryBlue),
-      )
-          : vm.errorMessage != null
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.cloud_off_rounded,
-              size: 64,
-              color: AppColors.greyText,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              vm.errorMessage!,
-              style: const TextStyle(
-                color: AppColors.black,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
-              ),
-              onPressed: () => vm.fetchProductsForCurrentUser(),
-              child: const Text(
-                "Retry",
-                style: TextStyle(color: AppColors.white),
-              ),
-            ),
-          ],
-        ),
-      )
-          : SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Searchable Product Selector
-            _buildProductDropdown(vm),
-            const SizedBox(height: 20),
+      );
+    }
 
-            // 2. Purchase Mode Selector
-            _buildPurchaseModeSelector(vm),
+    if (vm.errorMessage != null) {
+      return _buildErrorWidget(vm);
+    }
+
+    if (vm.productList.isEmpty) {
+      return _buildEmptyWidget(vm);
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Searchable Dropdown (সার্চ + ড্রপডাউন)
+          _buildSearchableDropdown(vm),
+          const SizedBox(height: 20),
+
+          // 2. Purchase Mode Selector
+          _buildPurchaseModeSelector(vm),
+          const SizedBox(height: 24),
+
+          // 3. Selected Product Details
+          if (vm.selectedProduct != null) ...[
+            _buildSelectedProductCard(vm),
             const SizedBox(height: 24),
-
-            // 3. Product Header
-            if (vm.selectedProduct != null) ...[
-              _buildProductHeader(vm.selectedProduct!),
-              const SizedBox(height: 24),
-            ],
-
-            // 4. EMI Section
-            if (vm.selectedPurchaseType == 'EMI') ...[
-              if (vm.isFetchingEmiPlans)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Column(
-                      children: [
-                        CircularProgressIndicator(
-                          color: AppColors.primaryBlue,
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          'Loading EMI Plans...',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.greyText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else if (vm.emiPlanList.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderGrey),
-                  ),
-                  child: const Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 40,
-                          color: AppColors.greyText,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'No EMI Plans Available',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.greyText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else ...[
-                  _buildEmiCalculatorCard(vm),
-                  const SizedBox(height: 24),
-                  _buildChoosePlanSection(vm),
-                  const SizedBox(height: 24),
-                  _buildEmiSummary(vm),
-                  const SizedBox(height: 24),
-                  _buildInstallmentScheduleTable(vm),
-                  const SizedBox(height: 32),
-                ],
-            ],
-
-            // 5. Action Button
-            _buildActionButtons(vm),
           ],
-        ),
+
+          // 4. EMI Section
+          if (vm.selectedPurchaseType == 'EMI' &&
+              vm.selectedProduct != null) ...[
+            _buildEmiSection(vm),
+          ],
+
+          // // 5. Action Button
+          // if (vm.selectedProduct != null) ...[
+          //   const SizedBox(height: 20),
+          //   _buildActionButton(vm),
+          // ],
+        ],
       ),
     );
   }
 
-  // ===================== SEARCHABLE PRODUCT DROPDOWN =====================
-  Widget _buildProductDropdown(BrandSelectionViewModel vm) {
+  // ===================== SEARCHABLE DROPDOWN =====================
+  Widget _buildSearchableDropdown(BrandSelectModelForManager vm) {
     return GestureDetector(
-      onTap: () => _showSearchableProductBottomSheet(vm),
+      onTap: () => _showSearchableBottomSheet(vm),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -277,7 +211,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                   Text(
                     vm.selectedProduct != null
                         ? (vm.selectedProduct!.brand?.name ?? "Tap to change")
-                        : "Search by model or brand",
+                        : "Search by name, brand, or model",
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.greyText,
@@ -298,17 +232,18 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
-  void _showSearchableProductBottomSheet(BrandSelectionViewModel vm) {
+  // ===================== SEARCHABLE BOTTOM SHEET =====================
+  void _showSearchableBottomSheet(BrandSelectModelForManager vm) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _SearchProductBottomSheet(vm: vm),
+      builder: (context) => _SearchableProductSheet(vm: vm),
     );
   }
 
   // ===================== PURCHASE MODE SELECTOR =====================
-  Widget _buildPurchaseModeSelector(BrandSelectionViewModel vm) {
+  Widget _buildPurchaseModeSelector(BrandSelectModelForManager vm) {
     return Container(
       height: 52,
       padding: const EdgeInsets.all(4),
@@ -331,12 +266,12 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: isSelected
                       ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
                       : [],
                 ),
                 child: Row(
@@ -374,20 +309,28 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
-  // ===================== PRODUCT HEADER =====================
-  Widget _buildProductHeader(Data product) {
+  // ===================== SELECTED PRODUCT CARD =====================
+  Widget _buildSelectedProductCard(BrandSelectModelForManager vm) {
+    final product = vm.selectedProduct!;
     final imageUrl = product.imageUrl != null
         ? (product.imageUrl!.startsWith('http')
-        ? product.imageUrl!
-        : ApiEndPoint.assetUrl(product.imageUrl!))
+              ? product.imageUrl!
+              : ApiEndPoint.assetUrl(product.imageUrl!))
         : '';
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderGrey),
+        border: Border.all(color: AppColors.primaryBlue, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryBlue.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -400,39 +343,65 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
             ),
             child: imageUrl.isNotEmpty
                 ? ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.phone_android,
-                  size: 40,
-                  color: AppColors.primaryBlue,
-                ),
-              ),
-            )
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.phone_android,
+                        size: 40,
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
+                  )
                 : const Icon(
-              Icons.phone_android,
-              size: 40,
-              color: AppColors.primaryBlue,
-            ),
+                    Icons.phone_android,
+                    size: 40,
+                    color: AppColors.primaryBlue,
+                  ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  product.name ?? 'Phone',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.black,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        product.name ?? 'Phone',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.black,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.successGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'SELECTED',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.successGreen,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  (product.brand?.name ?? '').toUpperCase(),
+                  product.brand?.name ?? '',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -441,23 +410,13 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '৳${product.sellingPrice ?? "0"}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
-                    const Icon(
-                      Icons.verified_user_rounded,
-                      color: AppColors.successGreen,
-                      size: 20,
-                    ),
-                  ],
+                Text(
+                  'Selling Price: ৳${product.sellingPrice ?? 0}',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
               ],
             ),
@@ -467,18 +426,74 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
+  // ===================== EMI SECTION =====================
+  Widget _buildEmiSection(BrandSelectModelForManager vm) {
+    if (vm.isFetchingEmiPlans) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              CircularProgressIndicator(color: AppColors.primaryBlue),
+              SizedBox(height: 12),
+              Text(
+                'Loading EMI Plans...',
+                style: TextStyle(fontSize: 14, color: AppColors.greyText),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (vm.emiPlanList.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderGrey),
+        ),
+        child: const Center(
+          child: Column(
+            children: [
+              Icon(Icons.info_outline, size: 40, color: AppColors.greyText),
+              SizedBox(height: 8),
+              Text(
+                'No EMI Plans Available',
+                style: TextStyle(fontSize: 14, color: AppColors.greyText),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        _buildEmiCalculatorCard(vm),
+        const SizedBox(height: 20),
+        _buildChoosePlanSection(vm),
+        const SizedBox(height: 20),
+        _buildEmiSummary(vm),
+        const SizedBox(height: 20),
+        _buildInstallmentScheduleTable(vm),
+      ],
+    );
+  }
+
   // ===================== EMI CALCULATOR CARD =====================
-  Widget _buildEmiCalculatorCard(BrandSelectionViewModel vm) {
+  Widget _buildEmiCalculatorCard(BrandSelectModelForManager vm) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderGrey),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(5),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -520,14 +535,6 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
             showArrow: true,
             onTap: () => _showDownPaymentDialog(vm),
           ),
-          // const Divider(height: 24, thickness: 0.8),
-          // _calcRow(
-          //   Icons.percent_rounded,
-          //   "Charges Rate",
-          //   "${vm.interestRate.toStringAsFixed(0)}%",
-          //   showArrow: true,
-          //   onTap: () => _showInterestDialog(vm),
-          // ),
           const Divider(height: 24, thickness: 0.8),
           Row(
             children: [
@@ -564,12 +571,12 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: isSelected
                             ? [
-                          BoxShadow(
-                            color: AppColors.primaryBlue.withAlpha(50),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
+                                BoxShadow(
+                                  color: AppColors.primaryBlue.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
                             : null,
                       ),
                       child: Center(
@@ -579,7 +586,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                             fontSize: 13,
                             fontWeight: FontWeight.w900,
                             color: isSelected
-                                ? AppColors.white
+                                ? Colors.white
                                 : AppColors.primaryBlue,
                           ),
                         ),
@@ -590,56 +597,18 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
               ),
             ],
           ),
-          // if (vm.getDownPaymentComponents().isNotEmpty) ...[
-          //   const SizedBox(height: 16),
-          //   const Divider(height: 1),
-          //   const SizedBox(height: 12),
-          //   const Text(
-          //     "Additional Charges:",
-          //     style: TextStyle(
-          //       fontSize: 12,
-          //       fontWeight: FontWeight.w600,
-          //       color: AppColors.greyText,
-          //     ),
-          //   ),
-          //   const SizedBox(height: 6),
-          //   Wrap(
-          //     spacing: 8,
-          //     runSpacing: 4,
-          //     children: vm.getDownPaymentComponents().map((comp) {
-          //       return Container(
-          //         padding: const EdgeInsets.symmetric(
-          //           horizontal: 10,
-          //           vertical: 4,
-          //         ),
-          //         decoration: BoxDecoration(
-          //           color: AppColors.bgGrey,
-          //           borderRadius: BorderRadius.circular(6),
-          //         ),
-          //         child: Text(
-          //           "${comp.name}: ${comp.rate}%",
-          //           style: const TextStyle(
-          //             fontSize: 11,
-          //             fontWeight: FontWeight.w600,
-          //             color: AppColors.iconGrey,
-          //           ),
-          //         ),
-          //       );
-          //     }).toList(),
-          //   ),
-          // ],
         ],
       ),
     );
   }
 
   Widget _calcRow(
-      IconData icon,
-      String label,
-      String value, {
-        bool showArrow = false,
-        VoidCallback? onTap,
-      }) {
+    IconData icon,
+    String label,
+    String value, {
+    bool showArrow = false,
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -685,7 +654,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   }
 
   // ===================== SELECTED PLAN SECTION =====================
-  Widget _buildChoosePlanSection(BrandSelectionViewModel vm) {
+  Widget _buildChoosePlanSection(BrandSelectModelForManager vm) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -711,7 +680,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryBlue.withAlpha(60),
+                color: AppColors.primaryBlue.withOpacity(0.3),
                 blurRadius: 15,
                 offset: const Offset(0, 8),
               ),
@@ -774,14 +743,14 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   }
 
   // ===================== EMI SUMMARY =====================
-  Widget _buildEmiSummary(BrandSelectionViewModel vm) {
+  Widget _buildEmiSummary(BrandSelectModelForManager vm) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.infoBlue,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primaryBlue.withAlpha(30)),
+        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2)),
       ),
       child: Column(
         children: [
@@ -819,11 +788,11 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   }
 
   Widget _sumRow(
-      String label,
-      String value, {
-        bool isBold = false,
-        Color? color,
-      }) {
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -848,7 +817,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   }
 
   // ===================== INSTALLMENT SCHEDULE =====================
-  Widget _buildInstallmentScheduleTable(BrandSelectionViewModel vm) {
+  Widget _buildInstallmentScheduleTable(BrandSelectModelForManager vm) {
     if (vm.installmentSchedule.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -866,7 +835,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.borderGrey),
           ),
@@ -885,18 +854,18 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
                   color: isFinal ? AppColors.infoBlue : Colors.transparent,
                   borderRadius: isLast
                       ? const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  )
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        )
                       : BorderRadius.zero,
                   border: isLast
                       ? null
                       : const Border(
-                    bottom: BorderSide(
-                      color: AppColors.borderGrey,
-                      width: 0.5,
-                    ),
-                  ),
+                          bottom: BorderSide(
+                            color: AppColors.borderGrey,
+                            width: 0.5,
+                          ),
+                        ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -954,13 +923,13 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
-  // ===================== ACTION BUTTONS =====================
-  Widget _buildActionButtons(BrandSelectionViewModel vm) {
+  // ===================== ACTION BUTTON =====================
+  Widget _buildActionButton(BrandSelectModelForManager vm) {
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withAlpha(40),
+            color: AppColors.primaryBlue.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -989,7 +958,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
               tenure: vm.selectedTenureMonths,
               downPayment: vm.resultDownPayment,
               interestRate: vm.interestRate,
-              downPaymentComponents: vm.getDownPaymentComponents().map((e) => e.toJson()).toList(),
+              downPaymentComponents: vm.getDownPaymentComponentsMap(),
               cashbackRate: vm.cashbackRate,
             );
           }
@@ -999,7 +968,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Buy",
+              "Buy Now",
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
@@ -1015,7 +984,7 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   }
 
   // ===================== DIALOGS =====================
-  void _showDownPaymentDialog(BrandSelectionViewModel vm) {
+  void _showDownPaymentDialog(BrandSelectModelForManager vm) {
     final controller = TextEditingController(
       text: vm.resultDownPayment.toStringAsFixed(0),
     );
@@ -1058,43 +1027,71 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
     );
   }
 
-  void _showInterestDialog(BrandSelectionViewModel vm) {
-    final controller = TextEditingController(
-      text: vm.interestRate.toStringAsFixed(0),
-    );
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Edit Charges Rate (%)",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            suffixText: " %",
-            border: OutlineInputBorder(),
+  // ===================== ERROR WIDGET =====================
+  Widget _buildErrorWidget(BrandSelectModelForManager vm) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.cloud_off_rounded,
+            size: 64,
+            color: AppColors.greyText,
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+          const SizedBox(height: 16),
+          Text(
+            vm.errorMessage!,
+            style: const TextStyle(
+              color: AppColors.black,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryBlue,
             ),
-            onPressed: () {
-              final value = double.tryParse(controller.text);
-              if (value != null) {
-                vm.updateInterestRate(value);
-              }
-              Navigator.pop(context);
-            },
-            child: const Text("Apply", style: TextStyle(color: Colors.white)),
+            onPressed: () => vm.fetchAssignedProducts(),
+            child: const Text("Retry", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===================== EMPTY WIDGET =====================
+  Widget _buildEmptyWidget(BrandSelectModelForManager vm) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.inventory_2_rounded,
+            size: 64,
+            color: AppColors.greyText,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "No Products Assigned",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "You don't have any products assigned yet.",
+            style: TextStyle(color: AppColors.greyText),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+            ),
+            onPressed: () => vm.fetchAssignedProducts(),
+            child: const Text("Refresh", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1102,17 +1099,17 @@ class _BrandSelectionScreenState extends State<BrandSelectionScreen> {
   }
 }
 
-// ===================== SEARCH BOTTOM SHEET =====================
-class _SearchProductBottomSheet extends StatefulWidget {
-  final BrandSelectionViewModel vm;
-  const _SearchProductBottomSheet({required this.vm});
+// ===================== SEARCHABLE PRODUCT BOTTOM SHEET =====================
+class _SearchableProductSheet extends StatefulWidget {
+  final BrandSelectModelForManager vm;
+  const _SearchableProductSheet({required this.vm});
 
   @override
-  State<_SearchProductBottomSheet> createState() =>
-      _SearchProductBottomSheetState();
+  State<_SearchableProductSheet> createState() =>
+      _SearchableProductSheetState();
 }
 
-class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
+class _SearchableProductSheetState extends State<_SearchableProductSheet> {
   final TextEditingController _searchController = TextEditingController();
   List<Data> _filteredList = [];
 
@@ -1122,14 +1119,27 @@ class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
     _filteredList = widget.vm.productList;
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _filter(String query) {
     setState(() {
-      _filteredList = widget.vm.productList.where((p) {
-        final name = p.name?.toLowerCase() ?? "";
-        final brand = p.brand?.name?.toLowerCase() ?? "";
-        return name.contains(query.toLowerCase()) ||
-            brand.contains(query.toLowerCase());
-      }).toList();
+      if (query.isEmpty) {
+        _filteredList = widget.vm.productList;
+      } else {
+        _filteredList = widget.vm.productList.where((product) {
+          final name = product.name?.toLowerCase() ?? '';
+          final brand = product.brand?.name?.toLowerCase() ?? '';
+          final model = product.model?.toLowerCase() ?? '';
+          final search = query.toLowerCase();
+          return name.contains(search) ||
+              brand.contains(search) ||
+              model.contains(search);
+        }).toList();
+      }
     });
   }
 
@@ -1149,6 +1159,7 @@ class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
       ),
       child: Column(
         children: [
+          // Handle Bar
           const SizedBox(height: 12),
           Container(
             width: 50,
@@ -1158,6 +1169,7 @@ class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
+          // Header
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 16, 12),
             child: Row(
@@ -1178,6 +1190,7 @@ class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
               ],
             ),
           ),
+          // Search Box
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: TextField(
@@ -1186,7 +1199,7 @@ class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
               autofocus: true,
               style: const TextStyle(fontWeight: FontWeight.w600),
               decoration: InputDecoration(
-                hintText: "Search by phone name or brand...",
+                hintText: "Search by phone name, brand, or model...",
                 hintStyle: TextStyle(
                   color: Colors.grey.shade400,
                   fontSize: 14,
@@ -1197,6 +1210,18 @@ class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
                   color: AppColors.primaryBlue,
                   size: 22,
                 ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear_rounded,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          _filter('');
+                        },
+                      )
+                    : null,
                 filled: true,
                 fillColor: AppColors.bgGrey,
                 border: OutlineInputBorder(
@@ -1208,124 +1233,161 @@ class _SearchProductBottomSheetState extends State<_SearchProductBottomSheet> {
             ),
           ),
           const SizedBox(height: 16),
+          // Product List
           Expanded(
             child: _filteredList.isEmpty
                 ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off_rounded,
-                    size: 48,
-                    color: Colors.grey.shade300,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "No models found",
-                    style: TextStyle(
-                      color: AppColors.greyText,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            )
-                : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              itemCount: _filteredList.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final product = _filteredList[index];
-                final isSelected =
-                    widget.vm.selectedProduct?.id == product.id;
-
-                return InkWell(
-                  onTap: () {
-                    widget.vm.selectProduct(product);
-                    Navigator.pop(context);
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.infoBlue
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryBlue
-                            : Colors.transparent,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            color: AppColors.bgGrey,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.phone_iphone_rounded,
-                            color: AppColors.primaryBlue,
-                            size: 28,
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 48,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "No models found",
+                          style: TextStyle(
+                            color: AppColors.greyText,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    itemCount: _filteredList.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final product = _filteredList[index];
+                      final isSelected =
+                          widget.vm.selectedProduct?.id == product.id;
+                      final imageUrl = product.imageUrl != null
+                          ? (product.imageUrl!.startsWith('http')
+                                ? product.imageUrl!
+                                : ApiEndPoint.assetUrl(product.imageUrl!))
+                          : '';
+
+                      return InkWell(
+                        onTap: () {
+                          widget.vm.selectProduct(product);
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.infoBlue
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primaryBlue
+                                  : Colors.transparent,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                product.name ?? "N/A",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 16,
-                                  color: isSelected
-                                      ? AppColors.primaryBlue
-                                      : AppColors.black,
+                              // Product Image
+                              Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgGrey,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: imageUrl.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.network(
+                                          imageUrl,
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (_, __, ___) =>
+                                              const Icon(
+                                                Icons.phone_iphone_rounded,
+                                                color: AppColors.primaryBlue,
+                                                size: 28,
+                                              ),
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.phone_iphone_rounded,
+                                        color: AppColors.primaryBlue,
+                                        size: 28,
+                                      ),
+                              ),
+                              const SizedBox(width: 16),
+                              // Product Info
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.name ?? "N/A",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 16,
+                                        color: isSelected
+                                            ? AppColors.primaryBlue
+                                            : AppColors.black,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      product.brand?.name ?? "Other Brand",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.greyText,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (product.model != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        "Model: ${product.model}",
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.iconGrey,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
-                              Text(
-                                product.brand?.name ?? "Other Brand",
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.greyText,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              // Price & Selection
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "৳${product.sellingPrice ?? '0'}",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.primaryBlue,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: AppColors.primaryBlue,
+                                      size: 18,
+                                    ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              "৳${product.sellingPrice ?? '0'}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.primaryBlue,
-                                fontSize: 16,
-                              ),
-                            ),
-                            if (isSelected)
-                              const Icon(
-                                Icons.check_circle_rounded,
-                                color: AppColors.primaryBlue,
-                                size: 16,
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

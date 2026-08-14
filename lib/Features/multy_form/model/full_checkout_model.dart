@@ -18,7 +18,7 @@ class FullCheckoutModel {
   String saleType = 'EMI'; // 'Selling Price' | 'EMI'
 
   // EMI Mode
-  String emiMode = 'EXISTING_PLAN'; // EXISTING_PLAN | CREATE_NEW_PLAN | REMAINING_BALANCE
+  String emiMode = 'CREATE_NEW_PLAN'; // EXISTING_PLAN | CREATE_NEW_PLAN | REMAINING_BALANCE
 
   // Existing Plan
   String? emiPlanId;

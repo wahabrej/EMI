@@ -11,6 +11,7 @@ import '../../Features/Home/Screen/CollectPaymentScreen.dart';
 import '../../Features/Home/Screen/OverdueLoanScreen.dart';
 import '../../Features/Home/Screen/PendingApprovalScreen.dart';
 import '../../Features/Home/Screen/TotalCustomerScreen.dart';
+import '../../Features/Home/Screen/brand_selectforManager.dart';
 import '../../Features/Home/Screen/brand_selection_screen.dart';
 import '../../Features/Home/Screen/LoanApplicationDetailsScreen.dart';
 import '../../Features/Home/Screen/CustomerDetailsScreen.dart'; // Added this
@@ -43,6 +44,8 @@ class AppRoutes {
 
     RouteName.collectPaymentScreen: (context) =>
         const CollectPaymentScreen(),
+    RouteName.brandSelectForManager: (context) =>
+        const BrandSelectForManager(),
 
     RouteName.singleLoanDetailScreen: (context) {
       // arguments থেকে loanId নিন

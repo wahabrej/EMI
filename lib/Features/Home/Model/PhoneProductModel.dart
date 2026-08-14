@@ -29,6 +29,7 @@ class Data {
   String? code;
   String? name;
   String? model;
+  String? modelCode; // ✅ এই লাইন যোগ করুন
   String? categoryId;
   String? seriesId;
   String? buyingPrice;
@@ -55,6 +56,7 @@ class Data {
     this.code,
     this.name,
     this.model,
+    this.modelCode, // ✅ এই লাইন যোগ করুন
     this.categoryId,
     this.seriesId,
     this.buyingPrice,
@@ -82,6 +84,7 @@ class Data {
     code = json['code']?.toString();
     name = json['name']?.toString();
     model = json['model']?.toString();
+    modelCode = json['modelCode']?.toString() ?? json['model_code']?.toString() ?? json['model']?.toString(); // ✅ এই লাইন যোগ করুন
     categoryId = json['categoryId']?.toString();
     seriesId = json['seriesId']?.toString();
     buyingPrice = json['buyingPrice']?.toString();
@@ -120,6 +123,7 @@ class Data {
     data['code'] = code;
     data['name'] = name;
     data['model'] = model;
+    data['modelCode'] = modelCode; // ✅ এই লাইন যোগ করুন
     data['categoryId'] = categoryId;
     data['seriesId'] = seriesId;
     data['buyingPrice'] = buyingPrice;

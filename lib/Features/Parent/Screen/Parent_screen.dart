@@ -2,25 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/Features/Parent/ViewModel/Parent_screen_provider.dart';
 import '../../../core/constant/App_Colors.dart';
-
-import '../../EMI/Screen/EmiRepaymentScheduleScreen.dart';
-import '../../EMI/Screen/Emi_Screen.dart';
+import '../../../core/constant/Token_storage.dart';
 import '../../Home/Screen/Home_Screen.dart';
+import '../../Home/Screen/brand_selectforManager.dart';
 import '../../Home/Screen/brand_selection_screen.dart';
 import '../../Order/Screen/Order_Screen.dart';
 import '../../Payment/Screen/Payment_Screen.dart';
 import '../../Profile/Screen/ProfileScreen.dart';
 
-class ParentScreen extends StatelessWidget {
+class ParentScreen extends StatefulWidget {
   const ParentScreen({super.key});
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    BrandSelectionScreen(),
-    OrderScreen(),
-    PaymentScreen(),
-    ProfileScreen(),
-  ];
+  @override
+  State<ParentScreen> createState() => _ParentScreenState();
+}
+
+class _ParentScreenState extends State<ParentScreen> {
+  final AppStorage _appStorage = AppStorage();
+  String? _userRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final role = await _appStorage.getUserRole();
+    setState(() {
+      _userRole = role;
+    });
+    debugPrint("👤 [ParentScreen] User Role: $_userRole");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +42,9 @@ class ParentScreen extends StatelessWidget {
         return Scaffold(
           body: IndexedStack(
             index: provider.currentIndex,
-            children: _screens,
+            children: _getScreens(), // ✅ Dynamic screens
           ),
 
-          // Bottom Navigation Bar
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               boxShadow: [
@@ -50,10 +62,16 @@ class ParentScreen extends StatelessWidget {
               },
               type: BottomNavigationBarType.fixed,
               backgroundColor: AppColors.white,
-              selectedItemColor: AppColors.primaryBlue, // Active Color
-              unselectedItemColor: AppColors.lightGreyText, // Inactive Color
-              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+              selectedItemColor: AppColors.primaryBlue,
+              unselectedItemColor: AppColors.lightGreyText,
+              selectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
               showUnselectedLabels: true,
               elevation: 0,
               items: const [
@@ -88,5 +106,24 @@ class ParentScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  // ✅ Dynamic Screens based on Role
+  List<Widget> _getScreens() {
+    // Check if user is Manager
+    final bool isManager = _userRole?.toUpperCase() == 'MANAGER';
+
+    return [
+      const HomeScreen(),
+
+      // ✅ Brand Selection based on Role
+      isManager
+          ? const BrandSelectForManager() // Manager Screen
+          : const BrandSelectionScreen(), // Staff/Agent Screen
+
+      const OrderScreen(),
+      const PaymentScreen(),
+      const ProfileScreen(),
+    ];
   }
 }

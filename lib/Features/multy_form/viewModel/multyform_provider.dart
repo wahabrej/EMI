@@ -64,7 +64,14 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("   downPayment: ${checkoutData.downPayment}");
     debugPrint("═══════════════════════════════════════");
 
-    // ─── EXISTING PLAN ───
+    // ✅ ১ম: CREATE_NEW_PLAN (ডিফল্ট)
+    if (checkoutData.emiMode == 'CREATE_NEW_PLAN') {
+      debugPrint("📌 [initializePlanData] Calculating CREATE_NEW_PLAN data");
+      recalculateEmi();
+      return;
+    }
+
+    // ✅ ২য়: EXISTING_PLAN
     if (checkoutData.emiMode == 'EXISTING_PLAN') {
       if (checkoutData.emiPlanId != null &&
           checkoutData.emiPlanId!.isNotEmpty) {
@@ -92,14 +99,7 @@ class CheckoutViewModel extends ChangeNotifier {
       return;
     }
 
-    // ─── CREATE NEW PLAN ───
-    if (checkoutData.emiMode == 'CREATE_NEW_PLAN') {
-      debugPrint("📌 [initializePlanData] Calculating CREATE_NEW_PLAN data");
-      recalculateEmi();
-      return;
-    }
-
-    // ─── REMAINING BALANCE ───
+    // ✅ ৩য়: REMAINING_BALANCE
     if (checkoutData.emiMode == 'REMAINING_BALANCE') {
       debugPrint("📌 [initializePlanData] Calculating REMAINING_BALANCE data");
       recalculateEmi();
@@ -189,7 +189,7 @@ class CheckoutViewModel extends ChangeNotifier {
     checkoutData.saleType = saleType;
 
     if (saleType == 'EMI') {
-      checkoutData.emiMode = 'EXISTING_PLAN';
+      checkoutData.emiMode = 'CREATE_NEW_PLAN';  // ✅ ডিফল্ট CREATE_NEW_PLAN
 
       if (tenure != null) {
         checkoutData.emiTenureMonths = tenure;

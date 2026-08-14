@@ -1,13 +1,13 @@
-// lib/viewmodels/BrandSelectionViewModel.dart
 import 'dart:convert';
-import 'package:flutter/material.dart';
+
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+
 import '../../../core/constant/Api_End_point.dart';
 import '../../../core/constant/Token_storage.dart';
 import '../Model/EmiPlan.dart';
-import '../Model/PhoneProductModel.dart' hide PhoneProductModel, Data;
 
-class BrandSelectionViewModel extends ChangeNotifier {
+class BrandSelectModelForManager extends ChangeNotifier {
   // ─── Loading States ───
   bool isLoading = false;
   bool isFetchingEmiPlans = false;
@@ -48,7 +48,7 @@ class BrandSelectionViewModel extends ChangeNotifier {
   String? _currentUserId;
 
   // ─── Constructor ───
-  BrandSelectionViewModel() {
+  BrandSelectModelForManager() {
     _loadCurrentUserId();
   }
 
@@ -75,86 +75,104 @@ class BrandSelectionViewModel extends ChangeNotifier {
     return headers;
   }
 
-  // ─── Fetch Products ───
-  Future<void> fetchProductsForCurrentUser() async {
-    if (_currentUserId == null || _currentUserId!.isEmpty) {
-      await _loadCurrentUserId();
-      if (_currentUserId == null || _currentUserId!.isEmpty) {
-        errorMessage = "User not logged in. Please login again.";
-        debugPrint("[BrandSelectionVM] $errorMessage");
-        _setLoading(false);
-        notifyListeners();
-        return;
-      }
-    }
-    debugPrint(" [BrandSelectionVM] Fetching products for User ID: $_currentUserId");
-    await fetchProducts(salesPersonId: _currentUserId);
-  }
-
-  Future<void> fetchProducts({String? salesPersonId, String? brandId, String? search}) async {
+  // ─── ✅ NEW: Fetch Assigned Products for Manager ───
+  Future<void> fetchAssignedProducts({
+    String? brandId,
+    String? search,
+    String? status,
+  }) async {
     _setLoading(true);
     errorMessage = null;
 
-    final String effectiveSalesPersonId = salesPersonId ?? _currentUserId ?? '';
-
     debugPrint("═══════════════════════════════════════════════════");
-    debugPrint(" [BrandSelectionVM] fetchProducts() CALLED");
-    debugPrint(" Sales Person ID: $effectiveSalesPersonId");
+    debugPrint(" [BrandSelectionVM] fetchAssignedProducts() CALLED");
+    debugPrint(" BrandId: $brandId");
+    debugPrint(" Search: $search");
+    debugPrint(" Status: $status");
     debugPrint("═══════════════════════════════════════════════════");
-
-    if (effectiveSalesPersonId.isEmpty) {
-      errorMessage = "Sales Person ID is required.";
-      debugPrint(" [BrandSelectionVM] $errorMessage");
-      _setLoading(false);
-      notifyListeners();
-      return;
-    }
 
     try {
-      final String apiUrl = "${ApiEndPoint.products}?salesPersonId=$effectiveSalesPersonId";
-      debugPrint(" API URL: $apiUrl");
+      // ✅ Build URL with query parameters
+      final uri = Uri.parse(ApiEndPoint.assignedProducts);
+      final queryParams = <String, String>{};
+
+      if (brandId != null && brandId.isNotEmpty) {
+        queryParams['brandId'] = brandId;
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+
+      final url = uri.replace(queryParameters: queryParams);
+      debugPrint(" 📡 API URL: $url");
 
       final headers = await _getHeaders();
-      debugPrint(" Headers: ${headers.keys.join(', ')}");
+      debugPrint(" 📋 Headers: ${headers.keys.join(', ')}");
 
       final response = await http.get(
-        Uri.parse(apiUrl),
+        url,
         headers: headers,
       );
 
-      debugPrint(" Status Code: ${response.statusCode}");
+      debugPrint(" 📊 Status Code: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        debugPrint(" API call SUCCESSFUL!");
+        debugPrint(" ✅ API call SUCCESSFUL!");
+        debugPrint(" 📄 Response: ${response.body}");
 
         final Map<String, dynamic> json = jsonDecode(response.body);
-        final List<dynamic> rawData = json['data'] ?? [];
-        debugPrint(" Total Products: ${rawData.length}");
 
+        // ✅ Check response structure
+        // Assuming response format: { "data": [ { "id": "...", "name": "...", ... } ] }
+        final List<dynamic> rawData = json['data'] ?? [];
+        debugPrint(" 📦 Total Products: ${rawData.length}");
+
+        // ✅ Convert to your Data model
         phoneProductResponse = PhoneProductModel.fromJson(json);
         productList = phoneProductResponse?.data ?? [];
 
         if (productList.isNotEmpty) {
-          debugPrint(" ${productList.length} products loaded successfully.");
+          debugPrint(" ✅ ${productList.length} products loaded successfully.");
           await selectProduct(productList.first);
         } else {
-          errorMessage = "No products available for this Sales Person.";
-          debugPrint(" $errorMessage");
+          errorMessage = "No assigned products available for this Manager.";
+          debugPrint(" ⚠️ $errorMessage");
         }
+      } else if (response.statusCode == 403) {
+        errorMessage = "Access denied. Only Managers and Agents can access this endpoint.";
+        debugPrint(" ❌ $errorMessage");
+      } else if (response.statusCode == 401) {
+        errorMessage = "Session expired. Please login again.";
+        debugPrint(" ❌ $errorMessage");
       } else {
-        debugPrint("❌ API call FAILED!");
-        debugPrint("   Status Code: ${response.statusCode}");
-        debugPrint("   Response: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}");
+        debugPrint(" ❌ API call FAILED!");
+        debugPrint("    Status Code: ${response.statusCode}");
+        debugPrint("    Response: ${response.body}");
         errorMessage = "Failed to load products. Status Code: ${response.statusCode}";
       }
     } catch (e, stackTrace) {
-      debugPrint("❌ EXCEPTION: $e");
-      debugPrint("   StackTrace: $stackTrace");
+      debugPrint(" ❌ EXCEPTION: $e");
+      debugPrint("    StackTrace: $stackTrace");
       errorMessage = "Network Error: ${e.toString()}";
     } finally {
       _setLoading(false);
       debugPrint("═══════════════════════════════════════════════════");
     }
+  }
+
+  // ─── ✅ OLD fetchProducts (Keep for backward compatibility) ───
+  Future<void> fetchProducts({String? salesPersonId, String? brandId, String? search}) async {
+    // ⚠️ This is the old endpoint - now we use fetchAssignedProducts
+    await fetchAssignedProducts(brandId: brandId, search: search);
+  }
+
+  // ─── ✅ NEW: Fetch products for current user ───
+  Future<void> fetchProductsForCurrentUser() async {
+    debugPrint(" [BrandSelectionVM] Fetching assigned products for Manager");
+    await fetchAssignedProducts();
   }
 
   // ─── Select Product ───
@@ -245,8 +263,6 @@ class BrandSelectionViewModel extends ChangeNotifier {
   // ─── Apply EMI Plan ───
   void _applyEmiPlan(EmiPlan plan) {
     selectedEmiPlan = plan;
-
-    // Update all values from selected plan
     downPayment = plan.getDownPaymentAmount();
     interestRate = plan.getAppEmiChargeRate();
     cashbackRate = plan.getCashbackRate();
@@ -279,10 +295,8 @@ class BrandSelectionViewModel extends ChangeNotifier {
     resultDownPayment = downPayment;
 
     // ─── ১. App EMI Charge বের করা ───
-    // STEP 1: Base EMI Charge (appEmiChargeRate থেকে)
     double baseEmiCharge = (sellingPrice * interestRate) / 100;
 
-    // STEP 2: Additional Charges (downPaymentComponents থেকে)
     double additionalCharges = 0.0;
     final components = getDownPaymentComponents();
 
@@ -296,33 +310,17 @@ class BrandSelectionViewModel extends ChangeNotifier {
       }
     }
 
-    // STEP 3: EMI Charge for Apps = Base + Additional
     double emiChargeForApps = baseEmiCharge + additionalCharges;
-
-    // STEP 4: Cashback
     double cashback = (sellingPrice * cashbackRate) / 100;
-
-    // STEP 5: Regular Pay EMI Charge = EMI Charge for Apps - Cashback
     double regularPayEmiCharge = emiChargeForApps - cashback;
 
-    // ─── ২. ফাইন্যান্সড অ্যামাউন্ট ───
-    // Financed Amount = Selling Price + App EMI Charge - Down Payment
     double financedAmount = sellingPrice + emiChargeForApps - resultDownPayment;
-
-    // ─── ৩. মাসিক কিস্তি ───
     final months = selectedTenureMonths;
     double monthlyEmi = months > 0 ? financedAmount / months : 0;
-
-    // ─── ৪. ফাইনাল ইনস্টলমেন্ট ───
     double finalInstallment = financedAmount - (monthlyEmi * (months - 1));
-
-    // ─── ৫. মোট পেবল ───
     double totalPayable = resultDownPayment + financedAmount;
-
-    // ─── ৬. মোট ইন্টারেস্ট ───
     double totalInterest = emiChargeForApps - cashback;
 
-    // ─── রাউন্ডিং ───
     resultBaseEmiCharge = _round(baseEmiCharge);
     resultAppEmiCharge = _round(emiChargeForApps);
     resultCashback = _round(cashback);
@@ -332,10 +330,8 @@ class BrandSelectionViewModel extends ChangeNotifier {
     resultTotalPayable = _round(totalPayable);
     resultTotalInterest = _round(totalInterest);
 
-    // ─── ইনস্টলমেন্ট শিডিউল ───
     _generateInstallmentSchedule(months);
 
-    // Debug Print
     debugPrint("═══════════════════════════════════════");
     debugPrint("📊 [CALCULATION RESULT]");
     debugPrint("   Selling Price: $sellingPrice");
@@ -386,6 +382,17 @@ class BrandSelectionViewModel extends ChangeNotifier {
     return selectedEmiPlan?.displayDownPaymentPercent ?? '0';
   }
 
+  List<Map<String, dynamic>> getDownPaymentComponentsMap() {
+    final components = getDownPaymentComponents();
+    return components.map((comp) {
+      return {
+        'name': comp.name,
+        'rate': comp.rate,
+        'type': comp.type,
+      };
+    }).toList();
+  }
+
   // ─── Reset ───
   void reset() {
     selectedProduct = null;
@@ -401,18 +408,5 @@ class BrandSelectionViewModel extends ChangeNotifier {
     resultMonthlyEmi = 0.0;
     installmentSchedule.clear();
     notifyListeners();
-  }
-  // lib/viewmodels/BrandSelectionViewModel.dart
-
-// ─── নতুন: DownPaymentComponents কে Map-এ রূপান্তর ───
-  List<Map<String, dynamic>> getDownPaymentComponentsMap() {
-    final components = getDownPaymentComponents();
-    return components.map((comp) {
-      return {
-        'name': comp.name,
-        'rate': comp.rate,
-        'type': comp.type,
-      };
-    }).toList();
   }
 }

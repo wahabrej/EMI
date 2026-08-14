@@ -1,6 +1,7 @@
 import 'package:provider/provider.dart';
 
 import '../../Features/Auth/ModelView/Auth_Screen_Provider.dart';
+import '../../Features/Home/ViewModel/BrandSelectModelForManager.dart';
 import '../../Features/Home/ViewModel/Brand_Selection_Model.dart';
 import '../../Features/Home/ViewModel/PaymentViewModel.dart';
 import '../../Features/Home/ViewModel/SalesDashboardViewModel.dart';
@@ -85,6 +86,10 @@ class AppProviders {
       ),
       ChangeNotifierProvider<PaymentViewModel>(
         create: (context) => PaymentViewModel(),
+      ),
+
+      ChangeNotifierProvider<BrandSelectModelForManager>(
+        create: (context) => BrandSelectModelForManager(),
       ),
     ];
   }

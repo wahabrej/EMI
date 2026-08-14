@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:smart_pay_app/core/routes/Routes_name.dart';
 import '../../../core/constant/App_Colors.dart';
 import '../../../core/constant/Token_storage.dart';
+import '../../Notification/viewModel/sellerNotificationProvider.dart';
 import '../Model/sales_dashboard_model.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
 
@@ -16,16 +17,29 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final AppStorage _appStorage = AppStorage();
+  String? _userRole;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserRole();
+
       Provider.of<SalesDashboardViewModel>(
         context,
         listen: false,
       ).fetchSalesDashboard();
+      final provider = context.read<SellerNotificationProvider>();
+      provider.fetchNotifications(page: 1, limit: 20);
     });
+  }
+
+  Future<void> _loadUserRole() async {
+    final role = await _appStorage.getUserRole();
+    setState(() {
+      _userRole = role;
+    });
+    print("👤 User Role in HomeScreen: $_userRole");
   }
 
   @override
@@ -224,51 +238,65 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      RouteName.sellerNotificationScreen,
-                    ),
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.notifications_outlined,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        if (pendingCount > 0)
-                          Positioned(
-                            right: 9,
-                            top: 6,
-                            child: Container(
-                              width: 10,
-                              height: 10,
-                              decoration: const BoxDecoration(
-                                color: AppColors.errorRed,
+                  Consumer<SellerNotificationProvider>(
+                    builder: (context, provider, child) {
+                      final unreadCount = provider.unreadCount;
+
+                      return GestureDetector(
+                        onTap: () async {
+                          await Navigator.pushNamed(
+                            context,
+                            RouteName.sellerNotificationScreen,
+                          );
+                          final provider = context
+                              .read<SellerNotificationProvider>();
+                          await provider.fetchNotifications(page: 1, limit: 20);
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
                                 shape: BoxShape.circle,
                               ),
-                              child: Center(
-                                child: Text(
-                                  '',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
+                              child: const Icon(
+                                Icons.notifications_outlined,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            if (unreadCount > 0)
+                              Positioned(
+                                right: 5,
+                                top: 2,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                    minHeight: 18,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.errorRed,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      unreadCount > 99 ? '99+' : '$unreadCount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                      ],
-                    ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 10),
                   GestureDetector(
@@ -639,11 +667,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCreateCustomerButton() {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(
-          context,
-          RouteName.brandSelectionScreen,
-          arguments: 'fromHome', // 👈 Pass this string
-        );
+        print(" Going to BrandSelectionForManager $_userRole");
+
+        if (_userRole?.toUpperCase() == 'MANAGER') {
+          print(" Going to BrandSelectionForManager");
+          Navigator.pushNamed(
+            context,
+            RouteName.brandSelectForManager,
+            arguments: 'fromHome', //  Pass this string
+          );
+        } else {
+          print(" Going to BrandSelectionScreen");
+          Navigator.pushNamed(
+            context,
+            RouteName.brandSelectionScreen,
+            arguments: 'fromHome', //  Pass this string
+          );
+        }
       },
       child: Container(
         width: double.infinity,
@@ -687,7 +727,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Quick Actions ─────────────────────────────────────
   Widget _buildQuickActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -773,7 +812,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Recent Applications ───────────────────────────────
   Widget _buildRecentApplications(List<Applications> apps) {
     final recent = apps.take(5).toList();
 

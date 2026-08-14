@@ -55,6 +55,8 @@ class AuthScreenProvider extends ChangeNotifier {
         if (roles != null && roles.isNotEmpty) {
           _userRole = roles[0]['role']?['name']?.toString().toUpperCase();
           await _tokenStorage.saveUserRole(_userRole!);
+          print("Saving Role: $_userRole");
+
         }
 
         if (token != null) {
