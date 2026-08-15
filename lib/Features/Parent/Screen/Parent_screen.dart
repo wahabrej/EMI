@@ -108,18 +108,18 @@ class _ParentScreenState extends State<ParentScreen> {
     );
   }
 
-  // ✅ Dynamic Screens based on Role
+  //  Dynamic Screens based on Role
   List<Widget> _getScreens() {
     // Check if user is Manager
-    final bool isManager = _userRole?.toUpperCase() == 'MANAGER';
+    final bool isManager = _userRole?.toUpperCase() == 'MANAGER' || _userRole?.toUpperCase() == 'SHOP';
 
     return [
       const HomeScreen(),
 
-      // ✅ Brand Selection based on Role
+      //  Brand Selection based on Role
       isManager
-          ? const BrandSelectForManager() // Manager Screen
-          : const BrandSelectionScreen(), // Staff/Agent Screen
+          ? const BrandSelectForManager()
+          : const BrandSelectionScreen(),
 
       const OrderScreen(),
       const PaymentScreen(),

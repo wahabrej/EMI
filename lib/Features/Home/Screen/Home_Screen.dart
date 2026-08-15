@@ -669,7 +669,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         print(" Going to BrandSelectionForManager $_userRole");
 
-        if (_userRole?.toUpperCase() == 'MANAGER') {
+        if (_userRole?.toUpperCase() == 'MANAGER' || _userRole?.toUpperCase() == 'SHOP') {
           print(" Going to BrandSelectionForManager");
           Navigator.pushNamed(
             context,

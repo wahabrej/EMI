@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/constant/App_Colors.dart';
 import '../../../core/constant/Api_End_point.dart';
 import '../ViewModel/LoanApplicationViewModel.dart';
@@ -25,7 +23,7 @@ class _LoanApplicationDetailsScreenState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint(
-        '🔍 [DetailsScreen] Fetching details for ID: ${widget.applicationId}',
+        '[DetailsScreen] Fetching details for ID: ${widget.applicationId}',
       );
       context.read<LoanApplicationViewModel>().fetchApplicationDetails(
         widget.applicationId,
@@ -603,7 +601,7 @@ class _LoanApplicationDetailsScreenState
     if (guarantorDocs is List) {
       for (int i = 0; i < guarantorDocs.length; i++) {
         final doc = guarantorDocs[i];
-        debugPrint('📄 [Guarantor $index] Doc $i: ${doc}');
+        debugPrint('📄 [Guarantor $index] Doc $i: $doc');
       }
     }
 
@@ -611,7 +609,7 @@ class _LoanApplicationDetailsScreenState
 
     debugPrint('📄 [Guarantor $index] Looking for documents...');
 
-    // ─── guarantorDocuments থেকে ডকুমেন্ট নিন ───
+    // ─── guarantorDocuments ───
     if (guarantorDocs is List) {
       for (var doc in guarantorDocs) {
         int? guarantorIndex = doc['guarantorIndex'] ?? doc['index'];
@@ -631,16 +629,16 @@ class _LoanApplicationDetailsScreenState
             bool exists = docs.any((d) => d['url'] == url);
             if (!exists) {
               docs.add({'label': label, 'url': url});
-              debugPrint('📄 [Guarantor $index] ✅ Added doc: $label -> $url');
+              debugPrint('📄 [Guarantor $index] Added doc: $label -> $url');
             } else {
-              debugPrint('📄 [Guarantor $index] ⚠️ Doc already exists: $label');
+              debugPrint('📄 [Guarantor $index] Doc already exists: $label');
             }
           } else {
-            debugPrint('📄 [Guarantor $index] ⚠️ URL is empty for doc: $doc');
+            debugPrint('📄 [Guarantor $index] URL is empty for doc: $doc');
           }
         } else {
           debugPrint(
-            '📄 [Guarantor $index] ⚠️ Skipping doc - index mismatch: $guarantorIndex != $index',
+            '📄 [Guarantor $index] Skipping doc - index mismatch: $guarantorIndex != $index',
           );
         }
       }
@@ -654,10 +652,10 @@ class _LoanApplicationDetailsScreenState
       if (!exists) {
         docs.add({'label': 'NID FRONT', 'url': nidFront});
         debugPrint(
-          '📄 [Guarantor $index] ✅ Added NID FRONT from nidFront: $nidFront',
+          '📄 [Guarantor $index] Added NID FRONT from nidFront: $nidFront',
         );
       } else {
-        debugPrint('📄 [Guarantor $index] ⚠️ NID FRONT already exists');
+        debugPrint('📄 [Guarantor $index] NID FRONT already exists');
       }
     }
 
@@ -668,10 +666,10 @@ class _LoanApplicationDetailsScreenState
       if (!exists) {
         docs.add({'label': 'NID BACK', 'url': nidBack});
         debugPrint(
-          '📄 [Guarantor $index] ✅ Added NID BACK from nidBack: $nidBack',
+          '📄 [Guarantor $index] Added NID BACK from nidBack: $nidBack',
         );
       } else {
-        debugPrint('📄 [Guarantor $index] ⚠️ NID BACK already exists');
+        debugPrint('📄 [Guarantor $index] NID BACK already exists');
       }
     }
 
@@ -820,7 +818,7 @@ class _LoanApplicationDetailsScreenState
     final fullUrl = ApiEndPoint.assetUrl(url);
 
     debugPrint(
-      '📸 [DocThumbnail] Label: $label, URL: $fullUrl, isVideo: $isVideo',
+      '[DocThumbnail] Label: $label, URL: $fullUrl, isVideo: $isVideo',
     );
 
     return Container(
@@ -935,121 +933,198 @@ class _LoanApplicationDetailsScreenState
   }
 
   // ─── Video Player ───
+  // ─── Video Player with VideoPlayerController ───
   void _showVideoPlayer(BuildContext context, String videoUrl, String title) {
     debugPrint('🎬 [VideoPlayer] Opening video: $videoUrl');
 
-    bool isLoading = true;
-
-    final webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {
-            debugPrint('📊 [WebView] Loading progress: $progress%');
-            if (progress >= 100) {
-              isLoading = false;
-            }
-          },
-          onPageFinished: (String url) {
-            debugPrint('✅ [WebView] Page loaded: $url');
-            isLoading = false;
-          },
-          onWebResourceError: (WebResourceError error) {
-            debugPrint('❌ [WebView] Error: ${error.description}');
-            isLoading = false;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(videoUrl));
+    // VideoPlayerController ব্যবহার করুন
+    final controller = VideoPlayerController.network(videoUrl);
 
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height * 0.5,
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: WebViewWidget(controller: webViewController),
-                  ),
-                  if (isLoading)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        color: Colors.black.withOpacity(0.7),
-                        child: const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircularProgressIndicator(color: Colors.white),
-                              SizedBox(height: 16),
-                              Text(
-                                'Loading video...',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return FutureBuilder(
+              future: controller.initialize(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  //
+                  return Dialog(
+                    backgroundColor: Colors.transparent,
+                    child: Container(
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(color: Colors.white),
+                            SizedBox(height: 16),
+                            Text(
+                              'Loading video...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Dialog(
+                    backgroundColor: Colors.transparent,
+                    child: Container(
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                              size: 48,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Failed to load video',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                //
+                controller.play();
+                return Dialog(
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: AspectRatio(
+                            aspectRatio: controller.value.aspectRatio,
+                            child: VideoPlayer(controller),
                           ),
                         ),
-                      ),
-                    ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 28,
+                        // Play/Pause Button
+                        Positioned.fill(
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (controller.value.isPlaying) {
+                                    controller.pause();
+                                  } else {
+                                    controller.play();
+                                  }
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  controller.value.isPlaying
+                                      ? Icons.pause
+                                      : Icons.play_arrow,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        // Close Button
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              onPressed: () {
+                                controller.dispose();
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Title
+                        Positioned(
+                          bottom: 16,
+                          left: 16,
+                          right: 16,
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // Video Progress
+                        Positioned(
+                          bottom: 50,
+                          left: 16,
+                          right: 16,
+                          child: VideoProgressIndicator(
+                            controller,
+                            allowScrubbing: true,
+                            colors: VideoProgressColors(
+                              playedColor: Colors.blue,
+                              bufferedColor: Colors.grey,
+                              backgroundColor: Colors.grey.withOpacity(0.3),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    right: 16,
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 

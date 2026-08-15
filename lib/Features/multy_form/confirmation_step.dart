@@ -114,14 +114,28 @@ class ConfirmationStep extends StatelessWidget {
           const SizedBox(height: 12),
 
           // 5. Payment Summary
+// lib/features/checkout/screens/confirmation_step.dart
+
+// ─── Payment Summary ───
           _buildSummarySection(
             title: '5. Payment Details',
             icon: Icons.payment_outlined,
             children: [
               _buildRow('Payment Method', data.downPaymentMethod ?? 'CASH'),
+
+              // ✅ 👇 এখানে যোগ করুন
               if (data.downPaymentMethod == 'BANK') ...[
+                _buildRow('Bank Account Name', data.bankAccountName ?? 'N/A'),
+                _buildRow('Bank Account Number', data.bankAccountNumber ?? 'N/A'),
+                _buildRow('Bank Name', data.bankName ?? 'N/A'),
                 _buildRow('Transaction Ref No', data.downPaymentReferenceNumber ?? 'N/A'),
                 _buildFileStatus('Bank Deposit Receipt', data.bankReceipt != null),
+              ],
+
+              //  BKASH এর জন্যও যোগ করতে পারেন
+              if (data.downPaymentMethod == 'BKASH') ...[
+                _buildRow('Sender Mobile', data.downPaymentReferenceNumber ?? 'N/A'),
+                _buildRow('Transaction ID', data.downPaymentReferenceNumber ?? 'N/A'),
               ],
             ],
           ),

@@ -156,6 +156,8 @@ class CheckoutViewModel extends ChangeNotifier {
   }
 
   // ─────────────── Catalog Integration ───────────────
+// lib/viewmodels/CheckoutViewModel.dart
+
   void setProductFromCatalog({
     required String id,
     required String name,
@@ -168,18 +170,13 @@ class CheckoutViewModel extends ChangeNotifier {
     List<Map<String, dynamic>>? downPaymentComponents,
     double? cashbackRate,
   }) {
-    loadEmiPlansForExistingProduct(id);
-
     debugPrint("═══════════════════════════════════════");
     debugPrint(" [CheckoutVM] Syncing Product: $name");
     debugPrint("   ID: $id");
     debugPrint("   Price: $price");
     debugPrint("   SaleType: $saleType");
-    debugPrint("   Tenure: $tenure");
+    debugPrint("   Tenure: $tenure");  // ✅ Brand Selection থেকে আসা Tenure
     debugPrint("   DownPayment: $downPayment");
-    debugPrint("   InterestRate: $interestRate");
-    debugPrint("   CashbackRate: $cashbackRate");
-    debugPrint("   DownPaymentComponents: $downPaymentComponents");
     debugPrint("═══════════════════════════════════════");
 
     checkoutData.productId = id;
@@ -189,10 +186,11 @@ class CheckoutViewModel extends ChangeNotifier {
     checkoutData.saleType = saleType;
 
     if (saleType == 'EMI') {
-      checkoutData.emiMode = 'CREATE_NEW_PLAN';  // ✅ ডিফল্ট CREATE_NEW_PLAN
+      checkoutData.emiMode = 'CREATE_NEW_PLAN'; // ডিফল্ট
 
+      // ✅ Tenure সেট করুন
       if (tenure != null) {
-        checkoutData.emiTenureMonths = tenure;
+        checkoutData.emiTenureMonths = tenure; // ✅ Brand Selection থেকে আসা Tenure
         checkoutData.newPlanMonths = tenure;
       }
 
@@ -208,20 +206,14 @@ class CheckoutViewModel extends ChangeNotifier {
 
       if (downPaymentComponents != null) {
         checkoutData.downPaymentComponents = downPaymentComponents;
-        debugPrint(
-          "✅ [CheckoutVM] DownPaymentComponents set: ${downPaymentComponents.length} items",
-        );
-        for (var comp in downPaymentComponents) {
-          debugPrint("   ${comp['name']}: ${comp['rate']}% (${comp['type']})");
-        }
       }
 
       if (cashbackRate != null) {
         checkoutData.selectedCashbackRate = cashbackRate;
-        debugPrint("✅ [CheckoutVM] CashbackRate set: $cashbackRate%");
       }
     }
 
+    // ✅ Product টি list এ যোগ করুন
     final exists = productList.any((p) => p.id == id);
     if (!exists) {
       productList.add(
@@ -232,19 +224,19 @@ class CheckoutViewModel extends ChangeNotifier {
           rawJson: {'id': id, 'name': name, 'mrp': price},
         ),
       );
-      debugPrint("✅ [CheckoutVM] Product added to list: $name");
     }
 
-    debugPrint("🔄 [CheckoutVM] Loading EMI plans for product: $id");
-    _loadEmiPlansForProduct(id);
+    debugPrint("🔄 Loading EMI plans for product: $id");
+    _loadEmiPlansForProduct(id); // ✅ এখানে Filter করা হবে
   }
 
   // ─── EMI প্ল্যান লোড করুন ───
+// lib/viewmodels/CheckoutViewModel.dart
+
+// ─── EMI প্ল্যান লোড করার সময় Tenure অনুযায়ী Filter করুন ───
   Future<void> _loadEmiPlansForProduct(String productId) async {
     debugPrint("═══════════════════════════════════════");
-    debugPrint(
-      "🔄 [_loadEmiPlansForProduct] Loading EMI plans for product: $productId",
-    );
+    debugPrint("🔄 [_loadEmiPlansForProduct] Loading EMI plans for product: $productId");
 
     final url = "${ApiEndPoint.emiPlans}?productId=$productId&isActive=true";
     debugPrint("🌐 API URL: $url");
@@ -259,45 +251,52 @@ class CheckoutViewModel extends ChangeNotifier {
         final rawList = data['data'] as List;
         debugPrint("📦 Raw data length: ${rawList.length}");
 
-        emiPlanList = rawList
+        // ✅ সব EMI Plans লোড করুন
+        final allPlans = rawList
             .map((e) => DropdownItemModel.fromJson(e))
             .toList();
-        debugPrint("✅ [CheckoutVM] Loaded ${emiPlanList.length} EMI plans");
 
-        for (int i = 0; i < emiPlanList.length; i++) {
-          debugPrint(
-            "   Plan $i: ${emiPlanList[i].name} (ID: ${emiPlanList[i].id})",
-          );
+        debugPrint("✅ Loaded ${allPlans.length} EMI plans");
+
+        // ✅ 🔥 Brand Selection থেকে আসা Tenure অনুযায়ী Filter করুন
+        final selectedTenure = checkoutData.emiTenureMonths; // Brand Selection থেকে আসা Tenure
+        debugPrint("📌 Selected Tenure: $selectedTenure months");
+
+        // ✅ শুধু মিলে যাওয়া Tenure এর Plans রাখুন
+        emiPlanList = allPlans.where((plan) {
+          // plan.rawJson থেকে months বের করুন
+          final planMonths = plan.rawJson['months'] as int? ??
+              int.tryParse(plan.rawJson['months']?.toString() ?? '0') ?? 0;
+          return planMonths == selectedTenure;
+        }).toList();
+
+        debugPrint("✅ Filtered ${emiPlanList.length} plans for tenure: $selectedTenure months");
+
+        for (var plan in emiPlanList) {
+          debugPrint("   📌 Plan: ${plan.name} (ID: ${plan.id}) - ${plan.rawJson['months']} months");
         }
 
         if (emiPlanList.isNotEmpty) {
           final firstPlan = emiPlanList.first;
           checkoutData.emiPlanId = firstPlan.id;
-          debugPrint(
-            "📌 [CheckoutVM] Auto-selected first plan: ${firstPlan.name} (ID: ${firstPlan.id})",
-          );
+          debugPrint("📌 Auto-selected first plan: ${firstPlan.name}");
           await onEmiPlanSelected(firstPlan.id);
-          debugPrint("✅ [CheckoutVM] Data fetched for selected plan");
+          debugPrint("✅ Data fetched for selected plan");
         } else {
-          debugPrint("⚠️ [CheckoutVM] No EMI plans available for this product");
+          debugPrint("⚠️ No EMI plans available for tenure: $selectedTenure months");
         }
 
         notifyListeners();
       } else {
-        debugPrint(
-          "❌ [CheckoutVM] Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}",
-        );
+        debugPrint("❌ Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}");
       }
     } catch (e) {
-      debugPrint("❌ [CheckoutVM] Error loading EMI plans: $e");
+      debugPrint("❌ Error loading EMI plans: $e");
     }
 
-    // 🔥 ডেটা লোড হওয়ার পর Plan ডেটা Initialize করুন
     initializePlanData();
-
     debugPrint("═══════════════════════════════════════");
   }
-
   // ─────────────── Recalculate EMI ───────────────
   void recalculateEmi() {
     debugPrint("═══════════════════════════════════════");
@@ -448,31 +447,82 @@ class CheckoutViewModel extends ChangeNotifier {
   Future<void> fetchShops() async {
     _isFetchingDropdowns = true;
     notifyListeners();
+
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("🏪 [fetchShops] STARTED");
+    debugPrint("   📌 Token: ${userToken.isNotEmpty ? '✅ Found' : '❌ NOT FOUND'}");
+    debugPrint("   📌 API URL: ${ApiEndPoint.shops}");
+    debugPrint("═══════════════════════════════════════");
+
     try {
       final response = await http.get(
         Uri.parse(ApiEndPoint.shops),
         headers: _headers,
       );
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['success'] == true) {
-        shopList = (data['data'] as List)
+
+      debugPrint("📊 [fetchShops] Status Code: ${response.statusCode}");
+      debugPrint("📊 [fetchShops] Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List rawList = data['data'] ?? [];
+        debugPrint("📦 [fetchShops] Raw List Length: ${rawList.length}");
+
+        shopList = rawList
             .map((e) => DropdownItemModel.fromJson(e))
             .toList();
+
+        debugPrint("✅ [fetchShops] Loaded ${shopList.length} shops");
+        for (var shop in shopList) {
+          debugPrint("   🏪 Shop: ${shop.name} (ID: ${shop.id})");
+        }
+
+        // ✅ 🔥 এখানে Auto-select যোগ করুন
+        if (shopList.isNotEmpty) {
+          final firstShop = shopList.first;
+          debugPrint("📌 [fetchShops] Auto-selecting first shop: ${firstShop.name}");
+          checkoutData.shopId = firstShop.id;
+          checkoutData.shopName = firstShop.name;  // ✅ সরাসরি নাম সেট করুন
+          await onShopSelected(firstShop.id);
+          notifyListeners();  // ✅ UI আপডেট করুন
+        } else {
+          debugPrint("⚠️ [fetchShops] No shops found!");
+        }
+      } else {
+        debugPrint("❌ [fetchShops] Failed! Status: ${response.statusCode}");
       }
     } catch (e) {
-      debugPrint("fetchShops Error: $e");
+      debugPrint("❌ [fetchShops] Exception: $e");
     }
+
     _isFetchingDropdowns = false;
     notifyListeners();
+    debugPrint("═══════════════════════════════════════");
   }
 
   Future<void> onShopSelected(String? shopId) async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("🏪 [onShopSelected] Called with: $shopId");
+
     checkoutData.shopId = shopId;
+
+    // ✅ Shop Name সেট করুন
+    if (shopId != null) {
+      final shop = shopList.firstWhere(
+            (e) => e.id == shopId,
+        orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
+      );
+      checkoutData.shopName = shop.name.isNotEmpty ? shop.name : null;
+      debugPrint("   📌 Shop Name: ${checkoutData.shopName}");
+    }
+
     agentList.clear();
     managerList.clear();
     salesPersonList.clear();
     notifyListeners();
+
     if (shopId == null) return;
+
     try {
       final res = await http.get(
         Uri.parse("${ApiEndPoint.agents}?shopId=$shopId"),
@@ -483,17 +533,39 @@ class CheckoutViewModel extends ChangeNotifier {
         agentList = (data['data'] as List)
             .map((e) => DropdownItemModel.fromJson(e))
             .toList();
+
+        // ✅ Agent Auto-select
+        if (agentList.isNotEmpty) {
+          final firstAgent = agentList.first;
+          await onAgentSelected(firstAgent.id);
+        }
       }
     } catch (e) {}
     notifyListeners();
   }
 
   Future<void> onAgentSelected(String? agentId) async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("👤 [onAgentSelected] Called with: $agentId");
+
     checkoutData.agentId = agentId;
+
+    // ✅ Agent Name সেট করুন
+    if (agentId != null) {
+      final agent = agentList.firstWhere(
+            (e) => e.id == agentId,
+        orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
+      );
+      checkoutData.agentName = agent.name.isNotEmpty ? agent.name : null;
+      debugPrint("   📌 Agent Name: ${checkoutData.agentName}");
+    }
+
     managerList.clear();
     salesPersonList.clear();
     notifyListeners();
+
     if (agentId == null) return;
+
     try {
       final res = await http.get(
         Uri.parse("${ApiEndPoint.managers}?agentId=$agentId"),
@@ -504,16 +576,38 @@ class CheckoutViewModel extends ChangeNotifier {
         managerList = (data['data'] as List)
             .map((e) => DropdownItemModel.fromJson(e))
             .toList();
+
+        // ✅ Manager Auto-select
+        if (managerList.isNotEmpty) {
+          final firstManager = managerList.first;
+          await onManagerSelected(firstManager.id);
+        }
       }
     } catch (e) {}
     notifyListeners();
   }
 
   Future<void> onManagerSelected(String? managerId) async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("👤 [onManagerSelected] Called with: $managerId");
+
     checkoutData.managerId = managerId;
+
+    // ✅ Manager Name সেট করুন
+    if (managerId != null) {
+      final manager = managerList.firstWhere(
+            (e) => e.id == managerId,
+        orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
+      );
+      checkoutData.managerName = manager.name.isNotEmpty ? manager.name : null;
+      debugPrint("   📌 Manager Name: ${checkoutData.managerName}");
+    }
+
     salesPersonList.clear();
     notifyListeners();
+
     if (managerId == null) return;
+
     try {
       final res = await http.get(
         Uri.parse("${ApiEndPoint.salesPersons}?managerId=$managerId"),
@@ -524,16 +618,38 @@ class CheckoutViewModel extends ChangeNotifier {
         salesPersonList = (data['data'] as List)
             .map((e) => DropdownItemModel.fromJson(e))
             .toList();
+
+        // ✅ Sales Person Auto-select
+        if (salesPersonList.isNotEmpty) {
+          final firstSalesPerson = salesPersonList.first;
+          await onSalesPersonSelected(firstSalesPerson.id);
+        }
       }
     } catch (e) {}
     notifyListeners();
   }
 
   Future<void> onSalesPersonSelected(String? salesPersonId) async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("👤 [onSalesPersonSelected] Called with: $salesPersonId");
+
     checkoutData.salesPersonId = salesPersonId;
+
+    // ✅ Sales Person Name সেট করুন
+    if (salesPersonId != null) {
+      final salesPerson = salesPersonList.firstWhere(
+            (e) => e.id == salesPersonId,
+        orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
+      );
+      checkoutData.salesPersonName = salesPerson.name.isNotEmpty ? salesPerson.name : null;
+      debugPrint("   📌 Sales Person Name: ${checkoutData.salesPersonName}");
+    }
+
     productList.clear();
     notifyListeners();
+
     if (salesPersonId == null) return;
+
     try {
       final res = await http.get(
         Uri.parse("${ApiEndPoint.products}?salesPersonId=$salesPersonId"),
@@ -551,22 +667,20 @@ class CheckoutViewModel extends ChangeNotifier {
   // lib/viewmodels/CheckoutViewModel.dart
 
   // ─── ইতিমধ্যে সিলেক্টেড প্রোডাক্টের জন্য EMI প্ল্যান লোড করুন ───
+  // lib/viewmodels/CheckoutViewModel.dart
+
   Future<void> loadEmiPlansForExistingProduct(String productId) async {
     debugPrint("═══════════════════════════════════════");
-    debugPrint(
-      "📌 [loadEmiPlansForExistingProduct] Called for product: $productId",
-    );
+    debugPrint("📌 [loadEmiPlansForExistingProduct] Called for product: $productId");
 
     if (productId.isEmpty) {
-      debugPrint("⚠️ [loadEmiPlansForExistingProduct] productId is empty");
+      debugPrint("⚠️ productId is empty");
       return;
     }
 
-    // যদি ইতিমধ্যে emiPlanList এ ডেটা থাকে, তাহলে ফেরত যান
+    // যদি ইতিমধ্যে emiPlanList এ ডেটা থাকে, তাহলে চেক করুন
     if (emiPlanList.isNotEmpty) {
-      debugPrint(
-        "✅ [loadEmiPlansForExistingProduct] emiPlanList already has ${emiPlanList.length} plans",
-      );
+      debugPrint("✅ emiPlanList already has ${emiPlanList.length} plans");
       initializePlanData();
       return;
     }
@@ -584,42 +698,48 @@ class CheckoutViewModel extends ChangeNotifier {
         final rawList = data['data'] as List;
         debugPrint("📦 Raw data length: ${rawList.length}");
 
-        emiPlanList = rawList
+        // ✅ সব Plans লোড করুন
+        final allPlans = rawList
             .map((e) => DropdownItemModel.fromJson(e))
             .toList();
-        debugPrint("✅ Loaded ${emiPlanList.length} EMI plans");
+
+        // ✅ Tenure অনুযায়ী Filter করুন
+        final selectedTenure = checkoutData.emiTenureMonths;
+        debugPrint("📌 Filtering plans for tenure: $selectedTenure months");
+
+        emiPlanList = allPlans.where((plan) {
+          final planMonths = plan.rawJson['months'] as int? ??
+              int.tryParse(plan.rawJson['months']?.toString() ?? '0') ?? 0;
+          return planMonths == selectedTenure;
+        }).toList();
+
+        debugPrint(" Loaded ${emiPlanList.length} EMI plans for $selectedTenure months");
 
         for (var plan in emiPlanList) {
-          debugPrint("   📌 Plan: ${plan.name} (ID: ${plan.id})");
+          debugPrint("    Plan: ${plan.name} (${plan.rawJson['months']} months)");
         }
 
-        // Auto-select first plan for EXISTING_PLAN
+        // EXISTING_PLAN এর জন্য auto-select
         if (emiPlanList.isNotEmpty && checkoutData.emiMode == 'EXISTING_PLAN') {
           final firstPlan = emiPlanList.first;
           checkoutData.emiPlanId = firstPlan.id;
-          debugPrint("✅ Auto-selected first plan: ${firstPlan.name}");
+          debugPrint(" Auto-selected first plan: ${firstPlan.name}");
           await onEmiPlanSelected(firstPlan.id);
-        } else if (emiPlanList.isNotEmpty &&
-            checkoutData.emiMode == 'CREATE_NEW_PLAN') {
-          // Custom EMI Plan এর জন্য শুধু notify করুন
+        } else if (emiPlanList.isNotEmpty && checkoutData.emiMode == 'CREATE_NEW_PLAN') {
           notifyListeners();
         }
 
         notifyListeners();
       } else {
-        debugPrint(
-          "❌ Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}",
-        );
+        debugPrint(" Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}");
       }
     } catch (e) {
-      debugPrint("❌ loadEmiPlansForExistingProduct Exception: $e");
+      debugPrint(" loadEmiPlansForExistingProduct Exception: $e");
     }
 
-    // ডেটা লোড হওয়ার পর Plan ডেটা Initialize করুন
     initializePlanData();
     debugPrint("═══════════════════════════════════════");
   }
-
   Future<void> onProductSelected(String? productId) async {
     debugPrint("═══════════════════════════════════════");
     debugPrint("📌 [onProductSelected] Called with productId: $productId");
@@ -1279,15 +1399,34 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("      monthlyEmi: ${request.fields['monthlyEmi']}");
     debugPrint("      emiTenureMonths: ${request.fields['emiTenureMonths']}");
 
-    // 🔥 Bank Receipt
+    // ──────────────────────────────────────────────────────────────
+    // ✅ 🔥 BANK PAYMENT FIELDS - এখানে যোগ করুন
+    // ──────────────────────────────────────────────────────────────
     if (checkoutData.downPaymentMethod == 'BANK') {
+      // Bank Account Name
+      request.fields['bankAccountName'] = checkoutData.bankAccountName ?? '';
+      debugPrint("   📌 bankAccountName: ${request.fields['bankAccountName']}");
+
+      // Bank Account Number
+      request.fields['bankAccountNumber'] = checkoutData.bankAccountNumber ?? '';
+      debugPrint("   📌 bankAccountNumber: ${request.fields['bankAccountNumber']}");
+
+      // Bank Name
+      request.fields['bankName'] = checkoutData.bankName ?? '';
+      debugPrint("   📌 bankName: ${request.fields['bankName']}");
+
+      // Bank Receipt Status
       request.fields['bankReceiptStatus'] = checkoutData.bankReceipt != null ? 'UPLOADED' : 'NOT_PROVIDED';
+      debugPrint("   📌 bankReceiptStatus: ${request.fields['bankReceiptStatus']}");
     } else {
       request.fields['bankReceiptStatus'] = 'NOT_APPLICABLE';
     }
 
-    if (checkoutData.downPaymentReferenceNumber != null) {
+    // Transaction Reference Number (যেকোনো পেমেন্টের জন্য)
+    if (checkoutData.downPaymentReferenceNumber != null &&
+        checkoutData.downPaymentReferenceNumber!.isNotEmpty) {
       request.fields['downPaymentReferenceNumber'] = checkoutData.downPaymentReferenceNumber!;
+      debugPrint("   📌 downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber']}");
     }
 
     debugPrint("   📌 [Bank Info]");

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import 'model/dropdown_item_model.dart';
 
+
 class OrderReviewStep extends StatefulWidget {
   final VoidCallback onNext;
 
@@ -24,29 +25,23 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
       final vm = Provider.of<CheckoutViewModel>(context, listen: false);
       debugPrint("📌 [OrderReviewStep] initState - Checking product");
 
-      if (vm.checkoutData.productId != null &&
-          vm.checkoutData.productId!.isNotEmpty) {
-        debugPrint(
-          "📌 [OrderReviewStep] Product already selected: ${vm.checkoutData.productId}",
-        );
+      if (vm.checkoutData.productId != null && vm.checkoutData.productId!.isNotEmpty) {
+        debugPrint("📌 [OrderReviewStep] Product already selected: ${vm.checkoutData.productId}");
         vm.loadEmiPlansForExistingProduct(vm.checkoutData.productId!);
       } else {
-        debugPrint(
-          "📌 [OrderReviewStep] No product selected, calling initializePlanData",
-        );
+        debugPrint("📌 [OrderReviewStep] No product selected, calling initializePlanData");
         vm.initializePlanData();
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
     final vm = Provider.of<CheckoutViewModel>(context);
     final order = vm.checkoutData;
 
-    debugPrint(
-      "📊 [OrderReviewStep] build - monthlyEmi: ${order.monthlyEmi}, downPayment: ${order.downPayment}",
-    );
+    debugPrint("📊 [OrderReviewStep] build - monthlyEmi: ${order.monthlyEmi}, downPayment: ${order.downPayment}");
 
     if (vm.isFetchingDropdowns) {
       return const Center(
@@ -55,10 +50,7 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           children: [
             CircularProgressIndicator(color: AppColors.primaryBlue),
             SizedBox(height: 12),
-            Text(
-              "Loading data from server...",
-              style: TextStyle(color: AppColors.greyText),
-            ),
+            Text("Loading data from server...", style: TextStyle(color: AppColors.greyText)),
           ],
         ),
       );
@@ -71,11 +63,7 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
         children: [
           const Text(
             'Order & Plan Details',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 4),
           const Text(
@@ -84,6 +72,7 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           ),
           const SizedBox(height: 24),
 
+          _buildSectionTitle("Store Assignment"),
           const SizedBox(height: 16),
           CustomDropdownField(
             label: 'Select Shop *',
@@ -143,57 +132,26 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+                ]
             ),
             child: Column(
               children: [
-                _buildSummaryRow(
-                  Icons.sell_outlined,
-                  'Price (MRP):',
-                  '৳${NumberFormat('#,##,###').format(order.mrp)}',
-                  isBold: true,
-                ),
+                _buildSummaryRow(Icons.sell_outlined, 'Price (MRP):', '৳${NumberFormat('#,##,###').format(order.mrp)}', isBold: true),
                 if (order.saleType == 'EMI') ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      color: Color(0xFFF1F5F9),
-                    ),
+                    child: Divider(height: 1, thickness: 0.5, color: Color(0xFFF1F5F9)),
                   ),
-                  _buildSummaryRow(
-                    Icons.calendar_today_outlined,
-                    'Tenure:',
-                    '${order.emiTenureMonths} Months',
-                  ),
+                  _buildSummaryRow(Icons.calendar_today_outlined, 'Tenure:', '${order.emiTenureMonths} Months'),
                   const SizedBox(height: 12),
-                  _buildSummaryRow(
-                    Icons.payments_outlined,
-                    'Downpayment:',
-                    '৳${NumberFormat('#,##,###').format(order.downPayment)}',
-                  ),
-                  const Divider(
-                    height: 24,
-                    thickness: 0.5,
-                    color: Color(0xFFF1F5F9),
-                  ),
-                  _buildSummaryRow(
-                    Icons.account_balance_wallet_outlined,
-                    'Monthly EMI:',
-                    '৳${NumberFormat('#,##,###').format(order.monthlyEmi)}',
-                    isBold: true,
-                    isBlue: true,
-                  ),
+                  _buildSummaryRow(Icons.payments_outlined, 'Downpayment:', '৳${NumberFormat('#,##,###').format(order.downPayment)}'),
+                  const Divider(height: 24, thickness: 0.5, color: Color(0xFFF1F5F9)),
+                  _buildSummaryRow(Icons.account_balance_wallet_outlined, 'Monthly EMI:', '৳${NumberFormat('#,##,###').format(order.monthlyEmi)}', isBold: true, isBlue: true),
                 ],
               ],
             ),
@@ -245,27 +203,14 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
                 elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  Text(
-                    'Next Step',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
-                  ),
+                  Text('Next Step', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
                   SizedBox(width: 10),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
                 ],
               ),
             ),
@@ -279,47 +224,23 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w800,
-        color: Color(0xFF94A3B8),
-        letterSpacing: 1.2,
-      ),
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.2),
     );
   }
 
-  Widget _buildSummaryRow(
-    IconData icon,
-    String label,
-    String value, {
-    bool isBold = false,
-    bool isBlue = false,
-  }) {
+  Widget _buildSummaryRow(IconData icon, String label, String value, {bool isBold = false, bool isBlue = false}) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isBlue
-                ? AppColors.primaryBlue.withOpacity(0.1)
-                : const Color(0xFFF1F5F9),
+            color: isBlue ? AppColors.primaryBlue.withOpacity(0.1) : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icon,
-            color: isBlue ? AppColors.primaryBlue : const Color(0xFF64748B),
-            size: 18,
-          ),
+          child: Icon(icon, color: isBlue ? AppColors.primaryBlue : const Color(0xFF64748B), size: 18),
         ),
         const SizedBox(width: 12),
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B),
-            fontSize: 14,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF64748B), fontSize: 14)),
         const Spacer(),
         Text(
           value,
@@ -345,9 +266,7 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
     debugPrint("   downPayment: ${order.downPayment}");
 
     for (int i = 0; i < vm.emiPlanList.length; i++) {
-      debugPrint(
-        "   Plan $i: ${vm.emiPlanList[i].name} (ID: ${vm.emiPlanList[i].id})",
-      );
+      debugPrint("   Plan $i: ${vm.emiPlanList[i].name} (ID: ${vm.emiPlanList[i].id})");
     }
     debugPrint("═══════════════════════════════════════");
 
@@ -355,7 +274,6 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle("EMI Configuration"),
-        const SizedBox(height: 16),
 
         _buildEmiOptionRadio(
           title: 'Custom EMI Plan',
@@ -364,13 +282,12 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           groupValue: order.emiMode,
           onChanged: (val) {
             order.emiMode = val!;
-            debugPrint(
-              "🔄 [OrderReview] EMI Mode changed to: ${order.emiMode}",
-            );
+            debugPrint(" [OrderReview] EMI Mode changed to: ${order.emiMode}");
             vm.recalculateEmi();
             vm.notifyListeners();
           },
         ),
+        const SizedBox(height: 16),
 
         _buildEmiOptionRadio(
           title: 'Existing EMI Plan',
@@ -379,9 +296,7 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           groupValue: order.emiMode,
           onChanged: (val) {
             order.emiMode = val!;
-            debugPrint(
-              "🔄 [OrderReview] EMI Mode changed to: ${order.emiMode}",
-            );
+            debugPrint(" [OrderReview] EMI Mode changed to: ${order.emiMode}");
 
             if (order.emiMode == 'EXISTING_PLAN') {
               if (order.emiPlanId != null && order.emiPlanId!.isNotEmpty) {
@@ -401,6 +316,8 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           },
         ),
 
+
+
         _buildEmiOptionRadio(
           title: 'Remaining Balance EMI',
           subtitle: 'Calculate based on custom upfront',
@@ -408,14 +325,16 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           groupValue: order.emiMode,
           onChanged: (val) {
             order.emiMode = val!;
-            debugPrint(
-              "🔄 [OrderReview] EMI Mode changed to: ${order.emiMode}",
-            );
+            debugPrint(" [OrderReview] EMI Mode changed to: ${order.emiMode}");
             vm.recalculateEmi();
             vm.notifyListeners();
           },
         ),
         const SizedBox(height: 20),
+
+// lib/features/checkout/screens/order_review_step.dart
+
+// _buildEmiCalculationOptions মেথডে
 
         if (order.emiMode == 'EXISTING_PLAN') ...[
           if (vm.emiPlanList.isEmpty) ...[
@@ -427,13 +346,13 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.amber.shade300),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.warning_amber_rounded, color: Colors.amber),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'No EMI plans available. Please select a product first.',
+                      'No EMI plans available for ${order.emiTenureMonths} months tenure.',
                       style: TextStyle(fontSize: 12, color: Colors.amber),
                     ),
                   ),
@@ -442,10 +361,11 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
             ),
           ],
 
+          // ✅ ড্রপডাউন দেখান
           CustomDropdownField(
             label: 'Choose EMI Plan *',
             value: order.emiPlanId,
-            items: vm.emiPlanList,
+            items: vm.emiPlanList, // ✅ এখানে Filter করা Plans থাকবে
             onChanged: (val) async {
               debugPrint("🔄 [OrderReview] EMI Plan Selected: $val");
               if (val != null && val.isNotEmpty) {
@@ -457,23 +377,26 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           ),
           const SizedBox(height: 16),
 
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryBox(
-                  'Down Payment',
-                  '৳${NumberFormat('#,###').format(order.downPayment)}',
+          // ✅ Selected Plan এর Details দেখান
+          if (order.emiPlanId != null) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryBox(
+                    'Down Payment',
+                    '৳${NumberFormat('#,###').format(order.downPayment)}',
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryBox(
-                  'Monthly EMI',
-                  '৳${NumberFormat('#,###').format(order.monthlyEmi)}',
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryBox(
+                    'Monthly EMI',
+                    '৳${NumberFormat('#,###').format(order.monthlyEmi)}',
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
 
         if (order.emiMode == 'CREATE_NEW_PLAN') ...[
@@ -497,15 +420,15 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
       ),
       child: Column(
         children: [
-          // _buildTextField(
-          //   label: 'Plan Name',
-          //   hint: 'e.g. Special 3 Month Plan',
-          //   initialValue: order.newPlanName,
-          //   onChanged: (v) {
-          //     order.newPlanName = v;
-          //     vm.notify();
-          //   },
-          // ),
+          _buildTextField(
+            label: 'Plan Name',
+            hint: 'e.g. Special 3 Month Plan',
+            initialValue: order.newPlanName,
+            onChanged: (v) {
+              order.newPlanName = v;
+              vm.notify();
+            },
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -524,14 +447,10 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildTextField(
-                  label: order.downPaymentCalculationType == 'RATE'
-                      ? 'DP Rate %'
-                      : 'DP Amount ৳',
+                  label: order.downPaymentCalculationType == 'RATE' ? 'DP Rate %' : 'DP Amount ৳',
                   hint: '20',
                   keyboardType: TextInputType.number,
-                  initialValue: order.downPaymentCalculationType == 'RATE'
-                      ? order.downPaymentCalculationRate
-                      : order.downPaymentAmount,
+                  initialValue: order.downPaymentCalculationType == 'RATE' ? order.downPaymentCalculationRate : order.downPaymentAmount,
                   onChanged: (v) {
                     if (order.downPaymentCalculationType == 'RATE') {
                       order.downPaymentCalculationRate = v;
@@ -549,21 +468,8 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Calculated EMI:',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              Text(
-                '৳${NumberFormat('#,###').format(order.monthlyEmi)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryBlue,
-                  fontSize: 18,
-                ),
-              ),
+              const Text('Calculated EMI:', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              Text('৳${NumberFormat('#,###').format(order.monthlyEmi)}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryBlue, fontSize: 18)),
             ],
           ),
         ],
@@ -588,9 +494,7 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
                   label: 'Upfront (৳)',
                   hint: '10000',
                   keyboardType: TextInputType.number,
-                  initialValue: order.customUpfrontPayment > 0
-                      ? order.customUpfrontPayment.toString()
-                      : '',
+                  initialValue: order.customUpfrontPayment > 0 ? order.customUpfrontPayment.toString() : '',
                   onChanged: (v) {
                     order.customUpfrontPayment = double.tryParse(v) ?? 0;
                     vm.notify();
@@ -616,21 +520,8 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Monthly EMI:',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              Text(
-                '৳${NumberFormat('#,###').format(order.monthlyEmi)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryBlue,
-                  fontSize: 18,
-                ),
-              ),
+              const Text('Monthly EMI:', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              Text('৳${NumberFormat('#,###').format(order.monthlyEmi)}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryBlue, fontSize: 18)),
             ],
           ),
         ],
@@ -651,33 +542,16 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryBlue.withOpacity(0.05)
-              : Colors.white,
-          border: Border.all(
-            color: isSelected ? AppColors.primaryBlue : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.5 : 1,
-          ),
+          color: isSelected ? AppColors.primaryBlue.withOpacity(0.05) : Colors.white,
+          border: Border.all(color: isSelected ? AppColors.primaryBlue : const Color(0xFFE2E8F0), width: isSelected ? 1.5 : 1),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isSelected ? Icons.check_circle : Icons.circle_outlined,
-              size: 18,
-              color: isSelected
-                  ? AppColors.primaryBlue
-                  : const Color(0xFFCBD5E1),
-            ),
+            Icon(isSelected ? Icons.check_circle : Icons.circle_outlined, size: 18, color: isSelected ? AppColors.primaryBlue : const Color(0xFFCBD5E1)),
             const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? AppColors.primaryBlue : AppColors.black,
-              ),
-            ),
+            Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.w600, color: isSelected ? AppColors.primaryBlue : AppColors.black)),
           ],
         ),
       ),
@@ -699,20 +573,9 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : const Color(0xFFF8FAFC),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryBlue : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.5 : 1,
-          ),
+          border: Border.all(color: isSelected ? AppColors.primaryBlue : const Color(0xFFE2E8F0), width: isSelected ? 1.5 : 1),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))] : [],
         ),
         child: Row(
           children: [
@@ -727,23 +590,8 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? AppColors.primaryBlue
-                          : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF94A3B8),
-                    ),
-                  ),
+                  Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? AppColors.primaryBlue : const Color(0xFF0F172A))),
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                 ],
               ),
             ),
@@ -763,50 +611,20 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF334155),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
         const SizedBox(height: 8),
         TextFormField(
           initialValue: initialValue,
           keyboardType: keyboardType,
           onChanged: onChanged,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 13,
-              fontWeight: FontWeight.normal,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: AppColors.primaryBlue,
-                width: 1.5,
-              ),
-            ),
+            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.normal),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5)),
             filled: true,
             fillColor: Colors.white,
           ),
@@ -827,23 +645,9 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF64748B),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text(
-            amount,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
-          ),
+          Text(amount, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
         ],
       ),
     );
@@ -851,7 +655,7 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// 🔹 CUSTOM DROPDOWN
+// CUSTOM DROPDOWN
 // ══════════════════════════════════════════════════════════════════════
 
 class CustomDropdownField extends StatefulWidget {
@@ -916,11 +720,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 15, offset: const Offset(0, 8)),
                   ],
                 ),
                 child: ClipRRect(
@@ -938,13 +738,8 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                           _removeOverlay();
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          color: isSelected
-                              ? AppColors.primaryBlue.withOpacity(0.08)
-                              : Colors.transparent,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          color: isSelected ? AppColors.primaryBlue.withOpacity(0.08) : Colors.transparent,
                           child: Row(
                             children: [
                               Expanded(
@@ -952,21 +747,12 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                                   item.name,
                                   style: TextStyle(
                                     fontSize: 14,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
-                                    color: isSelected
-                                        ? AppColors.primaryBlue
-                                        : const Color(0xFF1E293B),
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                    color: isSelected ? AppColors.primaryBlue : const Color(0xFF1E293B),
                                   ),
                                 ),
                               ),
-                              if (isSelected)
-                                const Icon(
-                                  Icons.check_circle,
-                                  size: 18,
-                                  color: AppColors.primaryBlue,
-                                ),
+                              if (isSelected) const Icon(Icons.check_circle, size: 18, color: AppColors.primaryBlue),
                             ],
                           ),
                         ),
@@ -993,23 +779,14 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedItem = widget.items
-        .where((e) => e.id == widget.value)
-        .firstOrNull;
+    final selectedItem = widget.items.where((e) => e.id == widget.value).firstOrNull;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            widget.label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF334155),
-            ),
-          ),
+          child: Text(widget.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
         ),
         CompositedTransformTarget(
           link: _layerLink,
@@ -1023,9 +800,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _isOpen
-                      ? AppColors.primaryBlue
-                      : const Color(0xFFE2E8F0),
+                  color: _isOpen ? AppColors.primaryBlue : const Color(0xFFE2E8F0),
                   width: _isOpen ? 1.5 : 1,
                 ),
               ),
@@ -1039,20 +814,14 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: selectedItem != null
-                            ? const Color(0xFF0F172A)
-                            : const Color(0xFF94A3B8),
+                        color: selectedItem != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
                       ),
                     ),
                   ),
                   AnimatedRotation(
                     turns: _isOpen ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.primaryBlue,
-                      size: 24,
-                    ),
+                    child: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryBlue, size: 24),
                   ),
                 ],
               ),

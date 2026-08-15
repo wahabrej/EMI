@@ -8,6 +8,13 @@ class FullCheckoutModel {
   String? agentId;
   String? managerId;
   String? salesPersonId;
+
+  // ✅ এই ফিল্ডগুলো যোগ করুন (Display Name এর জন্য)
+  String? shopName;
+  String? agentName;
+  String? managerName;
+  String? salesPersonName;
+
   String? productId;
   String? productModelId;
   String? productModel;

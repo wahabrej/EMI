@@ -73,7 +73,7 @@ class _PaymentStepState extends State<PaymentStep> {
         imageQuality: 85,
       );
       if (image != null) {
-        //vm.setBankReceipt(File(image.path));
+        vm.setBankReceipt(File(image.path));
       }
     });
   }
@@ -245,25 +245,96 @@ class _PaymentStepState extends State<PaymentStep> {
                     const Divider(color: Color(0xFFF1F5F9)),
                     const SizedBox(height: 8),
 
+                    // ─── 1. Bank Account Name ───
                     TextFormField(
-                      initialValue: data.downPaymentReferenceNumber,
+                      initialValue: data.bankAccountName,
                       style: const TextStyle(fontSize: 13),
-                      decoration: InputDecoration(
-                        labelText: 'Transaction Reference No.',
-                        hintText: 'Enter bank transaction/receipt ref no',
+                      decoration: const InputDecoration(
+                        labelText: 'Bank Account Name *',
+                        hintText: 'Enter your bank account name',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),
-                      onChanged: (val) =>
-                          data.downPaymentReferenceNumber = val.trim(),
+                      onChanged: (val) => data.bankAccountName = val.trim(),
+                      validator: (val) {
+                        if (data.downPaymentMethod == 'BANK') {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Bank account name is required';
+                          }
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 12),
 
+                    // ─── 2. Bank Account Number ───
+                    TextFormField(
+                      initialValue: data.bankAccountNumber,
+                      style: const TextStyle(fontSize: 13),
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Bank Account Number *',
+                        hintText: 'Enter your bank account number',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      onChanged: (val) => data.bankAccountNumber = val.trim(),
+                      validator: (val) {
+                        if (data.downPaymentMethod == 'BANK') {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Bank account number is required';
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ─── 3. Bank Name ───
+                    TextFormField(
+                      initialValue: data.bankName,
+                      style: const TextStyle(fontSize: 13),
+                      decoration: const InputDecoration(
+                        labelText: 'Bank Name *',
+                        hintText: 'Enter your bank name (e.g. DBBL, Brac Bank)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      onChanged: (val) => data.bankName = val.trim(),
+                      validator: (val) {
+                        if (data.downPaymentMethod == 'BANK') {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Bank name is required';
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ─── 4. Transaction Reference No. ─── (ইতিমধ্যে আছে)
+                    TextFormField(
+                      initialValue: data.downPaymentReferenceNumber,
+                      style: const TextStyle(fontSize: 13),
+                      decoration: const InputDecoration(
+                        labelText: 'Transaction Reference No.',
+                        hintText: 'Enter bank transaction/receipt ref no',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      onChanged: (val) => data.downPaymentReferenceNumber = val.trim(),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ─── 5. Bank Receipt Upload ─── (ইতিমধ্যে আছে)
                     InkWell(
                       onTap: () => _pickBankReceipt(vm),
                       borderRadius: BorderRadius.circular(8),
@@ -276,33 +347,24 @@ class _PaymentStepState extends State<PaymentStep> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.upload_file,
-                              color: Color(0xFF2563EB),
-                            ),
+                            const Icon(Icons.upload_file, color: Color(0xFF2563EB)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 data.bankReceipt != null
                                     ? 'Receipt Uploaded: ${data.bankReceipt!.path.split('/').last}'
-                                    : 'Upload Bank Deposit Receipt Image',
+                                    : 'Upload Bank Deposit Receipt Image *',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: data.bankReceipt != null
-                                      ? Colors.green
-                                      : const Color(0xFF475569),
+                                  color: data.bankReceipt != null ? Colors.green : const Color(0xFF475569),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             if (data.bankReceipt != null)
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 20,
-                              ),
+                              const Icon(Icons.check_circle, color: Colors.green, size: 20),
                           ],
                         ),
                       ),
