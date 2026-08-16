@@ -1377,7 +1377,7 @@ class CheckoutViewModel extends ChangeNotifier {
     request.fields['managerId'] = checkoutData.managerId ?? '';
     request.fields['salesPersonId'] = checkoutData.salesPersonId ?? '';
 
-    debugPrint("   📌 [Store Hierarchy]");
+    debugPrint("      [Store Hierarchy]");
     debugPrint("      shopId: ${request.fields['shopId']}");
     debugPrint("      agentId: ${request.fields['agentId']}");
     debugPrint("      managerId: ${request.fields['managerId']}");
@@ -1390,8 +1390,13 @@ class CheckoutViewModel extends ChangeNotifier {
     request.fields['emiCharge'] = checkoutData.emiCharge.toString();
     request.fields['monthlyEmi'] = checkoutData.monthlyEmi.toString();
     request.fields['emiTenureMonths'] = checkoutData.emiTenureMonths.toString();
+    if (checkoutData.monthlyPaymentDate != null &&
+        checkoutData.monthlyPaymentDate!.isNotEmpty) {
+      request.fields['monthlyPaymentDate'] = checkoutData.monthlyPaymentDate!;
+      debugPrint(" monthlyPaymentDate: ${checkoutData.monthlyPaymentDate}");
+    }
 
-    debugPrint("   📌 [Payment Info]");
+    debugPrint(" [Payment Info]");
     debugPrint("      downPaymentMethod: ${request.fields['downPaymentMethod']}");
     debugPrint("      incomeProofDocumentType: ${request.fields['incomeProofDocumentType']}");
     debugPrint("      downPayment: ${request.fields['downPayment']}");
@@ -1400,36 +1405,36 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("      emiTenureMonths: ${request.fields['emiTenureMonths']}");
 
     // ──────────────────────────────────────────────────────────────
-    // ✅ 🔥 BANK PAYMENT FIELDS - এখানে যোগ করুন
+    // BANK PAYMENT FIELDS
     // ──────────────────────────────────────────────────────────────
     if (checkoutData.downPaymentMethod == 'BANK') {
       // Bank Account Name
       request.fields['bankAccountName'] = checkoutData.bankAccountName ?? '';
-      debugPrint("   📌 bankAccountName: ${request.fields['bankAccountName']}");
+      debugPrint(" bankAccountName: ${request.fields['bankAccountName']}");
 
       // Bank Account Number
       request.fields['bankAccountNumber'] = checkoutData.bankAccountNumber ?? '';
-      debugPrint("   📌 bankAccountNumber: ${request.fields['bankAccountNumber']}");
+      debugPrint("  bankAccountNumber: ${request.fields['bankAccountNumber']}");
 
       // Bank Name
       request.fields['bankName'] = checkoutData.bankName ?? '';
-      debugPrint("   📌 bankName: ${request.fields['bankName']}");
+      debugPrint("  bankName: ${request.fields['bankName']}");
 
       // Bank Receipt Status
       request.fields['bankReceiptStatus'] = checkoutData.bankReceipt != null ? 'UPLOADED' : 'NOT_PROVIDED';
-      debugPrint("   📌 bankReceiptStatus: ${request.fields['bankReceiptStatus']}");
+      debugPrint("  bankReceiptStatus: ${request.fields['bankReceiptStatus']}");
     } else {
       request.fields['bankReceiptStatus'] = 'NOT_APPLICABLE';
     }
 
-    // Transaction Reference Number (যেকোনো পেমেন্টের জন্য)
+    // Transaction Reference Number
     if (checkoutData.downPaymentReferenceNumber != null &&
         checkoutData.downPaymentReferenceNumber!.isNotEmpty) {
       request.fields['downPaymentReferenceNumber'] = checkoutData.downPaymentReferenceNumber!;
-      debugPrint("   📌 downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber']}");
+      debugPrint("   downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber']}");
     }
 
-    debugPrint("   📌 [Bank Info]");
+    debugPrint("   [Bank Info]");
     debugPrint("      bankReceiptStatus: ${request.fields['bankReceiptStatus']}");
     debugPrint("      downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber'] ?? 'N/A'}");
 
@@ -1437,21 +1442,21 @@ class CheckoutViewModel extends ChangeNotifier {
     final guarantors = checkoutData.guarantors.map((g) => g.toJson()).toList();
     request.fields['guarantors'] = jsonEncode(guarantors);
 
-    debugPrint("   📌 [Guarantors]");
+    debugPrint("   [Guarantors]");
     debugPrint("      total: ${guarantors.length}");
     for (int i = 0; i < guarantors.length; i++) {
       debugPrint("      Guarantor #${i+1}: ${jsonEncode(guarantors[i])}");
     }
 
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    debugPrint("✅ [_addCommonFields] All fields added successfully");
+    debugPrint("[_addCommonFields] All fields added successfully");
     debugPrint("   TOTAL FIELDS: ${request.fields.length}");
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   }
 
   Future<void> _attachAllFiles(http.MultipartRequest request) async {
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    debugPrint("📎 [_attachAllFiles] STARTED - Attaching All Files");
+    debugPrint("[_attachAllFiles] STARTED - Attaching All Files");
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     int attachedCount = 0;
@@ -1460,7 +1465,7 @@ class CheckoutViewModel extends ChangeNotifier {
     // ─── ইমেজ ফাইল আটাচ করার ফাংশন ───
     Future<void> attachImage(String fieldName, File? file) async {
       if (file == null || !file.existsSync()) {
-        debugPrint("   ⚠️ [SKIP] $fieldName: File not found or null");
+        debugPrint("   [SKIP] $fieldName: File not found or null");
         skippedCount++;
         return;
       }
@@ -1474,13 +1479,13 @@ class CheckoutViewModel extends ChangeNotifier {
         ),
       );
       attachedCount++;
-      debugPrint("   🖼️ [IMAGE] $fieldName: ${file.path.split('/').last} (image/$mimeSubtype)");
+      debugPrint("  [IMAGE] $fieldName: ${file.path.split('/').last} (image/$mimeSubtype)");
     }
 
     // ─── ভিডিও ফাইল আটাচ করার ফাংশন ───
     Future<void> attachVideo(String fieldName, File? file) async {
       if (file == null || !file.existsSync()) {
-        debugPrint("   ⚠️ [SKIP] $fieldName: File not found or null");
+        debugPrint("   [SKIP] $fieldName: File not found or null");
         skippedCount++;
         return;
       }
@@ -1488,7 +1493,6 @@ class CheckoutViewModel extends ChangeNotifier {
       String ext = file.path.split('.').last.toLowerCase();
       String mimeType;
 
-      // ভিডিও ফরম্যাট অনুযায়ী সঠিক MIME টাইপ সেট করুন
       switch (ext) {
         case 'mp4':
           mimeType = 'video/mp4';
@@ -1517,7 +1521,7 @@ class CheckoutViewModel extends ChangeNotifier {
         default:
         // ডিফল্ট হিসেবে mp4 সেট করুন
           mimeType = 'video/mp4';
-          debugPrint("   ⚠️ [WARNING] Unknown video extension: $ext, using video/mp4");
+          debugPrint("   [WARNING] Unknown video extension: $ext, using video/mp4");
       }
 
       request.files.add(
@@ -1528,13 +1532,13 @@ class CheckoutViewModel extends ChangeNotifier {
         ),
       );
       attachedCount++;
-      debugPrint("   🎬 [VIDEO] $fieldName: ${file.path.split('/').last} ($mimeType)");
+      debugPrint("   [VIDEO] $fieldName: ${file.path.split('/').last} ($mimeType)");
     }
 
     // ─── PDF বা অন্যান্য ডকুমেন্ট আটাচ করার ফাংশন (ভবিষ্যতের জন্য) ───
     Future<void> attachDocument(String fieldName, File? file) async {
       if (file == null || !file.existsSync()) {
-        debugPrint("   ⚠️ [SKIP] $fieldName: File not found or null");
+        debugPrint("[SKIP] $fieldName: File not found or null");
         skippedCount++;
         return;
       }
@@ -1570,19 +1574,19 @@ class CheckoutViewModel extends ChangeNotifier {
         ),
       );
       attachedCount++;
-      debugPrint("   📄 [DOCUMENT] $fieldName: ${file.path.split('/').last} ($mimeType)");
+      debugPrint("  [DOCUMENT] $fieldName: ${file.path.split('/').last} ($mimeType)");
     }
 
     // ─── Customer Image ───
-    debugPrint("   📌 [Customer Photo]");
+    debugPrint("  [Customer Photo]");
     await attachImage('customerImage', customerImageFile);
 
     // ─── Customer Video (ভিডিও হিসেবে আটাচ করুন) ───
-    debugPrint("   📌 [Customer Video]");
+    debugPrint("  [Customer Video]");
     await attachVideo('customerVideo', checkoutData.customerVideo);
 
     // ─── Customer NID/Passport ───
-    debugPrint("   📌 [Customer ID Document]");
+    debugPrint("  [Customer ID Document]");
     if (checkoutData.customerIdType == 'NID') {
       await attachImage('customerNidFront', checkoutData.nidFront);
       await attachImage('customerNidBack', checkoutData.nidBack);
@@ -1591,23 +1595,23 @@ class CheckoutViewModel extends ChangeNotifier {
     }
 
     // ─── Income Proof ───
-    debugPrint("   📌 [Income Proof]");
+    debugPrint("   [Income Proof]");
     await attachImage('incomeProofDocument', checkoutData.incomeProof);
 
     // 🔥 Bank Receipt
-    debugPrint("   📌 [Bank Receipt]");
+    debugPrint("   [Bank Receipt]");
     if (checkoutData.downPaymentMethod == 'BANK' && checkoutData.bankReceipt != null) {
       await attachImage('bankReceipt', checkoutData.bankReceipt);
     } else {
-      debugPrint("   ⚠️ [SKIP] bankReceipt: Not applicable or file missing");
+      debugPrint("    [SKIP] bankReceipt: Not applicable or file missing");
       skippedCount++;
     }
 
     // ─── Guarantors ───
-    debugPrint("   📌 [Guarantor Documents]");
+    debugPrint("   [Guarantor Documents]");
     for (int i = 0; i < checkoutData.guarantors.length; i++) {
       final g = checkoutData.guarantors[i];
-      debugPrint("      📌 Guarantor #${i+1}: ${g.name}");
+      debugPrint("  Guarantor #${i+1}: ${g.name}");
       if (g.idType == 'NID') {
         await attachImage('guarantor${i}NidFront', g.nidFront);
         await attachImage('guarantor${i}NidBack', g.nidBack);
@@ -1617,11 +1621,10 @@ class CheckoutViewModel extends ChangeNotifier {
     }
 
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    debugPrint("📊 [_attachAllFiles] SUMMARY");
-    debugPrint("   ✅ Attached: $attachedCount file(s)");
-    debugPrint("   ⚠️ Skipped: $skippedCount file(s)");
-    debugPrint("   📌 Total Files: ${request.files.length}");
-
+    debugPrint(" [_attachAllFiles] SUMMARY");
+    debugPrint("    Attached: $attachedCount file(s)");
+    debugPrint("    Skipped: $skippedCount file(s)");
+    debugPrint("    Total Files: ${request.files.length}");
     // ফাইলের বিস্তারিত তালিকা দেখান
     if (request.files.isNotEmpty) {
       debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
