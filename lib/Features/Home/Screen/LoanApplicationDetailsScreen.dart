@@ -538,11 +538,11 @@ class _LoanApplicationDetailsScreenState
 
   // ─── Guarantor Card with Documents ───
   Widget _buildGuarantorCardWithDocuments(
-    BuildContext context,
-    dynamic g,
-    int index,
-    NumberFormat currency,
-  ) {
+      BuildContext context,
+      dynamic g,
+      int index,
+      NumberFormat currency,
+      ) {
     debugPrint('═══════════════════════════════════════════════════');
     debugPrint(
       '📄 [Guarantor $index] ========== BUILDING GUARANTOR CARD ==========',
@@ -551,12 +551,10 @@ class _LoanApplicationDetailsScreenState
     final viewModel = context.read<LoanApplicationViewModel>();
     final dataMap = viewModel.rawData ?? {};
 
-    // 🔥 g যদি Map হয়, তাহলে Map হিসেবে ব্যবহার করুন
     Map<String, dynamic> guarantorMap;
     if (g is Map<String, dynamic>) {
       guarantorMap = g;
     } else {
-      // যদি Object হয়, তাহলে toJson() ব্যবহার করুন
       try {
         guarantorMap = g.toJson() as Map<String, dynamic>;
       } catch (_) {
@@ -564,122 +562,44 @@ class _LoanApplicationDetailsScreenState
       }
     }
 
-    debugPrint('📄 [Guarantor $index] Name: ${guarantorMap['name'] ?? 'NULL'}');
-    debugPrint(
-      '📄 [Guarantor $index] Phone: ${guarantorMap['phone'] ?? 'NULL'}',
-    );
-    debugPrint(
-      '📄 [Guarantor $index] Relationship: ${guarantorMap['relationship'] ?? 'NULL'}',
-    );
-    debugPrint(
-      '📄 [Guarantor $index] NID Front: ${guarantorMap['nidFront'] ?? 'NULL'}',
-    );
-    debugPrint(
-      '📄 [Guarantor $index] NID Back: ${guarantorMap['nidBack'] ?? 'NULL'}',
-    );
-    debugPrint(
-      '📄 [Guarantor $index] ID Type: ${guarantorMap['idType'] ?? 'NULL'}',
-    );
-    debugPrint(
-      '📄 [Guarantor $index] NID/Passport Number: ${guarantorMap['nidPassportNumber'] ?? 'NULL'}',
-    );
-    debugPrint('📄 [Guarantor $index] Type: ${guarantorMap['type'] ?? 'NULL'}');
-
-    // ─── Raw Data থেকে guarantorDocuments চেক করুন ───
-    debugPrint(
-      '📄 [Guarantor $index] Raw Data Keys: ${dataMap.keys.join(', ')}',
-    );
-
-    var guarantorDocs = dataMap['guarantorDocuments'] ?? [];
-    debugPrint(
-      '📄 [Guarantor $index] guarantorDocs Type: ${guarantorDocs.runtimeType}',
-    );
-    debugPrint(
-      '📄 [Guarantor $index] guarantorDocs Length: ${guarantorDocs is List ? guarantorDocs.length : 'NOT A LIST'}',
-    );
-
-    if (guarantorDocs is List) {
-      for (int i = 0; i < guarantorDocs.length; i++) {
-        final doc = guarantorDocs[i];
-        debugPrint('📄 [Guarantor $index] Doc $i: $doc');
-      }
-    }
-
     final List<Map<String, String>> docs = [];
 
-    debugPrint('📄 [Guarantor $index] Looking for documents...');
+    var guarantorDocs = dataMap['guarantorDocuments'] ?? [];
 
     // ─── guarantorDocuments ───
     if (guarantorDocs is List) {
       for (var doc in guarantorDocs) {
         int? guarantorIndex = doc['guarantorIndex'] ?? doc['index'];
-        debugPrint(
-          '📄 [Guarantor $index] Checking doc with guarantorIndex: $guarantorIndex',
-        );
-
         if (guarantorIndex == index || guarantorIndex == null) {
           String url = doc['url'] ?? doc['fileUrl'] ?? doc['path'] ?? '';
           String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
-          debugPrint(
-            '📄 [Guarantor $index] Found doc - URL: $url, Type: $docType',
-          );
-
           if (url.isNotEmpty) {
             String label = _getDocumentLabel(docType);
             bool exists = docs.any((d) => d['url'] == url);
             if (!exists) {
               docs.add({'label': label, 'url': url});
-              debugPrint('📄 [Guarantor $index] Added doc: $label -> $url');
-            } else {
-              debugPrint('📄 [Guarantor $index] Doc already exists: $label');
             }
-          } else {
-            debugPrint('📄 [Guarantor $index] URL is empty for doc: $doc');
           }
-        } else {
-          debugPrint(
-            '📄 [Guarantor $index] Skipping doc - index mismatch: $guarantorIndex != $index',
-          );
         }
       }
     }
 
-    // ─── Guarantor এর নিজস্ব NID চেক করুন (Map থেকে) ───
+    // ─── Guarantor এর নিজস্ব NID চেক করুন ───
     String? nidFront = guarantorMap['nidFront'];
-    debugPrint('📄 [Guarantor $index] Checking nidFront: $nidFront');
     if (nidFront != null && nidFront.isNotEmpty) {
       bool exists = docs.any((d) => d['url'] == nidFront);
       if (!exists) {
         docs.add({'label': 'NID FRONT', 'url': nidFront});
-        debugPrint(
-          '📄 [Guarantor $index] Added NID FRONT from nidFront: $nidFront',
-        );
-      } else {
-        debugPrint('📄 [Guarantor $index] NID FRONT already exists');
       }
     }
 
     String? nidBack = guarantorMap['nidBack'];
-    debugPrint('📄 [Guarantor $index] Checking nidBack: $nidBack');
     if (nidBack != null && nidBack.isNotEmpty) {
       bool exists = docs.any((d) => d['url'] == nidBack);
       if (!exists) {
         docs.add({'label': 'NID BACK', 'url': nidBack});
-        debugPrint(
-          '📄 [Guarantor $index] Added NID BACK from nidBack: $nidBack',
-        );
-      } else {
-        debugPrint('📄 [Guarantor $index] NID BACK already exists');
       }
     }
-
-    debugPrint('📄 [Guarantor $index] Total Documents Found: ${docs.length}');
-    for (int i = 0; i < docs.length; i++) {
-      debugPrint(
-        '📄 [Guarantor $index]   Doc ${i + 1}: ${docs[i]['label']} -> ${docs[i]['url']}',
-      );
-    }
-    debugPrint('═══════════════════════════════════════════════════');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -698,9 +618,53 @@ class _LoanApplicationDetailsScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ─── ✅ Title: Guarantor 1, Guarantor 2, Guarantor 3 ───
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Guarantor ${index + 1}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: guarantorMap['type'] == 'FAMILY'
+                        ? Colors.green.shade50
+                        : Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    guarantorMap['type'] ?? 'N/A',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: guarantorMap['type'] == 'FAMILY'
+                          ? Colors.green.shade700
+                          : Colors.orange.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // ─── Guarantor Info ───
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -739,24 +703,6 @@ class _LoanApplicationDetailsScreenState
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.infoBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        guarantorMap['relationship'] ?? 'N/A',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.infoBlue,
-                        ),
                       ),
                     ),
                   ],
