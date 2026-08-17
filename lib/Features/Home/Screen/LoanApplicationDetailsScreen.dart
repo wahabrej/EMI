@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/constant/App_Colors.dart';
 import '../../../core/constant/Api_End_point.dart';
+import '../../../core/constant/Token_storage.dart';
 import '../ViewModel/LoanApplicationViewModel.dart';
 
 class LoanApplicationDetailsScreen extends StatefulWidget {
@@ -16,11 +18,16 @@ class LoanApplicationDetailsScreen extends StatefulWidget {
       _LoanApplicationDetailsScreenState();
 }
 
+final AppStorage _storage = AppStorage();
+String? userRole;
+
 class _LoanApplicationDetailsScreenState
     extends State<LoanApplicationDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint(
         '[DetailsScreen] Fetching details for ID: ${widget.applicationId}',
@@ -31,8 +38,20 @@ class _LoanApplicationDetailsScreenState
     });
   }
 
+  Future<void> _loadUserRole() async {
+    final role = await _storage.getUserRole();
+
+    if (!mounted) return;
+
+    setState(() {
+      userRole = role;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canApproveReject = userRole != "SALES_PERSON";
+
     final currency = NumberFormat('#,###');
 
     return Scaffold(
@@ -133,7 +152,11 @@ class _LoanApplicationDetailsScreenState
                 _buildInfoCard([
                   _infoRow("Application ID", app.displayId ?? 'N/A'),
                   _infoRow("Full Name", app.name ?? 'N/A'),
-                  _infoRow("Phone", app.phone ?? 'N/A'),
+                  _infoRow(
+                    "Phone",
+                    app.phone ?? 'N/A',
+                    isPhone: true,
+                  ), // ← isPhone: true যোগ করুন
                   _infoRow(
                     "${app.idType ?? 'NID'} Number",
                     app.nidPassportNumber ?? 'N/A',
@@ -184,7 +207,7 @@ class _LoanApplicationDetailsScreenState
                   }).toList(),
                 ],
 
-                if (currentStatus == 'PENDING') ...[
+                if (currentStatus == 'PENDING' && canApproveReject) ...[
                   const SizedBox(height: 40),
                   _buildActionButtons(
                     context,
@@ -192,7 +215,6 @@ class _LoanApplicationDetailsScreenState
                     app.id ?? widget.applicationId,
                   ),
                 ],
-
                 const SizedBox(height: 40),
               ],
             ),
@@ -304,7 +326,7 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(String label, String value, {bool isPhone = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -314,18 +336,107 @@ class _LoanApplicationDetailsScreenState
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Color(0xFF0F172A),
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // 🔥 সব নম্বরের জন্য Call Now বাটন দেখাবে
+                if (isPhone && value.isNotEmpty && value != 'N/A')
+                  GestureDetector(
+                    onTap: () => _makePhoneCall(value),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0052CC),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.phone_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Call Now',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    // ডায়ালার খোলা
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        final Uri dialUri = Uri(scheme: 'tel', path: phoneNumber);
+        await launchUrl(dialUri);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot call: $phoneNumber'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _showCallErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Call Error'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -538,11 +649,11 @@ class _LoanApplicationDetailsScreenState
 
   // ─── Guarantor Card with Documents ───
   Widget _buildGuarantorCardWithDocuments(
-      BuildContext context,
-      dynamic g,
-      int index,
-      NumberFormat currency,
-      ) {
+    BuildContext context,
+    dynamic g,
+    int index,
+    NumberFormat currency,
+  ) {
     debugPrint('═══════════════════════════════════════════════════');
     debugPrint(
       '📄 [Guarantor $index] ========== BUILDING GUARANTOR CARD ==========',
@@ -624,7 +735,10 @@ class _LoanApplicationDetailsScreenState
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -640,7 +754,10 @@ class _LoanApplicationDetailsScreenState
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: guarantorMap['type'] == 'FAMILY'
                         ? Colors.green.shade50

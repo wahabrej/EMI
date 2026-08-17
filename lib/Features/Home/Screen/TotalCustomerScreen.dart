@@ -61,17 +61,23 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
           }
 
           final allCustomers = uniqueCustomers.values.toList();
-          final int activeCount = allCustomers.where((c) => c.id != null).length;
-          final int pendingCount = allCustomers.where((c) => c.id == null).length;
+          final int activeCount = allCustomers
+              .where((c) => c.id != null)
+              .length;
+          final int pendingCount = allCustomers
+              .where((c) => c.id == null)
+              .length;
 
           // Filter + Search
           final filteredCustomers = allCustomers.where((customer) {
-            final matchesFilter = _selectedFilter == 'All' ||
+            final matchesFilter =
+                _selectedFilter == 'All' ||
                 (_selectedFilter == 'Active' && customer.id != null) ||
                 (_selectedFilter == 'Pending' && customer.id == null);
 
             final query = _searchQuery.toLowerCase();
-            final matchesSearch = query.isEmpty ||
+            final matchesSearch =
+                query.isEmpty ||
                 (customer.name?.toLowerCase().contains(query) ?? false) ||
                 (customer.phone?.toLowerCase().contains(query) ?? false);
 
@@ -113,7 +119,9 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                         if (filteredCustomers.isEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 80),
-                            child: _buildEmptyState('No customer records found'),
+                            child: _buildEmptyState(
+                              'No customer records found',
+                            ),
                           )
                         else
                           ListView.builder(
@@ -124,7 +132,9 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                             itemBuilder: (context, index) {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 14),
-                                child: _buildCustomerCard(filteredCustomers[index]),
+                                child: _buildCustomerCard(
+                                  filteredCustomers[index],
+                                ),
                               );
                             },
                           ),
@@ -147,7 +157,11 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
         backgroundColor: const Color(0xFF0052CC),
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 22),
+        icon: const Icon(
+          Icons.person_add_alt_1_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
         label: const Text(
           'Add Customer',
           style: TextStyle(
@@ -177,8 +191,11 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
             children: [
               IconButton(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const Expanded(
                 child: Text(
@@ -204,7 +221,11 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
+                const Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFF94A3B8),
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
@@ -403,7 +424,6 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
             child: Row(
               children: [
-                // Avatar
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: isPending
@@ -421,8 +441,6 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-
-                // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,7 +461,9 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 3),
+                              horizontal: 9,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: isPending
                                   ? const Color(0xFFFFF7ED)
@@ -475,8 +495,11 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          const Icon(Icons.phone_rounded,
-                              size: 13, color: Color(0xFF64748B)),
+                          const Icon(
+                            Icons.phone_rounded,
+                            size: 13,
+                            color: Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             phone,
@@ -491,7 +514,6 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                     ],
                   ),
                 ),
-
                 const Icon(
                   Icons.chevron_right_rounded,
                   color: Color(0xFF94A3B8),
@@ -502,6 +524,9 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
           ),
 
           // Bottom actions
+// TotalCustomerScreen.dart - _buildCustomerCard মেথডে
+
+// Bottom actions
           Container(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             decoration: const BoxDecoration(
@@ -509,11 +534,12 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
             ),
             child: Row(
               children: [
+                // ✅ Call Button - সরাসরি Phone Dialer Open করবে
                 Expanded(
                   child: _outlineBtn(
                     Icons.phone_rounded,
                     'Call',
-                        () => _launchAction('tel:$phone'),
+                        () => _makePhoneCall(phone), // ✅ _makePhoneCall ব্যবহার করুন
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -529,10 +555,43 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                   flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: () => _navigateToCustomerDetails(customer),
-                    icon: const Icon(Icons.person_outline_rounded,
-                        size: 16, color: Colors.white),
+                    icon: const Icon(
+                      Icons.person_outline_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                     label: const Text(
                       'View Details',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0052CC),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Edit Button
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _navigateToEditCustomer(customer),
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Edit',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -556,7 +615,65 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
       ),
     );
   }
+  void _makePhoneCall(String phoneNumber) async {
+    // ডায়ালার খোলা
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
 
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        final Uri dialUri = Uri(scheme: 'tel', path: phoneNumber);
+        await launchUrl(dialUri);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot call: $phoneNumber'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+// ─── Navigation to Edit Customer ───
+  void _navigateToEditCustomer(Customer customer) {
+    debugPrint('✏️ [TotalCustomerScreen] Edit Customer Clicked');
+    debugPrint('🆔 Customer ID: ${customer.id ?? 'N/A'}');
+    debugPrint('📋 Customer Name: ${customer.name ?? 'Unknown'}');
+
+    if (customer.id == null || customer.id!.isEmpty) {
+      debugPrint('⚠️ Customer ID is null or empty');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot edit pending applicant. Please complete application first.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final customerId = customer.id!;
+      debugPrint('✅ Navigating to EditCustomer with ID: $customerId');
+
+      Navigator.pushNamed(
+        context,
+        RouteName.editCustomerScreen,
+        arguments: customerId,
+      ).then((result) {
+        debugPrint('✅ Edit navigation completed. Result: $result');
+      }).catchError((error) {
+        debugPrint('❌ Navigation error: $error');
+        _showErrorDialog('Navigation Error', error.toString());
+      });
+    } catch (e, stackTrace) {
+      debugPrint('❌ Navigation Exception: $e');
+      debugPrint('📚 StackTrace: $stackTrace');
+      _showErrorDialog('Error', 'Could not open edit screen: $e');
+    }
+  }
   // ─── Navigation Method ───
   void _navigateToCustomerDetails(Customer customer) {
     debugPrint('👤 [TotalCustomerScreen] View Details Clicked');
@@ -564,42 +681,65 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
     debugPrint('📋 Customer Name: ${customer.name ?? 'Unknown'}');
     debugPrint('📞 Customer Phone: ${customer.phone ?? 'N/A'}');
 
+    // 🔥 নতুন চেক: customerId আছে কিনা
     if (customer.id == null || customer.id!.isEmpty) {
-      debugPrint('⚠️ Customer ID is null or empty - showing snackbar');
+      debugPrint('⚠️ Customer ID is null or empty - checking application...');
 
+      // 🆕 application থেকে ID নেওয়ার চেষ্টা করুন
+      // যদি customerId থাকে, তাহলে সেটা ব্যবহার করুন
+      if (customer.displayId != null &&
+          customer.displayId != 'Pending applicant') {
+        // customerId পাওয়া গেছে
+        try {
+          final customerId = customer.displayId!;
+          Navigator.pushNamed(
+            context,
+            RouteName.customerDetailsScreen,
+            arguments: customerId,
+          );
+          return;
+        } catch (e) {
+          debugPrint('Error navigating with displayId: $e');
+        }
+      }
+
+      // যদি কোন customerId না থাকে, তাহলে পেন্ডিং অ্যাপ্লিকেশন ওপেন করুন
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('This is a pending applicant. Complete the application first.'),
+          content: Text(
+            'This is a pending applicant. Please complete the application first.',
+          ),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 3),
         ),
       );
 
-      // Optionally navigate to pending application
+      // 🆕 পেন্ডিং অ্যাপ্লিকেশন স্ক্রিনে নিয়ে যান
       // Navigator.pushNamed(context, RouteName.pendingApplicationScreen);
       return;
     }
 
     try {
       final customerId = customer.id!;
-      debugPrint(' Sending customerId: $customerId');
+      debugPrint('✅ Sending customerId: $customerId');
 
-      // Navigate to Customer Details Screen
       Navigator.pushNamed(
-        context,
-        RouteName.customerDetailsScreen, // Make sure this route exists
-        arguments: customerId,
-      ).then((result) {
-        debugPrint(' Navigation completed. Result: $result');
-      }).catchError((error) {
-        debugPrint(' Navigation error: $error');
-        _showErrorDialog('Navigation Error', error.toString());
-      });
+            context,
+            RouteName.customerDetailsScreen,
+            arguments: customerId,
+          )
+          .then((result) {
+            debugPrint('✅ Navigation completed. Result: $result');
+          })
+          .catchError((error) {
+            debugPrint(' Navigation error: $error');
+            _showErrorDialog('Navigation Error', error.toString());
+          });
 
-      debugPrint(' Navigation command sent successfully');
+      debugPrint('✅ Navigation command sent successfully');
     } catch (e, stackTrace) {
       debugPrint(' Navigation Exception: $e');
-      debugPrint(' StackTrace: $stackTrace');
+      debugPrint('📚 StackTrace: $stackTrace');
       _showErrorDialog('Error', 'Could not open customer details: $e');
     }
   }

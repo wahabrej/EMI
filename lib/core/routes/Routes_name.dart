@@ -12,6 +12,7 @@ class RouteName {
   static const collectPaymentScreen = "collectPaymentScreen";
   static const singleLoanDetailScreen = "singleLoanDetailScreen";
   static const brandSelectForManager = "brandSelectForManager";
+  static const editCustomerScreen = "editCustomerScreen";
 
   // ── Sales Dashboard Details ──────────────────────────
   static const totalCustomerScreen = "totalCustomerScreen";

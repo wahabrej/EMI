@@ -179,4 +179,7 @@ class ApiEndPoint {
       '$baseUrl${_withPrefix('/payments/collect')}';
   static String get assignedProducts => '$baseUrl${_withPrefix('/assigned-products')}';
 
+  static String editCustomer(String id) => '$baseUrl${_withPrefix('/customers/$id')}';
+  static String updatePaymentDate(String id) => '$baseUrl${_withPrefix('/customers/$id')}';
+
 }

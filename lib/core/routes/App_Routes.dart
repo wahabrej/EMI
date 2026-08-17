@@ -8,6 +8,7 @@ import '../../Features/Auth/Screen/Sign_Up_Screen.dart';
 import '../../Features/EMI/Screen/EmiRepaymentScheduleScreen.dart';
 import '../../Features/Home/Screen/ActiveLoanScreen.dart';
 import '../../Features/Home/Screen/CollectPaymentScreen.dart';
+import '../../Features/Home/Screen/Edit_customer.dart';
 import '../../Features/Home/Screen/OverdueLoanScreen.dart';
 import '../../Features/Home/Screen/PendingApprovalScreen.dart';
 import '../../Features/Home/Screen/TotalCustomerScreen.dart';
@@ -46,7 +47,16 @@ class AppRoutes {
         const CollectPaymentScreen(),
     RouteName.brandSelectForManager: (context) =>
         const BrandSelectForManager(),
-
+    RouteName.editCustomerScreen: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments as String?;
+      if (args == null || args.isEmpty) {
+        // Fallback বা Error Handle
+        return const Scaffold(
+          body: Center(child: Text('Customer ID not found')),
+        );
+      }
+      return EditCustomerScreen(customerId: args);
+    },
     RouteName.singleLoanDetailScreen: (context) {
       // arguments থেকে loanId নিন
       final arguments = ModalRoute.of(context)?.settings.arguments;
