@@ -812,13 +812,53 @@ class _LoanApplicationDetailsScreenState
                               fontSize: 15,
                             ),
                           ),
-                          Text(
-                            "${guarantorMap['relationship'] ?? 'N/A'} • ${guarantorMap['phone'] ?? 'N/A'}",
-                            style: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 13,
-                            ),
+
+                          Row(
+                            children: [
+                              Text(
+                                "${guarantorMap['relationship'] ?? 'N/A'} • ${guarantorMap['phone'] ?? 'N/A'}",
+                                style: const TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => _makePhoneCall(guarantorMap['phone']),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0052CC),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.phone_rounded,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Call Now',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+
+
                         ],
                       ),
                     ),

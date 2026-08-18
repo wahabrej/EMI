@@ -35,7 +35,7 @@ class CustomerEditViewModel extends ChangeNotifier {
     notifyListeners();
 
     debugPrint('═══════════════════════════════════════════════════');
-    debugPrint('📋 [CustomerEditVM] ========== FETCH CUSTOMER DETAIL ==========');
+    debugPrint('📋 [CustomerEditVM] FETCH CUSTOMER DETAIL');
     debugPrint('📋 [CustomerEditVM] Customer ID: $customerId');
 
     try {
@@ -47,8 +47,7 @@ class CustomerEditViewModel extends ChangeNotifier {
         return false;
       }
 
-      final url = ApiEndPoint.customerDetails(customerId);
-      debugPrint('🌐 [CustomerEditVM] URL: $url');
+      final url = ApiEndPoint.editCustomer(customerId);
 
       final response = await http.get(
         Uri.parse(url),
@@ -60,7 +59,6 @@ class CustomerEditViewModel extends ChangeNotifier {
       );
 
       debugPrint('📊 [CustomerEditVM] Status Code: ${response.statusCode}');
-      debugPrint('📄 [CustomerEditVM] Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -70,29 +68,25 @@ class CustomerEditViewModel extends ChangeNotifier {
         notifyListeners();
 
         debugPrint('✅ [CustomerEditVM] Customer details fetched successfully!');
-        debugPrint('📋 [CustomerEditVM] Customer Name: ${_customerDetail?.data?.name}');
-        debugPrint('📋 [CustomerEditVM] Customer Phone: ${_customerDetail?.data?.phone}');
-        debugPrint('═══════════════════════════════════════════════════');
+        debugPrint('📋 [CustomerEditVM] Name: ${_customerDetail?.data?.name}');
+        debugPrint('📋 [CustomerEditVM] Phone: ${_customerDetail?.data?.phone}');
         return true;
       } else {
         final Map<String, dynamic> errorData = jsonDecode(response.body);
-        _errorMessage = errorData['message'] ?? errorData['error']?['message'] ?? 'Failed to load customer details';
+        _errorMessage = errorData['message'] ?? 'Failed to load customer details';
         _isLoading = false;
         notifyListeners();
-        debugPrint('❌ [CustomerEditVM] Error: $_errorMessage');
         return false;
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
-      debugPrint('❌ [CustomerEditVM] Exception: $e');
-      debugPrint('📚 [CustomerEditVM] StackTrace: $stackTrace');
       return false;
     }
   }
 
-  // ─── ✅ Update Customer ───
+  // ─── Update Customer ───
   Future<bool> updateCustomer({
     required String customerId,
     required Map<String, dynamic> updatedData,
@@ -102,10 +96,9 @@ class CustomerEditViewModel extends ChangeNotifier {
     _successMessage = null;
     notifyListeners();
 
-    debugPrint('═══════════════════════════════════════════════════');
-    debugPrint('✏️ [CustomerEditVM] ========== UPDATE CUSTOMER ==========');
-    debugPrint('✏️ [CustomerEditVM] Customer ID: $customerId');
-    debugPrint('📝 [CustomerEditVM] Updated Data: $updatedData');
+    debugPrint('════════════════════════════════════════════════════════');
+    debugPrint('✏️ [CustomerEditVM] UPDATE CUSTOMER');
+    debugPrint('════════════════════════════════════════════════════════');
 
     try {
       final token = await _tokenStorage.getToken();
@@ -116,8 +109,11 @@ class CustomerEditViewModel extends ChangeNotifier {
         return false;
       }
 
-      final url = ApiEndPoint.updatePaymentDate(customerId);
+      final url = ApiEndPoint.editCustomer(customerId);
+      final body = jsonEncode(updatedData);
+
       debugPrint('🌐 [CustomerEditVM] URL: $url');
+      debugPrint('📤 [CustomerEditVM] Request Body: $body');
 
       final response = await http.put(
         Uri.parse(url),
@@ -126,11 +122,11 @@ class CustomerEditViewModel extends ChangeNotifier {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode(updatedData),
+        body: body,
       );
 
-      debugPrint('📊 [CustomerEditVM] Status Code: ${response.statusCode}');
-      debugPrint('📄 [CustomerEditVM] Response: ${response.body}');
+      debugPrint('📥 [CustomerEditVM] Status Code: ${response.statusCode}');
+      debugPrint('📥 [CustomerEditVM] Response: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -139,26 +135,25 @@ class CustomerEditViewModel extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
 
-        // Refresh customer details after update
         await fetchCustomerDetail(customerId);
 
-        debugPrint('✅ [CustomerEditVM] Customer updated successfully!');
-        debugPrint('═══════════════════════════════════════════════════');
+        debugPrint('✅ [CustomerEditVM] Update successful!');
         return true;
       } else {
         final Map<String, dynamic> errorData = jsonDecode(response.body);
-        _errorMessage = errorData['message'] ?? errorData['error']?['message'] ?? 'Failed to update customer';
+        _errorMessage = errorData['message'] ??
+            errorData['error']?['message'] ??
+            'Failed to update customer';
         _isLoading = false;
         notifyListeners();
         debugPrint('❌ [CustomerEditVM] Error: $_errorMessage');
         return false;
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
       debugPrint('❌ [CustomerEditVM] Exception: $e');
-      debugPrint('📚 [CustomerEditVM] StackTrace: $stackTrace');
       return false;
     }
   }
@@ -173,23 +168,9 @@ class CustomerEditViewModel extends ChangeNotifier {
   }
 
   // ─── Getters ───
-  String getCustomerName() {
-    return _customerDetail?.data?.name ?? 'N/A';
-  }
-
-  String getCustomerPhone() {
-    return _customerDetail?.data?.phone ?? 'N/A';
-  }
-
-  String getCustomerId() {
-    return _customerDetail?.data?.displayId ?? 'N/A';
-  }
-
-  String getCustomerStatus() {
-    return _customerDetail?.data?.status ?? 'ACTIVE';
-  }
-
-  String getCustomerIdType() {
-    return _customerDetail?.data?.idType ?? 'NID';
-  }
+  String getCustomerName() => _customerDetail?.data?.name ?? 'N/A';
+  String getCustomerPhone() => _customerDetail?.data?.phone ?? 'N/A';
+  String getCustomerId() => _customerDetail?.data?.displayId ?? 'N/A';
+  String getCustomerStatus() => _customerDetail?.data?.status ?? 'ACTIVE';
+  String getCustomerIdType() => _customerDetail?.data?.idType ?? 'NID';
 }

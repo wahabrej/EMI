@@ -326,9 +326,6 @@ class EditData {
 }
 
 // ─── Guarantor ───
-// lib/models/customer_detail_model.dart
-
-// ─── Guarantor ───
 class Guarantor {
   String? id;
   String? customerId;
@@ -336,7 +333,7 @@ class Guarantor {
   String? name;
   String? phone;
   String? relationship;
-  String? idType;  // ✅ এটা যোগ করুন
+  String? idType;
   String? nidPassportNumber;
   String? documentType;
   String? documentImageFileName;
@@ -358,7 +355,7 @@ class Guarantor {
     this.name,
     this.phone,
     this.relationship,
-    this.idType,  // ✅ এটা যোগ করুন
+    this.idType,
     this.nidPassportNumber,
     this.documentType,
     this.documentImageFileName,
@@ -382,7 +379,7 @@ class Guarantor {
       name: json['name']?.toString(),
       phone: json['phone']?.toString(),
       relationship: json['relationship']?.toString(),
-      idType: json['idType']?.toString(),  // ✅ এটা যোগ করুন
+      idType: json['idType']?.toString(),
       nidPassportNumber: json['nidPassportNumber']?.toString(),
       documentType: json['documentType']?.toString(),
       documentImageFileName: json['documentImageFileName']?.toString(),
@@ -403,13 +400,15 @@ class Guarantor {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
+    if (id != null && id!.isNotEmpty) {
+      data['id'] = id;
+    }
     data['customerId'] = customerId;
     data['type'] = type;
     data['name'] = name;
     data['phone'] = phone;
     data['relationship'] = relationship;
-    data['idType'] = idType;  // ✅ এটা যোগ করুন
+    data['idType'] = idType;
     data['nidPassportNumber'] = nidPassportNumber;
     data['documentType'] = documentType;
     data['documentImageFileName'] = documentImageFileName;
@@ -503,9 +502,7 @@ class Shop {
   String? id;
   String? name;
   String? code;
-
   Shop({this.id, this.name, this.code});
-
   factory Shop.fromJson(Map<String, dynamic> json) {
     return Shop(
       id: json['id']?.toString(),
@@ -513,7 +510,6 @@ class Shop {
       code: json['code']?.toString(),
     );
   }
-
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -536,7 +532,6 @@ class AssignedProductModel {
   String? updatedAt;
   Shop? brand;
   Product? product;
-
   AssignedProductModel({
     this.id,
     this.code,
@@ -550,7 +545,6 @@ class AssignedProductModel {
     this.brand,
     this.product,
   });
-
   factory AssignedProductModel.fromJson(Map<String, dynamic> json) {
     return AssignedProductModel(
       id: json['id']?.toString(),
@@ -566,7 +560,6 @@ class AssignedProductModel {
       product: json['product'] != null ? Product.fromJson(json['product']) : null,
     );
   }
-
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -595,15 +588,7 @@ class Product {
   String? code;
   String? brandId;
   String? sellingPrice;
-
-  Product({
-    this.id,
-    this.name,
-    this.code,
-    this.brandId,
-    this.sellingPrice,
-  });
-
+  Product({this.id, this.name, this.code, this.brandId, this.sellingPrice});
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id']?.toString(),
@@ -613,7 +598,6 @@ class Product {
       sellingPrice: json['sellingPrice']?.toString(),
     );
   }
-
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -634,7 +618,6 @@ class ActiveLoan {
   double? totalAmount;
   double? paidAmount;
   double? remainingAmount;
-
   ActiveLoan({
     this.id,
     this.displayId,
@@ -644,7 +627,6 @@ class ActiveLoan {
     this.paidAmount,
     this.remainingAmount,
   });
-
   factory ActiveLoan.fromJson(Map<String, dynamic> json) {
     return ActiveLoan(
       id: json['id']?.toString(),
@@ -656,7 +638,6 @@ class ActiveLoan {
       remainingAmount: double.tryParse(json['remainingAmount']?.toString() ?? '0'),
     );
   }
-
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;

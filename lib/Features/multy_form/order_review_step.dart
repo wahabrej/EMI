@@ -82,8 +82,13 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
             'Verify store details and selected plan pricing',
             style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
+// OrderReviewStep build মেথডে
+
           const SizedBox(height: 24),
-          _buildPaymentDateField(vm, order),
+          _buildIssueDateField(vm, order),  // ✅ Issue Date
+          const SizedBox(height: 16),
+          _buildPaymentDateField(vm, order), // ✅ Payment Date
+
 
           const SizedBox(height: 16),
           CustomDropdownField(
@@ -334,7 +339,88 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
     );
   }
   // lib/features/checkout/screens/order_review_step.dart
+// lib/features/checkout/screens/order_review_step.dart
 
+// ─── Issue Date Field ───
+  Widget _buildIssueDateField(CheckoutViewModel vm, var order) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle("Issue Date"),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: order.issueDate != null
+                  ? DateTime.parse(order.issueDate!)
+                  : DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: AppColors.primaryBlue,
+                      onPrimary: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              order.issueDate = picked.toIso8601String().split('T')[0];
+              vm.notifyListeners();
+            }
+          },
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  color: AppColors.primaryBlue,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    order.issueDate != null
+                        ? DateFormat('dd MMM yyyy').format(
+                      DateTime.parse(order.issueDate!),
+                    )
+                        : DateFormat('dd MMM yyyy').format(DateTime.now()),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: order.issueDate != null
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF94A3B8),
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+// ─── Payment Date Field ───
   Widget _buildPaymentDateField(CheckoutViewModel vm, var order) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,13 +429,21 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () async {
+            // ✅ Next Month এর প্রথম দিন Calculation
+            final DateTime now = DateTime.now();
+            final DateTime firstDayOfNextMonth = DateTime(
+              now.year,
+              now.month + 1,
+              1,
+            );
+
             final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: order.monthlyPaymentDate != null
                   ? DateTime.parse(order.monthlyPaymentDate!)
-                  : DateTime.now(), // ✅ Default Today
-              firstDate: DateTime.now(),
-              lastDate: DateTime.now().add(const Duration(days: 365)),
+                  : firstDayOfNextMonth, // ✅ Next Month এর প্রথম দিন
+              firstDate: firstDayOfNextMonth, // ✅ Next Month থেকে শুরু
+              lastDate: firstDayOfNextMonth.add(const Duration(days: 365)),
               builder: (context, child) {
                 return Theme(
                   data: Theme.of(context).copyWith(
@@ -386,18 +480,24 @@ class _OrderReviewStepState extends State<OrderReviewStep> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    // ✅ এখানে Default Today দেখান
                     order.monthlyPaymentDate != null
                         ? DateFormat('dd MMM yyyy').format(
                       DateTime.parse(order.monthlyPaymentDate!),
                     )
-                        : DateFormat('dd MMM yyyy').format(DateTime.now()), // ✅ Default Today
+                        : DateFormat('dd MMM yyyy').format(
+                      // ✅ Next Month এর প্রথম দিন Show করুন
+                      DateTime(
+                        DateTime.now().year,
+                        DateTime.now().month + 1,
+                        1,
+                      ),
+                    ),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: order.monthlyPaymentDate != null
                           ? const Color(0xFF0F172A)
-                          : const Color(0xFF0F172A), // ✅ Today এর জন্য কালো
+                          : const Color(0xFF0F172A),
                     ),
                   ),
                 ),

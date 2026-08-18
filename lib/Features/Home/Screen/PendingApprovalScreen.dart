@@ -1,6 +1,9 @@
+// lib/features/home/screens/pending_approval_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../../CustomerFeature/home/model/customer_dashboard_model.dart';
 import '../../../core/constant/App_Colors.dart';
 import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
@@ -53,15 +56,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   // ─── Document Verification Status ───
   bool _isDocumentVerified(dynamic app) {
     try {
-      // Check if documents exist
       final docs = app.documents;
       if (docs == null) return false;
 
-      // If documents is a List
       if (docs is List) {
         if (docs.isEmpty) return false;
-
-        // Check if all documents are verified
         for (var doc in docs) {
           if (doc != null) {
             final status = doc['status']?.toString().toUpperCase() ?? '';
@@ -73,7 +72,6 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
         return true;
       }
 
-      // If documents is a Map
       if (docs is Map) {
         final status = docs['status']?.toString().toUpperCase() ?? '';
         return status == 'VERIFIED' || status == 'APPROVED';
@@ -98,7 +96,6 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
               .toList() ??
               [];
 
-          // Search filter
           if (_searchQuery.isNotEmpty) {
             final q = _searchQuery.toLowerCase();
             apps = apps.where((a) {
@@ -566,7 +563,6 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          // ─── DOCUMENT VERIFICATION STATUS ───
                           isVerified
                               ? Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -713,7 +709,35 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                     },
                   ),
                 ),
-
+                const SizedBox(width: 8),
+                // ✅ Edit Button (New)
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _navigateToEditCustomer(app),
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0052CC),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 2,
@@ -749,6 +773,83 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ ─── Navigation to Edit Customer ───
+  void _navigateToEditCustomer(dynamic app) {
+    debugPrint('✏️ [PendingApprovalScreen] Edit Customer Clicked');
+
+    // Extract customer ID from application
+    String? customerId;
+
+    // Try to get customer ID from different sources
+    if (app.customer != null) {
+      customerId = app.customer?.id?.toString();
+      debugPrint('📋 Customer ID from customer: $customerId');
+    }
+
+    if (customerId == null || customerId.isEmpty) {
+      // Try to get from application directly
+      customerId = app.id?.toString();
+      debugPrint('📋 Customer ID from app.id: $customerId');
+    }
+
+    if (customerId == null || customerId.isEmpty) {
+      // Try to get from displayId
+      customerId = app.displayId?.toString();
+      debugPrint('📋 Customer ID from displayId: $customerId');
+    }
+
+    debugPrint('📋 Customer Name: ${app.name ?? "Unknown"}');
+    debugPrint('📋 Application ID: ${app.id ?? "N/A"}');
+
+    if (customerId == null || customerId.isEmpty) {
+      debugPrint('⚠️ Customer ID is null or empty');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot edit pending applicant. Please complete the application first.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    try {
+      debugPrint('✅ Navigating to EditCustomer with ID: $customerId');
+
+      Navigator.pushNamed(
+        context,
+        RouteName.editCustomerScreen,
+        arguments: customerId,
+      ).then((result) {
+        debugPrint('✅ Edit navigation completed. Result: $result');
+      }).catchError((error) {
+        debugPrint('❌ Navigation error: $error');
+        _showErrorDialog('Navigation Error', error.toString());
+      });
+    } catch (e, stackTrace) {
+      debugPrint('❌ Navigation Exception: $e');
+      debugPrint('📚 StackTrace: $stackTrace');
+      _showErrorDialog('Error', 'Could not open edit screen: $e');
+    }
+  }
+
+  // ─── Error Dialog ───
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),

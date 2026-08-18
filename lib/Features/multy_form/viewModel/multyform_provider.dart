@@ -1340,9 +1340,11 @@ class CheckoutViewModel extends ChangeNotifier {
     request.fields['password'] = checkoutData.password.isEmpty ? '12345678' : checkoutData.password;
     request.fields['presentAddress'] = checkoutData.presentAddress;
     request.fields['permanentAddress'] = checkoutData.permanentAddress;
+    debugPrint("   📌 [ISSUE DATE] issueDate: ${request.fields['issueDate']}");
 
     debugPrint("   📌 [Basic Info]");
     debugPrint("      issueDate: ${request.fields['issueDate']}");
+    debugPrint("      monthlyPayment: ${request.fields['issueDate']}");
     debugPrint("      name: ${request.fields['name']}");
     debugPrint("      phone: ${request.fields['phone']}");
     debugPrint("      password: ${request.fields['password']}");
@@ -1390,10 +1392,15 @@ class CheckoutViewModel extends ChangeNotifier {
     request.fields['emiCharge'] = checkoutData.emiCharge.toString();
     request.fields['monthlyEmi'] = checkoutData.monthlyEmi.toString();
     request.fields['emiTenureMonths'] = checkoutData.emiTenureMonths.toString();
+    // ✅ Monthly Payment Date
     if (checkoutData.monthlyPaymentDate != null &&
         checkoutData.monthlyPaymentDate!.isNotEmpty) {
       request.fields['monthlyPaymentDate'] = checkoutData.monthlyPaymentDate!;
-      debugPrint(" monthlyPaymentDate: ${checkoutData.monthlyPaymentDate}");
+
+      // ✅ Monthly Payment Date Debug Print
+      debugPrint("   📌 [MONTHLY PAYMENT DATE] monthlyPaymentDate: ${checkoutData.monthlyPaymentDate}");
+    } else {
+      debugPrint("   ⚠️ [MONTHLY PAYMENT DATE] monthlyPaymentDate is NULL or EMPTY");
     }
 
     debugPrint(" [Payment Info]");
