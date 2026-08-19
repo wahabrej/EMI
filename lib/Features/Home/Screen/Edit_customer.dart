@@ -2111,13 +2111,13 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
       'yyyy-MM-dd',
     ).format(_selectedMonthlyPaymentDate);
 
-    // ─── 3.2: 🔥 HIERARCHY FIELDS ───
+    // ─── 3.2:  HIERARCHY FIELDS ───
     updatedData['shopId'] = customer.shopId ?? '';
     updatedData['agentId'] = customer.agentId ?? '';
     updatedData['managerId'] = customer.managerId ?? '';
     updatedData['salesPersonId'] = customer.salesPersonId ?? '';
 
-    // ─── 3.3: 🔥 PRODUCT FIELDS (REQUIRED) ───
+    // ─── 3.3:  PRODUCT FIELDS (REQUIRED) ───
     updatedData['productId'] = customer.productId ?? '';
     updatedData['productModelId'] = customer.productModelId ?? '';
     updatedData['mrp'] = customer.mrp ?? '0';
@@ -2191,7 +2191,7 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
           relationship.isEmpty ||
           nidNumber.isEmpty) {
         debugPrint(
-          '⚠️ [EditCustomer] Guarantor #${i + 1} has empty fields, skipping...',
+          '[EditCustomer] Guarantor #${i + 1} has empty fields, skipping...',
         );
         continue;
       }
@@ -2223,24 +2223,24 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
 
     // ─── Step 4: Debug Log ───
     debugPrint('════════════════════════════════════════════════════════');
-    debugPrint('🚀 [EditCustomer] UPDATE REQUEST');
-    debugPrint('📋 Customer ID : ${widget.customerId}');
-    debugPrint('📋 Name        : ${updatedData['name']}');
-    debugPrint('📋 Phone       : ${updatedData['phone']}');
-    debugPrint('📋 Monthly Date: ${updatedData['monthlyPaymentDate']}');
-    debugPrint('🏪 Shop ID     : ${updatedData['shopId']}');
-    debugPrint('👤 Agent ID    : ${updatedData['agentId']}');
-    debugPrint('👤 Manager ID  : ${updatedData['managerId']}');
-    debugPrint('👤 Sales ID    : ${updatedData['salesPersonId']}');
-    debugPrint('📦 Product ID  : ${updatedData['productId']}');
-    debugPrint('📦 ProductModel: ${updatedData['productModelId']}');
-    debugPrint('💰 MRP         : ${updatedData['mrp']}');
-    debugPrint('💰 Down Payment: ${updatedData['downPayment']}');
-    debugPrint('💰 EMI Charge  : ${updatedData['emiCharge']}');
-    debugPrint('💰 Monthly EMI : ${updatedData['monthlyEmi']}');
-    debugPrint('📅 EMI Tenure  : ${updatedData['emiTenureMonths']}');
-    debugPrint('👥 Guarantors  : ${guarantorsList.length}');
-    debugPrint('📦 Full Payload: ${jsonEncode(updatedData)}');
+    debugPrint('[EditCustomer] UPDATE REQUEST');
+    debugPrint('Customer ID : ${widget.customerId}');
+    debugPrint('Name        : ${updatedData['name']}');
+    debugPrint('Phone       : ${updatedData['phone']}');
+    debugPrint('Monthly Date: ${updatedData['monthlyPaymentDate']}');
+    debugPrint('Shop ID     : ${updatedData['shopId']}');
+    debugPrint('Agent ID    : ${updatedData['agentId']}');
+    debugPrint('Manager ID  : ${updatedData['managerId']}');
+    debugPrint('Sales ID    : ${updatedData['salesPersonId']}');
+    debugPrint('Product ID  : ${updatedData['productId']}');
+    debugPrint('ProductModel: ${updatedData['productModelId']}');
+    debugPrint('MRP         : ${updatedData['mrp']}');
+    debugPrint('Down Payment: ${updatedData['downPayment']}');
+    debugPrint('EMI Charge  : ${updatedData['emiCharge']}');
+    debugPrint('Monthly EMI : ${updatedData['monthlyEmi']}');
+    debugPrint('EMI Tenure  : ${updatedData['emiTenureMonths']}');
+    debugPrint('Guarantors  : ${guarantorsList.length}');
+    debugPrint('Full Payload: ${jsonEncode(updatedData)}');
     debugPrint('════════════════════════════════════════════════════════');
 
     // ─── Step 5: Show Loading ───

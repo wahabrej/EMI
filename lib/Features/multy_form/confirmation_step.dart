@@ -336,7 +336,7 @@ class ConfirmationStep extends StatelessWidget {
                           isSuccess: false,
                           message:
                               vm.errorMessage ??
-                              "Something went wrong. Please try again.",
+                              "Something went wrong. Please try again.-------",
                           vm: vm,
                         );
                       }
@@ -386,6 +386,7 @@ class ConfirmationStep extends StatelessWidget {
     debugPrint(
       "📢 [ConfirmationStep] Showing ${isSuccess ? 'SUCCESS' : 'FAILURE'} Dialog",
     );
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -412,15 +413,68 @@ class ConfirmationStep extends StatelessWidget {
             ),
           ],
         ),
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.iconGrey,
-            fontWeight: FontWeight.w500,
-            height: 1.5,
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ─── Main Message ───
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.iconGrey,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
+              ),
+            ),
+
+            // ─── 🔥 Backend Error Details (Only for Failure) ───
+            if (!isSuccess && vm.errorMessage != null) ...[
+              const SizedBox(height: 16),
+              const Divider(color: AppColors.errorRed, thickness: 1),
+              const SizedBox(height: 12),
+              const Text(
+                '🔴 Error Details:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.errorRed,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.errorRed.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.errorRed.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  vm.errorMessage!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.errorRed.withOpacity(0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.left,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Please check the error above and try again.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.iconGrey.withOpacity(0.7),
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.left,
+              ),
+            ],
+          ],
         ),
         actions: [
           Container(
