@@ -1171,38 +1171,55 @@ class CheckoutViewModel extends ChangeNotifier {
       debugPrint("   RESPONSE BODY: ${res.body}");
       debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
+      // ✅ এখান থেকে পরিবর্তন শুরু
       final data = jsonDecode(res.body);
 
       if (res.statusCode == 200 || res.statusCode == 201) {
-        String id = data['data']['id'].toString();
+        if (data['success'] == true) {
+          String id = data['data']['id'].toString();
 
-        checkoutData.emiPlanId = id;
-        checkoutData.emiTenureMonths = checkoutData.newPlanMonths;
+          checkoutData.emiPlanId = id;
+          checkoutData.emiTenureMonths = checkoutData.newPlanMonths;
 
-        debugPrint("✅ [createNewEmiPlan] SUCCESS");
-        debugPrint("   EMI PLAN ID: $id");
-        debugPrint("   EMI TENURE: ${checkoutData.emiTenureMonths} MONTHS");
-        debugPrint("   ✅ New EMI Plan created successfully!");
-        debugPrint("═══════════════════════════════════════");
+          debugPrint("✅ [createNewEmiPlan] SUCCESS");
+          debugPrint("   EMI PLAN ID: $id");
+          debugPrint("   EMI TENURE: ${checkoutData.emiTenureMonths} MONTHS");
+          debugPrint("   ✅ New EMI Plan created successfully!");
+          debugPrint("═══════════════════════════════════════");
 
-        return id;
+          return id;
+        } else {
+          // ❌ API success false হলে error message
+          _errorMessage = data['message'] ??
+              data['error']?['message'] ??
+              data['error'] ??
+              "Failed to create EMI plan";
+          debugPrint("❌ [createNewEmiPlan] API Error: $_errorMessage");
+          debugPrint("   STATUS CODE: ${res.statusCode}");
+          debugPrint("   FULL RESPONSE: ${res.body}");
+          debugPrint("═══════════════════════════════════════");
+          return null;
+        }
       } else {
-        _errorMessage = data['error']?['message'] ?? 'Failed to create plan';
-
-        debugPrint("❌ [createNewEmiPlan] FAILED");
-        debugPrint("   ERROR MESSAGE: $_errorMessage");
+        // ❌ HTTP error
+        _errorMessage = data['message'] ??
+            data['error']?['message'] ??
+            data['error'] ??
+            "Server error: ${res.statusCode}";
+        debugPrint("❌ [createNewEmiPlan] HTTP Error: $_errorMessage");
         debugPrint("   STATUS CODE: ${res.statusCode}");
         debugPrint("   FULL RESPONSE: ${res.body}");
         debugPrint("═══════════════════════════════════════");
-
         return null;
       }
+      // ✅ এখান পর্যন্ত পরিবর্তন
     } catch (e, stackTrace) {
       debugPrint("═══════════════════════════════════════");
       debugPrint("❌ [createNewEmiPlan] EXCEPTION CAUGHT");
       debugPrint("   Error: $e");
       debugPrint("   StackTrace: $stackTrace");
       debugPrint("═══════════════════════════════════════");
+      _errorMessage = "Network error: ${e.toString()}";
       return null;
     }
   }
@@ -1246,21 +1263,51 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("   RESPONSE BODY: $responseBody");
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+    // ✅ এখান থেকে পরিবর্তন শুরু
+    try {
+      final data = jsonDecode(responseBody);
 
-    if (isSuccess) {
-      debugPrint("✅ [_submitSellingPriceCustomer] SUCCESS!");
-      debugPrint("   ✅ Customer created/updated successfully!");
-    } else {
-      debugPrint("❌ [_submitSellingPriceCustomer] FAILED!");
-      debugPrint("   ❌ Status Code: ${response.statusCode}");
-      debugPrint("   ❌ Response: $responseBody");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data['success'] == true) {
+          debugPrint("✅ [_submitSellingPriceCustomer] SUCCESS!");
+          debugPrint("   ✅ Customer created/updated successfully!");
+          _errorMessage = null;
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        } else {
+          // ❌ API success false হলে error message
+          _errorMessage = data['message'] ??
+              data['error']?['message'] ??
+              data['error'] ??
+              "Failed to submit customer. Please try again.";
+          debugPrint("❌ [_submitSellingPriceCustomer] API returned success: false");
+          debugPrint("   Error: $_errorMessage");
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+      } else {
+        // ❌ HTTP error
+        _errorMessage = data['message'] ??
+            data['error']?['message'] ??
+            data['error'] ??
+            "Server error: ${response.statusCode}";
+        debugPrint("❌ [_submitSellingPriceCustomer] HTTP Error: ${response.statusCode}");
+        debugPrint("   Error: $_errorMessage");
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      // ❌ JSON parse error
+      _errorMessage = "Failed to parse server response: ${e.toString()}";
+      debugPrint("❌ [_submitSellingPriceCustomer] Parse Error: $e");
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-
-    _isLoading = false;
-    notifyListeners();
-    debugPrint("═══════════════════════════════════════");
-    return isSuccess;
+    // ✅ এখান পর্যন্ত পরিবর্তন
   }
 
   Future<bool> _submitLoanApplication() async {
@@ -1311,21 +1358,51 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("   RESPONSE BODY: $responseBody");
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+    // ✅ এখান থেকে পরিবর্তন শুরু
+    try {
+      final data = jsonDecode(responseBody);
 
-    if (isSuccess) {
-      debugPrint("✅ [_submitLoanApplication] SUCCESS!");
-      debugPrint("   ✅ Loan Application submitted successfully!");
-    } else {
-      debugPrint("❌ [_submitLoanApplication] FAILED!");
-      debugPrint("   ❌ Status Code: ${response.statusCode}");
-      debugPrint("   ❌ Response: $responseBody");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data['success'] == true) {
+          debugPrint("✅ [_submitLoanApplication] SUCCESS!");
+          debugPrint("   ✅ Loan Application submitted successfully!");
+          _errorMessage = null;
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        } else {
+          // ❌ API success false হলে error message
+          _errorMessage = data['message'] ??
+              data['error']?['message'] ??
+              data['error'] ??
+              "Failed to submit loan application. Please try again.";
+          debugPrint("❌ [_submitLoanApplication] API returned success: false");
+          debugPrint("   Error: $_errorMessage");
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+      } else {
+        // ❌ HTTP error
+        _errorMessage = data['message'] ??
+            data['error']?['message'] ??
+            data['error'] ??
+            "Server error: ${response.statusCode}";
+        debugPrint("❌ [_submitLoanApplication] HTTP Error: ${response.statusCode}");
+        debugPrint("   Error: $_errorMessage");
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      // ❌ JSON parse error
+      _errorMessage = "Failed to parse server response: ${e.toString()}";
+      debugPrint("❌ [_submitLoanApplication] Parse Error: $e");
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-
-    _isLoading = false;
-    notifyListeners();
-    debugPrint("═══════════════════════════════════════");
-    return isSuccess;
+    // ✅ এখান পর্যন্ত পরিবর্তন
   }
 
   void _addCommonFields(http.MultipartRequest request) {

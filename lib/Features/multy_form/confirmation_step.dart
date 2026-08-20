@@ -329,7 +329,7 @@ class ConfirmationStep extends StatelessWidget {
                           vm: vm,
                         );
                       } else {
-                        debugPrint("❌ [ConfirmationStep] Submission FAILED!");
+                        debugPrint(" [ConfirmationStep] Submission FAILED!");
                         debugPrint("   Error: ${vm.errorMessage}");
                         _showResponseDialog(
                           context: context,
