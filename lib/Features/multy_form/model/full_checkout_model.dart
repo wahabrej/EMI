@@ -1,33 +1,23 @@
-// lib/model/full_checkout_model.dart
 import 'dart:io';
 
 class FullCheckoutModel {
-  // ── Step 1: Order Review ──
+  // Step 1: Order Review
   String? issueDate;
   String? shopId;
+  String? shopName; // ✅ Added
   String? agentId;
+  String? agentName; // ✅ Added
   String? managerId;
+  String? managerName; // ✅ Added
   String? salesPersonId;
-
-  // ✅ এই ফিল্ডগুলো যোগ করুন (Display Name এর জন্য)
-  String? shopName;
-  String? agentName;
-  String? managerName;
-  String? salesPersonName;
-
+  String? salesPersonName; // ✅ Added
   String? productId;
   String? productModelId;
   String? productModel;
   String? brandName;
   double mrp = 0.0;
-
-  // Sale Type
-  String saleType = 'EMI'; // 'Selling Price' | 'EMI'
-
-  // EMI Mode
-  String emiMode = 'CREATE_NEW_PLAN'; // EXISTING_PLAN | CREATE_NEW_PLAN | REMAINING_BALANCE
-
-  // Existing Plan
+  String saleType = 'EMI';
+  String emiMode = 'EXISTING_PLAN';
   String? emiPlanId;
   int emiTenureMonths = 0;
   double downPayment = 0.0;
@@ -35,10 +25,10 @@ class FullCheckoutModel {
   double monthlyEmi = 0.0;
   String? monthlyPaymentDate;
 
-  // ── Create New EMI Plan ──
+  // New Plan / Custom Plan
   String newPlanName = '';
   int newPlanMonths = 3;
-  String downPaymentCalculationType = 'RATE'; // RATE | AMOUNT
+  String downPaymentCalculationType = 'RATE';
   String downPaymentCalculationRate = '20';
   String? downPaymentAmount;
   String appEmiChargeType = 'RATE';
@@ -46,9 +36,8 @@ class FullCheckoutModel {
   String? appEmiChargeAmount;
   String cashbackRate = '0';
   String? cashbackAmount;
-  String newPlanNote = '';
 
-  // ── Remaining Balance / Custom EMI ──
+  // Remaining Balance / Custom EMI
   double customUpfrontPayment = 0.0;
   int customEmiDurationMonths = 6;
   String customAppEmiChargeRate = '0';
@@ -56,52 +45,52 @@ class FullCheckoutModel {
   String customEmiNote = '';
   List<Map<String, dynamic>> customAdditionalCharges = [];
 
-  // ── Customer Info ──
+  // Customer Info
   String name = '';
   String phone = '';
   String password = '';
   String presentAddress = '';
   String permanentAddress = '';
-  String customerIdType = 'NID'; // NID | Passport
+  String customerIdType = 'NID';
   String nidPassportNumber = '';
   String sourceOfIncome = 'Business';
   double monthlyIncome = 0.0;
 
-  // Alias for compatibility
-  String get incomeSource => sourceOfIncome;
-  set incomeSource(String? value) {
-    if (value != null) sourceOfIncome = value;
-  }
-
-  // ── KYC ──
+  // KYC
   File? customerPhoto;
+  File? customerVideo; // ✅ Added for video
   File? nidFront;
   File? nidBack;
   File? incomeProof;
-  File? customerVideo;
   String incomeProofDocumentType = 'INCOME_PROOF_BANK_STATEMENT';
 
-  // ── Guarantors ──
+  // Guarantors
   List<GuarantorInfo> guarantors = [
     GuarantorInfo(type: 'FAMILY', relationship: 'Brother'),
     GuarantorInfo(type: 'NON_FAMILY', relationship: 'Friend'),
   ];
 
-  // ── Payment ──
-  String downPaymentMethod = 'CASH'; // CASH | BKASH | BANK
+  // Payment
+  String downPaymentMethod = 'CASH';
   String? bankAccountName;
   String? bankAccountNumber;
   String? bankName;
   String? downPaymentReferenceNumber;
+  String? senderMobileNumber; // 💡 Added for bKash
   File? bankReceipt;
 
-  // ── EMI Calculation Results & State ──
+  // EMI Calculation Results & State
   double appEmiCharge = 0.0;
   double cashbackEarned = 0.0;
   double financedAmount = 0.0;
   double totalPayable = 0.0;
   double? selectedCashbackRate;
   List<Map<String, dynamic>> downPaymentComponents = [];
+
+  String get incomeSource => sourceOfIncome;
+  set incomeSource(String? value) {
+    if (value != null) sourceOfIncome = value;
+  }
 }
 
 class GuarantorInfo {
@@ -109,7 +98,7 @@ class GuarantorInfo {
   String name;
   String phone;
   String relationship;
-  String idType; // NID | Passport
+  String idType;
   String nidPassportNumber;
   File? nidFront;
   File? nidBack;

@@ -435,7 +435,7 @@ class ConfirmationStep extends StatelessWidget {
               const Divider(color: AppColors.errorRed, thickness: 1),
               const SizedBox(height: 12),
               const Text(
-                '🔴 Error Details:',
+                'Error Details:',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,

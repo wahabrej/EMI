@@ -17,10 +17,11 @@ class PaymentStep extends StatefulWidget {
 class _PaymentStepState extends State<PaymentStep> {
   final _formKey = GlobalKey<FormState>();
 
+  // ─── Image Picker ───
   Future<void> _showImageSourceActionSheet(
-    BuildContext context,
-    Function(ImageSource) onSourceSelected,
-  ) async {
+      BuildContext context,
+      Function(ImageSource) onSourceSelected,
+      ) async {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -37,10 +38,7 @@ class _PaymentStepState extends State<PaymentStep> {
               ),
             ),
             ListTile(
-              leading: const Icon(
-                Icons.photo_library,
-                color: AppColors.primaryBlue,
-              ),
+              leading: const Icon(Icons.photo_library, color: AppColors.primaryBlue),
               title: const Text('Gallery'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -48,10 +46,7 @@ class _PaymentStepState extends State<PaymentStep> {
               },
             ),
             ListTile(
-              leading: const Icon(
-                Icons.camera_alt,
-                color: AppColors.primaryBlue,
-              ),
+              leading: const Icon(Icons.camera_alt, color: AppColors.primaryBlue),
               title: const Text('Camera'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -65,7 +60,8 @@ class _PaymentStepState extends State<PaymentStep> {
     );
   }
 
-  Future<void> _pickBankReceipt(CheckoutViewModel vm) async {
+  // ─── Pick Receipt ───
+  Future<void> _pickReceipt(CheckoutViewModel vm) async {
     await _showImageSourceActionSheet(context, (source) async {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -78,9 +74,12 @@ class _PaymentStepState extends State<PaymentStep> {
     });
   }
 
+  // ─── Handle Next ───
   void _handleNext(CheckoutViewModel vm) {
-    if (vm.checkoutData.downPaymentMethod == 'BANK' &&
-        vm.checkoutData.bankReceipt == null) {
+    final data = vm.checkoutData;
+
+    // ─── Validation for BANK ───
+    if (data.downPaymentMethod == 'BANK' && data.bankReceipt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please upload bank receipt'),
@@ -89,6 +88,29 @@ class _PaymentStepState extends State<PaymentStep> {
       );
       return;
     }
+
+    // ─── Validation for BKASH ───
+    if (data.downPaymentMethod == 'BKASH') {
+      if (data.senderMobileNumber == null || data.senderMobileNumber!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter bKash account number'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      if (data.downPaymentReferenceNumber == null || data.downPaymentReferenceNumber!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter bKash transaction ID'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
     if (_formKey.currentState!.validate()) {
       widget.onNext();
     }
@@ -123,7 +145,7 @@ class _PaymentStepState extends State<PaymentStep> {
             ),
             const SizedBox(height: 16),
 
-            // 🔹 Dynamic Product Card Summary
+            // ─── Product Card Summary ───
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -161,35 +183,26 @@ class _PaymentStepState extends State<PaymentStep> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          data.saleType == 'EMI'
-                              ? 'EMI Sale'
-                              : 'Selling Price Sale',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF64748B),
-                          ),
+                          data.saleType == 'EMI' ? 'EMI Sale' : 'Selling Price Sale',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                         ),
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '৳ ${data.mrp.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primaryBlue,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    '৳ ${data.mrp.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primaryBlue,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
+            // ─── Payment Method Selection ───
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -210,6 +223,7 @@ class _PaymentStepState extends State<PaymentStep> {
                   ),
                   const SizedBox(height: 12),
 
+                  // ─── Cash Option ───
                   _buildPaymentOption(
                     vm: vm,
                     type: 'CASH',
@@ -221,6 +235,7 @@ class _PaymentStepState extends State<PaymentStep> {
                   ),
                   const SizedBox(height: 10),
 
+                  // ─── bKash Option ───
                   _buildPaymentOption(
                     vm: vm,
                     type: 'BKASH',
@@ -231,6 +246,7 @@ class _PaymentStepState extends State<PaymentStep> {
                   ),
                   const SizedBox(height: 10),
 
+                  // ─── Bank Option ───
                   _buildPaymentOption(
                     vm: vm,
                     type: 'BANK',
@@ -240,134 +256,141 @@ class _PaymentStepState extends State<PaymentStep> {
                     iconColor: Colors.deepOrange,
                   ),
 
+                  // ──────────────────────────────────────────────
+                  // 🔥 BKASH FORM (FULL IMPLEMENTATION)
+                  // ──────────────────────────────────────────────
+                  if (data.downPaymentMethod == 'BKASH') ...[
+                    const SizedBox(height: 16),
+                    const Divider(color: Color(0xFFF1F5F9)),
+                    const SizedBox(height: 8),
+
+                    // ─── bKash Account Number ───
+                    TextFormField(
+                      initialValue: data.senderMobileNumber,
+                      style: const TextStyle(fontSize: 13),
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'bKash Account Number *',
+                        hintText: '017xxxxxxxx',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone_android_rounded, size: 18),
+                      ),
+                      onChanged: (val) => data.senderMobileNumber = val.trim(),
+                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ─── bKash Transaction ID ───
+                    TextFormField(
+                      initialValue: data.downPaymentReferenceNumber,
+                      style: const TextStyle(fontSize: 13),
+                      decoration: const InputDecoration(
+                        labelText: 'Transaction ID *',
+                        hintText: 'Enter bKash transaction ID',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.receipt_long_rounded, size: 18),
+                      ),
+                      onChanged: (val) => data.downPaymentReferenceNumber = val.trim(),
+                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ─── Payment Screenshot (Optional) ───
+                    _buildImageUpload(
+                      vm: vm,
+                      label: 'Payment Screenshot (Optional)',
+                      file: data.bankReceipt,
+                      isRequired: false,
+                    ),
+
+                    // ─── bKash Payment Info Box ───
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFCE7F3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFF9A8D4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Color(0xFFBE185D), size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: const Text(
+                              'Send payment to bKash merchant account. Enter the transaction ID after successful payment.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF831843),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // ──────────────────────────────────────────────
+                  // BANK FORM
+                  // ──────────────────────────────────────────────
                   if (data.downPaymentMethod == 'BANK') ...[
                     const SizedBox(height: 16),
                     const Divider(color: Color(0xFFF1F5F9)),
                     const SizedBox(height: 8),
 
-                    // ─── 1. Bank Account Name ───
                     TextFormField(
                       initialValue: data.bankAccountName,
                       style: const TextStyle(fontSize: 13),
                       decoration: const InputDecoration(
                         labelText: 'Bank Account Name *',
-                        hintText: 'Enter your bank account name',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(),
                       ),
                       onChanged: (val) => data.bankAccountName = val.trim(),
-                      validator: (val) {
-                        if (data.downPaymentMethod == 'BANK') {
-                          if (val == null || val.trim().isEmpty) {
-                            return 'Bank account name is required';
-                          }
-                        }
-                        return null;
-                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 12),
 
-                    // ─── 2. Bank Account Number ───
                     TextFormField(
                       initialValue: data.bankAccountNumber,
                       style: const TextStyle(fontSize: 13),
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         labelText: 'Bank Account Number *',
-                        hintText: 'Enter your bank account number',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(),
                       ),
                       onChanged: (val) => data.bankAccountNumber = val.trim(),
-                      validator: (val) {
-                        if (data.downPaymentMethod == 'BANK') {
-                          if (val == null || val.trim().isEmpty) {
-                            return 'Bank account number is required';
-                          }
-                        }
-                        return null;
-                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 12),
 
-                    // ─── 3. Bank Name ───
                     TextFormField(
                       initialValue: data.bankName,
                       style: const TextStyle(fontSize: 13),
                       decoration: const InputDecoration(
                         labelText: 'Bank Name *',
-                        hintText: 'Enter your bank name (e.g. DBBL, Brac Bank)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(),
                       ),
                       onChanged: (val) => data.bankName = val.trim(),
-                      validator: (val) {
-                        if (data.downPaymentMethod == 'BANK') {
-                          if (val == null || val.trim().isEmpty) {
-                            return 'Bank name is required';
-                          }
-                        }
-                        return null;
-                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 12),
 
-                    // ─── 4. Transaction Reference No. ─── (ইতিমধ্যে আছে)
                     TextFormField(
                       initialValue: data.downPaymentReferenceNumber,
                       style: const TextStyle(fontSize: 13),
                       decoration: const InputDecoration(
-                        labelText: 'Transaction Reference No.',
-                        hintText: 'Enter bank transaction/receipt ref no',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        labelText: 'Transaction Ref No.',
+                        border: OutlineInputBorder(),
                       ),
                       onChanged: (val) => data.downPaymentReferenceNumber = val.trim(),
                     ),
                     const SizedBox(height: 12),
 
-                    // ─── 5. Bank Receipt Upload ─── (ইতিমধ্যে আছে)
-                    InkWell(
-                      onTap: () => _pickBankReceipt(vm),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFCBD5E1)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.upload_file, color: Color(0xFF2563EB)),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                data.bankReceipt != null
-                                    ? 'Receipt Uploaded: ${data.bankReceipt!.path.split('/').last}'
-                                    : 'Upload Bank Deposit Receipt Image *',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: data.bankReceipt != null ? Colors.green : const Color(0xFF475569),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (data.bankReceipt != null)
-                              const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                          ],
-                        ),
-                      ),
+                    _buildImageUpload(
+                      vm: vm,
+                      label: 'Upload Bank Deposit Receipt *',
+                      file: data.bankReceipt,
+                      isRequired: true,
                     ),
                   ],
                 ],
@@ -376,6 +399,7 @@ class _PaymentStepState extends State<PaymentStep> {
 
             const SizedBox(height: 24),
 
+            // ─── Next Button ───
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -383,7 +407,6 @@ class _PaymentStepState extends State<PaymentStep> {
                 onPressed: () => _handleNext(vm),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
-                  elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -404,6 +427,68 @@ class _PaymentStepState extends State<PaymentStep> {
     );
   }
 
+  // ─── Image Upload Widget ───
+  Widget _buildImageUpload({
+    required CheckoutViewModel vm,
+    required String label,
+    File? file,
+    bool isRequired = false,
+  }) {
+    return InkWell(
+      onTap: () => _pickReceipt(vm),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: file != null
+                ? Colors.green
+                : isRequired
+                ? Colors.red.shade300
+                : const Color(0xFFCBD5E1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              file != null ? Icons.check_circle : Icons.upload_file,
+              color: file != null
+                  ? Colors.green
+                  : isRequired
+                  ? Colors.red.shade300
+                  : const Color(0xFF2563EB),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                file != null
+                    ? 'File Uploaded: ${file.path.split('/').last}'
+                    : isRequired
+                    ? '$label *'
+                    : label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: file != null
+                      ? Colors.green
+                      : isRequired
+                      ? Colors.red.shade700
+                      : const Color(0xFF475569),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (file != null) const Icon(Icons.check_circle, color: Colors.green, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Payment Option Widget ───
   Widget _buildPaymentOption({
     required CheckoutViewModel vm,
     required String type,
@@ -416,7 +501,14 @@ class _PaymentStepState extends State<PaymentStep> {
     bool isSelected = vm.checkoutData.downPaymentMethod == type;
 
     return InkWell(
-      onTap: () => vm.setPaymentMethod(type),
+      onTap: () {
+        vm.setPaymentMethod(type);
+        // Clear previous bKash data when switching
+        if (type != 'BKASH') {
+          vm.checkoutData.senderMobileNumber = '';
+          vm.checkoutData.downPaymentReferenceNumber = '';
+        }
+      },
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -424,9 +516,7 @@ class _PaymentStepState extends State<PaymentStep> {
           color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF2563EB)
-                : const Color(0xFFE2E8F0),
+            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
@@ -436,7 +526,13 @@ class _PaymentStepState extends State<PaymentStep> {
               value: type,
               groupValue: vm.checkoutData.downPaymentMethod,
               onChanged: (val) {
-                if (val != null) vm.setPaymentMethod(val);
+                if (val != null) {
+                  vm.setPaymentMethod(val);
+                  if (val != 'BKASH') {
+                    vm.checkoutData.senderMobileNumber = '';
+                    vm.checkoutData.downPaymentReferenceNumber = '';
+                  }
+                }
               },
               activeColor: const Color(0xFF2563EB),
             ),
