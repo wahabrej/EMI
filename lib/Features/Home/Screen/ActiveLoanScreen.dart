@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../../CustomerFeature/home/model/customer_dashboard_model.dart';
 import '../../../core/constant/App_Colors.dart';
 import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
@@ -843,13 +844,40 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                   ),
                 ),
             //    Payment History
+            //     Expanded(
+            //       child: _actionButton(
+            //         Icons.history_rounded,
+            //         'Payment History',
+            //         onTap: () {
+            //          Navigator.pushNamed(context, RouteName.paymentScreen);
+            //         },
+            //       ),
+            //     ),
                 Expanded(
-                  child: _actionButton(
-                    Icons.history_rounded,
-                    'Payment History',
-                    onTap: () {
-                     Navigator.pushNamed(context, RouteName.paymentScreen);
-                    },
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _navigateToEditCustomer(customer),
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0052CC),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   ),
                 ),
                 // Collect Payment
@@ -908,6 +936,43 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
 
   // ─── Navigation Method ───
 // ActiveLoanScreen.dart
+  void _navigateToEditCustomer(dynamic customer) {
+    debugPrint('✏️ [TotalCustomerScreen] Edit Customer Clicked');
+    debugPrint('🆔 Customer ID: ${customer.id ?? 'N/A'}');
+    debugPrint('📋 Customer Name: ${customer.name ?? 'Unknown'}');
+
+    if (customer.id == null || customer.id!.isEmpty) {
+      debugPrint('Customer ID is null or empty');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot edit pending applicant. Please complete application first.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final customerId = customer.id!;
+      debugPrint(' Navigating to EditCustomer with ID: $customerId');
+
+      Navigator.pushNamed(
+        context,
+        RouteName.editCustomerScreen,
+        arguments: customerId,
+      ).then((result) {
+        debugPrint('Edit navigation completed. Result: $result');
+      }).catchError((error) {
+        debugPrint(' Navigation error: $error');
+        _showErrorDialog('Navigation Error', error.toString());
+      });
+    } catch (e, stackTrace) {
+      debugPrint(' Navigation Exception: $e');
+      debugPrint(' StackTrace: $stackTrace');
+      _showErrorDialog('Error', 'Could not open edit screen: $e');
+    }
+  }
 
   void _navigateToLoanDetails(dynamic loan) {
     debugPrint('🚀 [ActiveLoanScreen] View Details Clicked');
