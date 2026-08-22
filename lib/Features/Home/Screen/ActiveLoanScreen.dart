@@ -957,6 +957,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
       final customerId = customer.id!;
       debugPrint(' Navigating to EditCustomer with ID: $customerId');
 
+
       Navigator.pushNamed(
         context,
         RouteName.editCustomerScreen,
