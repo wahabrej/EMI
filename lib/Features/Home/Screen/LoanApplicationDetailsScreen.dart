@@ -40,18 +40,69 @@ class _LoanApplicationDetailsScreenState
 
   Future<void> _loadUserRole() async {
     final role = await _storage.getUserRole();
-
     if (!mounted) return;
-
     setState(() {
       userRole = role;
     });
   }
 
+  // 💡 তারিখ ফরম্যাট করার হেল্পার মেথড
+  String _formatDate(String? dateStr) {
+    if (dateStr == null ||
+        dateStr.isEmpty ||
+        dateStr == 'N/A' ||
+        dateStr == 'null')
+      return 'N/A';
+
+    try {
+      if (RegExp(r'^\d+$').hasMatch(dateStr)) {
+        final day = int.tryParse(dateStr);
+        if (day != null && day >= 1 && day <= 31) {
+          String suffix = 'th';
+          if (day % 10 == 1 && day % 100 != 11)
+            suffix = 'st';
+          else if (day % 10 == 2 && day % 100 != 12)
+            suffix = 'nd';
+          else if (day % 10 == 3 && day % 100 != 13)
+            suffix = 'rd';
+          return "$day$suffix of every month";
+        }
+      }
+
+      DateTime? dt = DateTime.tryParse(dateStr);
+
+      if (dt == null && dateStr.contains('-')) {
+        List<String> parts = dateStr.split(' ')[0].split('-');
+        if (parts.length == 3) {
+          if (parts[0].length == 4) {
+            dt = DateTime(
+              int.parse(parts[0]),
+              int.parse(parts[1]),
+              int.parse(parts[2]),
+            );
+          } else {
+            dt = DateTime(
+              int.parse(parts[2]),
+              int.parse(parts[1]),
+              int.parse(parts[0]),
+            );
+          }
+        }
+      }
+
+      if (dt != null) {
+        return DateFormat('dd MMM yyyy').format(dt);
+      }
+
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final canApproveReject = userRole != "SALES_PERSON";
-
     final currency = NumberFormat('#,###');
 
     return Scaffold(
@@ -121,8 +172,6 @@ class _LoanApplicationDetailsScreenState
           if (app == null) return const Center(child: Text("No details found"));
 
           final String currentStatus = (app.status ?? '').toUpperCase().trim();
-
-          // 🔥 rawData থেকে guarantors নিন
           final dataMap = viewModel.rawData ?? {};
           var guarantors =
               dataMap['customer']?['guarantors'] ?? dataMap['guarantors'] ?? [];
@@ -152,11 +201,7 @@ class _LoanApplicationDetailsScreenState
                 _buildInfoCard([
                   _infoRow("Application ID", app.displayId ?? 'N/A'),
                   _infoRow("Full Name", app.name ?? 'N/A'),
-                  _infoRow(
-                    "Phone",
-                    app.phone ?? 'N/A',
-                    isPhone: true,
-                  ), // ← isPhone: true যোগ করুন
+                  _infoRow("Phone", app.phone ?? 'N/A', isPhone: true),
                   _infoRow(
                     "${app.idType ?? 'NID'} Number",
                     app.nidPassportNumber ?? 'N/A',
@@ -184,14 +229,19 @@ class _LoanApplicationDetailsScreenState
                     "Monthly EMI",
                     "৳${currency.format(app.monthlyEmi ?? 0)}",
                   ),
-                  _infoRow("Application Date", app.issueDate ?? 'N/A'),
+                  if (app.cashbackAmount != null && app.cashbackAmount! > 0)
+                    _infoRow(
+                      "Eligible Cashback",
+                      "৳${currency.format(app.cashbackAmount ?? 0)}",
+                    ),
+                  _infoRow("Application Date", _formatDate(app.issueDate)),
+                  _infoRow("Payment Date", _formatDate(app.nextPaymentDate)),
                 ]),
 
                 const SizedBox(height: 20),
                 _sectionHeader("Customer Documents"),
                 _buildCustomerDocumentSection(context, app),
 
-                // 🔥 Guarantor Details - rawData থেকে
                 if (guarantors is List && guarantors.isNotEmpty) ...[
                   const SizedBox(height: 20),
                   _sectionHeader("Guarantor Details"),
@@ -355,12 +405,10 @@ class _LoanApplicationDetailsScreenState
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
-                    // ✅ Multi-line support
                     softWrap: true,
                     overflow: TextOverflow.visible,
                   ),
                 ),
-                // 🔥 সব নম্বরের জন্য Call Now বাটন দেখাবে
                 if (isPhone && value.isNotEmpty && value != 'N/A')
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
@@ -406,59 +454,29 @@ class _LoanApplicationDetailsScreenState
   }
 
   void _makePhoneCall(String phoneNumber) async {
-    // ডায়ালার খোলা
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-
     try {
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
       } else {
-        final Uri dialUri = Uri(scheme: 'tel', path: phoneNumber);
-        await launchUrl(dialUri);
+        await launchUrl(phoneUri);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Cannot call: $phoneNumber'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
         ),
       );
     }
   }
 
-  void _showCallErrorDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Call Error'),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Customer Document Section ───
+  // ─── ✅ UPDATED: Customer Document Section ───
   Widget _buildCustomerDocumentSection(BuildContext context, dynamic app) {
     final List<Map<String, String>> docs = [];
-
     final viewModel = context.read<LoanApplicationViewModel>();
     final dataMap = viewModel.rawData ?? {};
 
-    debugPrint('📄 [Customer] DataMap Keys: ${dataMap.keys.join(', ')}');
-
-    // ─── customerDocuments থেকে ডকুমেন্ট নিন ───
     var customerDocs = dataMap['customerDocuments'];
     if (customerDocs != null && customerDocs is List) {
       for (var doc in customerDocs) {
@@ -466,144 +484,25 @@ class _LoanApplicationDetailsScreenState
         String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
         if (url.isNotEmpty) {
           String label = _getDocumentLabel(docType);
-          bool exists = docs.any((d) => d['url'] == url);
-          if (!exists) {
+          if (!docs.any((d) => d['url'] == url))
             docs.add({'label': label, 'url': url});
-          }
         }
       }
     }
 
-    // ─── customer অবজেক্ট থেকে সরাসরি ডকুমেন্ট নিন ───
     if (dataMap['customer'] != null &&
         dataMap['customer'] is Map<String, dynamic>) {
       final customer = dataMap['customer'] as Map<String, dynamic>;
-      debugPrint(
-        '📄 [Customer] Checking customer object: ${customer.keys.join(', ')}',
-      );
-
-      // Photo
       String? photo = customer['customerImageUrl'] ?? customer['customerImage'];
       if (photo != null && photo.toString().isNotEmpty) {
-        bool exists = docs.any((d) => d['url'] == photo);
-        if (!exists) {
+        if (!docs.any((d) => d['url'] == photo))
           docs.add({'label': 'PHOTO', 'url': photo.toString()});
-        }
       }
-
-      // Video
       String? video = customer['customerVideoUrl'] ?? customer['customerVideo'];
       if (video != null && video.toString().isNotEmpty) {
-        bool exists = docs.any((d) => d['url'] == video);
-        if (!exists) {
+        if (!docs.any((d) => d['url'] == video))
           docs.add({'label': 'VIDEO', 'url': video.toString()});
-        }
       }
-
-      // NID Front
-      if (customer['customerNidFront'] != null &&
-          customer['customerNidFront'].toString().isNotEmpty) {
-        bool exists = docs.any(
-          (d) => d['url'] == customer['customerNidFront'].toString(),
-        );
-        if (!exists) {
-          docs.add({
-            'label': 'NID FRONT',
-            'url': customer['customerNidFront'].toString(),
-          });
-        }
-      }
-
-      // NID Back
-      if (customer['customerNidBack'] != null &&
-          customer['customerNidBack'].toString().isNotEmpty) {
-        bool exists = docs.any(
-          (d) => d['url'] == customer['customerNidBack'].toString(),
-        );
-        if (!exists) {
-          docs.add({
-            'label': 'NID BACK',
-            'url': customer['customerNidBack'].toString(),
-          });
-        }
-      }
-
-      // Income Proof
-      String? income =
-          customer['incomeProofUrl'] ?? customer['incomeProofDocument'];
-      if (income != null && income.toString().isNotEmpty) {
-        bool exists = docs.any((d) => d['url'] == income);
-        if (!exists) {
-          docs.add({'label': 'INCOME PROOF', 'url': income.toString()});
-        }
-      }
-
-      // Bank Receipt
-      String? bank = customer['bankReceiptUrl'] ?? customer['bankReceipt'];
-      if (bank != null && bank.toString().isNotEmpty) {
-        bool exists = docs.any((d) => d['url'] == bank);
-        if (!exists) {
-          docs.add({'label': 'BANK RECEIPT', 'url': bank.toString()});
-        }
-      }
-    }
-
-    // ─── Direct fields from dataMap ───
-    if (dataMap['customerImageUrl'] != null &&
-        dataMap['customerImageUrl'].toString().isNotEmpty) {
-      bool exists = docs.any(
-        (d) => d['url'] == dataMap['customerImageUrl'].toString(),
-      );
-      if (!exists) {
-        docs.add({
-          'label': 'PHOTO',
-          'url': dataMap['customerImageUrl'].toString(),
-        });
-      }
-    }
-
-    if (dataMap['customerVideoUrl'] != null &&
-        dataMap['customerVideoUrl'].toString().isNotEmpty) {
-      bool exists = docs.any(
-        (d) => d['url'] == dataMap['customerVideoUrl'].toString(),
-      );
-      if (!exists) {
-        docs.add({
-          'label': 'VIDEO',
-          'url': dataMap['customerVideoUrl'].toString(),
-        });
-      }
-    }
-
-    if (dataMap['incomeProofUrl'] != null &&
-        dataMap['incomeProofUrl'].toString().isNotEmpty) {
-      bool exists = docs.any(
-        (d) => d['url'] == dataMap['incomeProofUrl'].toString(),
-      );
-      if (!exists) {
-        docs.add({
-          'label': 'INCOME PROOF',
-          'url': dataMap['incomeProofUrl'].toString(),
-        });
-      }
-    }
-
-    if (dataMap['bankReceiptUrl'] != null &&
-        dataMap['bankReceiptUrl'].toString().isNotEmpty) {
-      bool exists = docs.any(
-        (d) => d['url'] == dataMap['bankReceiptUrl'].toString(),
-      );
-      if (!exists) {
-        docs.add({
-          'label': 'BANK RECEIPT',
-          'url': dataMap['bankReceiptUrl'].toString(),
-        });
-      }
-    }
-
-    debugPrint('📄 [Customer] Total Documents Found: ${docs.length}');
-    for (var doc in docs) {
-      debugPrint('📄 [Customer] - ${doc['label']}: ${doc['url']}');
     }
 
     if (docs.isEmpty) {
@@ -632,89 +531,52 @@ class _LoanApplicationDetailsScreenState
         itemBuilder: (context, index) {
           final doc = docs[index];
           final isVideo = doc['label'] == 'VIDEO' || doc['label'] == 'Video';
-          return _docThumbnail(doc['label']!, doc['url']!, isVideo);
+          return _docThumbnail(
+            doc['label']!,
+            doc['url']!,
+            isVideo,
+            docs, // 📌 All documents list pass করছি
+            index, // 📌 Current index pass করছি
+          );
         },
       ),
     );
   }
 
-  // ─── Document Label Helper ───
   String _getDocumentLabel(String docType) {
     final type = docType.toUpperCase();
-    if (type.contains('PHOTO') || type.contains('CUSTOMER_PHOTO'))
-      return 'PHOTO';
-    if (type.contains('VIDEO') || type.contains('CUSTOMER_VIDEO'))
-      return 'VIDEO';
+    if (type.contains('PHOTO')) return 'PHOTO';
+    if (type.contains('VIDEO')) return 'VIDEO';
     if (type.contains('NID_FRONT')) return 'NID FRONT';
     if (type.contains('NID_BACK')) return 'NID BACK';
     if (type.contains('INCOME')) return 'INCOME PROOF';
     if (type.contains('BANK')) return 'BANK RECEIPT';
-    if (type.contains('GUARANTOR')) return 'GUARANTOR DOC';
     return docType.replaceAll('_', ' ').toUpperCase();
   }
 
-  // ─── Guarantor Card with Documents ───
+  // ─── ✅ UPDATED: Guarantor Card with Documents ───
   Widget _buildGuarantorCardWithDocuments(
-    BuildContext context,
-    dynamic g,
-    int index,
-    NumberFormat currency,
-  ) {
-    debugPrint('═══════════════════════════════════════════════════');
-    debugPrint(
-      '📄 [Guarantor $index] ========== BUILDING GUARANTOR CARD ==========',
-    );
-
+      BuildContext context,
+      dynamic g,
+      int index,
+      NumberFormat currency,
+      ) {
     final viewModel = context.read<LoanApplicationViewModel>();
     final dataMap = viewModel.rawData ?? {};
-
-    Map<String, dynamic> guarantorMap;
-    if (g is Map<String, dynamic>) {
-      guarantorMap = g;
-    } else {
-      try {
-        guarantorMap = g.toJson() as Map<String, dynamic>;
-      } catch (_) {
-        guarantorMap = {};
-      }
-    }
-
+    Map<String, dynamic> guarantorMap = g is Map<String, dynamic> ? g : {};
     final List<Map<String, String>> docs = [];
 
     var guarantorDocs = dataMap['guarantorDocuments'] ?? [];
-
-    // ─── guarantorDocuments ───
     if (guarantorDocs is List) {
       for (var doc in guarantorDocs) {
-        int? guarantorIndex = doc['guarantorIndex'] ?? doc['index'];
-        if (guarantorIndex == index || guarantorIndex == null) {
-          String url = doc['url'] ?? doc['fileUrl'] ?? doc['path'] ?? '';
-          String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
-          if (url.isNotEmpty) {
-            String label = _getDocumentLabel(docType);
-            bool exists = docs.any((d) => d['url'] == url);
-            if (!exists) {
-              docs.add({'label': label, 'url': url});
-            }
-          }
+        if (doc['guarantorIndex'] == index) {
+          String url = doc['url'] ?? '';
+          if (url.isNotEmpty)
+            docs.add({
+              'label': _getDocumentLabel(doc['documentType'] ?? ''),
+              'url': url,
+            });
         }
-      }
-    }
-
-    // ─── Guarantor এর নিজস্ব NID চেক করুন ───
-    String? nidFront = guarantorMap['nidFront'];
-    if (nidFront != null && nidFront.isNotEmpty) {
-      bool exists = docs.any((d) => d['url'] == nidFront);
-      if (!exists) {
-        docs.add({'label': 'NID FRONT', 'url': nidFront});
-      }
-    }
-
-    String? nidBack = guarantorMap['nidBack'];
-    if (nidBack != null && nidBack.isNotEmpty) {
-      bool exists = docs.any((d) => d['url'] == nidBack);
-      if (!exists) {
-        docs.add({'label': 'NID BACK', 'url': nidBack});
       }
     }
 
@@ -724,70 +586,12 @@ class _LoanApplicationDetailsScreenState
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── ✅ Title: Guarantor 1, Guarantor 2, Guarantor 3 ───
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Guarantor ${index + 1}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryBlue,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: guarantorMap['type'] == 'FAMILY'
-                        ? Colors.green.shade50
-                        : Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    guarantorMap['type'] ?? 'N/A',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: guarantorMap['type'] == 'FAMILY'
-                          ? Colors.green.shade700
-                          : Colors.orange.shade700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ─── Guarantor Info ───
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -797,9 +601,7 @@ class _LoanApplicationDetailsScreenState
                       radius: 20,
                       backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
                       child: Text(
-                        guarantorMap['name']?.isNotEmpty == true
-                            ? guarantorMap['name'][0].toUpperCase()
-                            : 'G',
+                        guarantorMap['name']?[0].toUpperCase() ?? 'G',
                         style: const TextStyle(
                           color: AppColors.primaryBlue,
                           fontWeight: FontWeight.bold,
@@ -818,7 +620,6 @@ class _LoanApplicationDetailsScreenState
                               fontSize: 15,
                             ),
                           ),
-
                           Row(
                             children: [
                               Text(
@@ -828,92 +629,46 @@ class _LoanApplicationDetailsScreenState
                                   fontSize: 13,
                                 ),
                               ),
-                              SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () => _makePhoneCall(guarantorMap['phone']),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF0052CC),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.phone_rounded,
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Call Now',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.phone_rounded,
+                                  size: 18,
+                                  color: AppColors.primaryBlue,
                                 ),
+                                onPressed: () =>
+                                    _makePhoneCall(guarantorMap['phone']),
                               ),
                             ],
                           ),
-
-
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
                 Text(
                   "${guarantorMap['idType'] ?? 'NID'} Number: ${guarantorMap['nidPassportNumber'] ?? 'N/A'}",
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: const TextStyle(fontSize: 13),
                 ),
               ],
             ),
           ),
-
-          // ─── Divider ───
-          if (docs.isNotEmpty)
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-          // ─── Guarantor Documents ───
           if (docs.isNotEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Documents',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
-                    ),
+              child: SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: docs.length,
+                  itemBuilder: (context, docIndex) => _docThumbnail(
+                    docs[docIndex]['label']!,
+                    docs[docIndex]['url']!,
+                    false,
+                    docs, // 📌 All documents list
+                    docIndex, // 📌 Current index
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: docs.length,
-                      itemBuilder: (context, docIndex) {
-                        final doc = docs[docIndex];
-                        return _docThumbnail(doc['label']!, doc['url']!, false);
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
         ],
@@ -921,30 +676,32 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  Widget _docThumbnail(String label, String url, [bool isVideo = false]) {
+  // ─── ✅ UPDATED: Document Thumbnail with Slide Navigation ───
+  Widget _docThumbnail(
+      String label,
+      String url,
+      bool isVideo,
+      List<Map<String, String>> allDocs,
+      int currentIndex,
+      ) {
     if (url.isEmpty) return const SizedBox.shrink();
-
     final fullUrl = ApiEndPoint.assetUrl(url);
-
-    debugPrint(
-      '[DocThumbnail] Label: $label, URL: $fullUrl, isVideo: $isVideo',
-    );
 
     return Container(
       margin: const EdgeInsets.only(right: 12),
       width: 100,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: InkWell(
               onTap: () {
-                if (isVideo) {
-                  _showVideoPlayer(context, fullUrl, label);
-                } else {
-                  _showFullScreenImage(context, fullUrl, label);
-                }
+                // 📌 Open full-screen slider viewer
+                _showDocumentSlider(
+                  context,
+                  allDocs,
+                  currentIndex,
+                );
               },
               child: Stack(
                 children: [
@@ -973,13 +730,9 @@ class _LoanApplicationDetailsScreenState
                           height: 80,
                           width: 100,
                           color: Colors.grey[200],
-                          child: Center(
+                          child: const Center(
                             child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                              strokeWidth: 2,
+                              color: Color(0xFF0052CC),
                             ),
                           ),
                         );
@@ -988,38 +741,56 @@ class _LoanApplicationDetailsScreenState
                         height: 80,
                         width: 100,
                         color: Colors.grey[200],
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.broken_image,
-                              color: Colors.grey,
-                              size: 24,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'No Image',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 8,
-                              ),
-                            ),
-                          ],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.grey,
                         ),
                       ),
                     ),
-                  if (isVideo)
-                    Positioned.fill(
+                  // 📌 Document count badge
+                  if (allDocs.length > 1)
+                    Positioned(
+                      top: 4,
+                      right: 4,
                       child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.black.withOpacity(0.3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.play_circle_fill,
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${currentIndex + 1}/${allDocs.length}',
+                          style: const TextStyle(
                             color: Colors.white,
-                            size: 32,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  // 📌 Video indicator
+                  if (isVideo)
+                    Positioned(
+                      bottom: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'VIDEO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -1028,11 +799,9 @@ class _LoanApplicationDetailsScreenState
               ),
             ),
           ),
-          const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-            textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1041,275 +810,138 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  // ─── Video Player ───
-  // ─── Video Player with VideoPlayerController ───
-  void _showVideoPlayer(BuildContext context, String videoUrl, String title) {
-    debugPrint('🎬 [VideoPlayer] Opening video: $videoUrl');
-
-    // VideoPlayerController ব্যবহার করুন
-    final controller = VideoPlayerController.network(videoUrl);
-
+  // ─── ✅ NEW: Document Slider Viewer ───
+  void _showDocumentSlider(
+      BuildContext context,
+      List<Map<String, String>> documents,
+      int initialIndex,
+      ) {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return FutureBuilder(
-              future: controller.initialize(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  //
-                  return Dialog(
-                    backgroundColor: Colors.transparent,
-                    child: Container(
-                      width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.5,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: Colors.white),
-                            SizedBox(height: 16),
-                            Text(
-                              'Loading video...',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Dialog(
-                    backgroundColor: Colors.transparent,
-                    child: Container(
-                      width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.5,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 48,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Failed to load video',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
-
-                //
-                controller.play();
-                return Dialog(
-                  backgroundColor: Colors.transparent,
-                  child: Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.5,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: AspectRatio(
-                            aspectRatio: controller.value.aspectRatio,
-                            child: VideoPlayer(controller),
-                          ),
-                        ),
-                        // Play/Pause Button
-                        Positioned.fill(
-                          child: Center(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  if (controller.value.isPlaying) {
-                                    controller.pause();
-                                  } else {
-                                    controller.play();
-                                  }
-                                });
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  controller.value.isPlaying
-                                      ? Icons.pause
-                                      : Icons.play_arrow,
-                                  color: Colors.white,
-                                  size: 48,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Close Button
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                controller.dispose();
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Title
-                        Positioned(
-                          bottom: 16,
-                          left: 16,
-                          right: 16,
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        // Video Progress
-                        Positioned(
-                          bottom: 50,
-                          left: 16,
-                          right: 16,
-                          child: VideoProgressIndicator(
-                            controller,
-                            allowScrubbing: true,
-                            colors: VideoProgressColors(
-                              playedColor: Colors.blue,
-                              bufferedColor: Colors.grey,
-                              backgroundColor: Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
+      builder: (context) => _DocumentSliderViewer(
+        documents: documents,
+        initialIndex: initialIndex,
+      ),
     );
   }
 
-  // ─── Full Screen Image ───
+  // ─── ✅ NEW: Video Player (updated) ───
+  void _showVideoPlayer(BuildContext context, String videoUrl, String title) {
+    final controller = VideoPlayerController.network(videoUrl);
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => FutureBuilder(
+          future: controller.initialize(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              controller.play();
+              return Dialog(
+                backgroundColor: Colors.black,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: controller.value.aspectRatio,
+                      child: VideoPlayer(controller),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            controller.value.isPlaying
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            if (controller.value.isPlaying) {
+                              controller.pause();
+                            } else {
+                              controller.play();
+                            }
+                            setState(() {});
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () {
+                            controller.dispose();
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
+      ),
+    );
+  }
+
+  // ─── ✅ NEW: Full Screen Image (for single image) ───
   void _showFullScreenImage(
-    BuildContext context,
-    String imageUrl,
-    String title,
-  ) {
+      BuildContext context,
+      String imageUrl,
+      String title,
+      ) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.9)),
-          child: Stack(
-            children: [
-              Center(
-                child: InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      );
-                    },
-                    errorBuilder: (_, __, ___) => Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.broken_image,
-                          color: Colors.white,
-                          size: 64,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Failed to load image',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 3.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text(
+                      'Failed to load image',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
               ),
-              Positioned(
-                top: 40,
-                right: 20,
-                child: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
                 ),
               ),
-              Positioned(
-                bottom: 40,
-                left: 0,
-                right: 0,
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1317,52 +949,32 @@ class _LoanApplicationDetailsScreenState
 
   // ─── Action Buttons ───
   Widget _buildActionButtons(
-    BuildContext context,
-    LoanApplicationViewModel viewModel,
-    String id,
-  ) {
+      BuildContext context,
+      LoanApplicationViewModel viewModel,
+      String id,
+      ) {
     return Row(
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: viewModel.isLoading
-                ? null
-                : () => _showRejectDialog(context, viewModel, id),
+            onPressed: () => _showRejectDialog(context, viewModel, id),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.errorRed,
               side: const BorderSide(color: AppColors.errorRed),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
             ),
-            child: const Text(
-              "Reject",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: const Text("Reject"),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton(
-            onPressed: viewModel.isLoading
-                ? null
-                : () => _showApproveDialog(context, viewModel, id),
+            onPressed: () => _showApproveDialog(context, viewModel, id),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0052CC),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
             ),
-            child: const Text(
-              "Approve",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: const Text("Approve"),
           ),
         ),
       ],
@@ -1370,10 +982,10 @@ class _LoanApplicationDetailsScreenState
   }
 
   void _showApproveDialog(
-    BuildContext context,
-    LoanApplicationViewModel viewModel,
-    String id,
-  ) {
+      BuildContext context,
+      LoanApplicationViewModel viewModel,
+      String id,
+      ) {
     final remarksController = TextEditingController();
     showDialog(
       context: context,
@@ -1381,70 +993,27 @@ class _LoanApplicationDetailsScreenState
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text("Approve Application"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Are you sure you want to approve this loan application?",
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: remarksController,
-                decoration: const InputDecoration(
-                  hintText: "Enter approval remarks (optional)",
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
+          content: TextField(
+            controller: remarksController,
+            decoration: const InputDecoration(hintText: "Remarks (optional)"),
           ),
           actions: [
             TextButton(
-              onPressed: viewModel.isLoading ? null : () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
               child: const Text("Cancel"),
             ),
             ElevatedButton(
-              onPressed: viewModel.isLoading
-                  ? null
-                  : () async {
-                      bool success = await viewModel.approveApplication(
-                        id,
-                        remarksController.text,
-                      );
-                      if (success && mounted) {
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Application Approved Successfully"),
-                            backgroundColor: AppColors.successGreen,
-                          ),
-                        );
-                        Navigator.pop(context);
-                      } else if (viewModel.errorMessage != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(viewModel.errorMessage!),
-                            backgroundColor: AppColors.errorRed,
-                          ),
-                        );
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0052CC),
-              ),
-              child: viewModel.isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      "Confirm Approval",
-                      style: TextStyle(color: Colors.white),
-                    ),
+              onPressed: () async {
+                bool success = await viewModel.approveApplication(
+                  id,
+                  remarksController.text,
+                );
+                if (success && mounted) {
+                  Navigator.pop(ctx);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Confirm"),
             ),
           ],
         ),
@@ -1453,137 +1022,382 @@ class _LoanApplicationDetailsScreenState
   }
 
   void _showRejectDialog(
-    BuildContext context,
-    LoanApplicationViewModel viewModel,
-    String id,
-  ) {
+      BuildContext context,
+      LoanApplicationViewModel viewModel,
+      String id,
+      ) {
     final remarksController = TextEditingController();
     String selectedReason = "Incomplete application";
-    final List<String> rejectionReasons = [
+    final reasons = [
       "Incomplete application",
       "KYC verification failed",
       "Credit score below minimum requirement",
       "Other (Specify Remarks)",
     ];
-
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text("Reject Application"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Select Rejection Reason:",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedReason,
-                      isExpanded: true,
-                      items: rejectionReasons
-                          .map(
-                            (String v) =>
-                                DropdownMenuItem(value: v, child: Text(v)),
-                          )
-                          .toList(),
-                      onChanged: (v) =>
-                          setDialogState(() => selectedReason = v!),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Remarks:",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: remarksController,
-                  decoration: InputDecoration(
-                    hintText: selectedReason == "Other (Specify Remarks)"
-                        ? "Explain 'Other' reason (Mandatory)"
-                        : "Additional notes (Optional)",
-                    border: const OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-              ],
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                value: selectedReason,
+                isExpanded: true,
+                items: reasons
+                    .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                    .toList(),
+                onChanged: (v) => setDialogState(() => selectedReason = v!),
+              ),
+              TextField(
+                controller: remarksController,
+                decoration: const InputDecoration(hintText: "Remarks"),
+              ),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: viewModel.isLoading ? null : () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
               child: const Text("Cancel"),
             ),
             ElevatedButton(
-              onPressed: viewModel.isLoading
-                  ? null
-                  : () async {
-                      if (selectedReason == "Other (Specify Remarks)" &&
-                          remarksController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              "Please provide remarks for 'Other' reason",
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      bool success = await viewModel.rejectApplication(
-                        id,
-                        selectedReason,
-                        remarksController.text.trim(),
-                      );
-                      if (success && mounted) {
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Application Rejected"),
-                            backgroundColor: AppColors.errorRed,
-                          ),
-                        );
-                        Navigator.pop(context);
-                      } else if (viewModel.errorMessage != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(viewModel.errorMessage!),
-                            backgroundColor: AppColors.errorRed,
-                          ),
-                        );
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.errorRed,
-              ),
-              child: viewModel.isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      "Confirm Reject",
-                      style: TextStyle(color: Colors.white),
-                    ),
+              onPressed: () async {
+                bool success = await viewModel.rejectApplication(
+                  id,
+                  selectedReason,
+                  remarksController.text,
+                );
+                if (success && mounted) {
+                  Navigator.pop(ctx);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Confirm"),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── ✅ NEW: Document Slider Viewer Widget ───
+class _DocumentSliderViewer extends StatefulWidget {
+  final List<Map<String, String>> documents;
+  final int initialIndex;
+
+  const _DocumentSliderViewer({
+    required this.documents,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_DocumentSliderViewer> createState() => _DocumentSliderViewerState();
+}
+
+class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+  VideoPlayerController? _videoController;
+  bool _isVideoPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+
+    // Check if current document is video
+    _checkVideoAndInitialize();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkVideoAndInitialize() async {
+    final doc = widget.documents[_currentIndex];
+    final isVideo = doc['label']?.toUpperCase().contains('VIDEO') ?? false;
+
+    if (isVideo) {
+      final url = ApiEndPoint.assetUrl(doc['url']!);
+      _videoController = VideoPlayerController.network(url);
+      await _videoController?.initialize();
+      _videoController?.play();
+      setState(() {
+        _isVideoPlaying = true;
+      });
+    }
+  }
+
+  void _onPageChanged(int index) {
+    // Dispose old video controller
+    _videoController?.dispose();
+    _videoController = null;
+
+    setState(() {
+      _currentIndex = index;
+      _isVideoPlaying = false;
+    });
+
+    // Check if new page is video
+    _checkVideoAndInitialize();
+  }
+
+  void _toggleVideoPlayback() {
+    if (_videoController == null) return;
+
+    setState(() {
+      if (_videoController!.value.isPlaying) {
+        _videoController!.pause();
+      } else {
+        _videoController!.play();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: const EdgeInsets.all(0),
+      child: Stack(
+        children: [
+          // ─── Page Viewer ───
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: widget.documents.length,
+            itemBuilder: (context, index) {
+              final doc = widget.documents[index];
+              final isVideo = doc['label']?.toUpperCase().contains('VIDEO') ?? false;
+              final url = ApiEndPoint.assetUrl(doc['url']!);
+              final label = doc['label'] ?? 'Document';
+
+              return Container(
+                color: Colors.black,
+                child: Center(
+                  child: isVideo
+                      ? _buildVideoViewer(url, label)
+                      : _buildImageViewer(url, label),
+                ),
+              );
+            },
+          ),
+
+          // ─── Top Bar ───
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.7),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Document count
+                  Text(
+                    '${_currentIndex + 1} / ${widget.documents.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  // Close button
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      _videoController?.dispose();
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── Bottom Bar ───
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.7),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Document label
+                  Text(
+                    widget.documents[_currentIndex]['label'] ?? 'Document',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  // Navigation dots
+                  if (widget.documents.length > 1)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        widget.documents.length,
+                            (index) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _currentIndex == index
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  // Previous/Next buttons
+                  if (widget.documents.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          TextButton(
+                            onPressed: _currentIndex > 0
+                                ? () {
+                              _pageController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                                : null,
+                            child: const Text(
+                              'Previous',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _currentIndex < widget.documents.length - 1
+                                ? () {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                                : null,
+                            child: const Text(
+                              'Next',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Image Viewer ───
+  Widget _buildImageViewer(String url, String label) {
+    return InteractiveViewer(
+      minScale: 0.5,
+      maxScale: 3.0,
+      child: Image.network(
+        url,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
+        },
+        errorBuilder: (_, __, ___) => const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.broken_image,
+                color: Colors.white,
+                size: 64,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Failed to load image',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Video Viewer ───
+  Widget _buildVideoViewer(String url, String label) {
+    if (_videoController == null) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _toggleVideoPlayback,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AspectRatio(
+            aspectRatio: _videoController!.value.aspectRatio,
+            child: VideoPlayer(_videoController!),
+          ),
+          // Play/Pause overlay
+          if (!_videoController!.value.isPlaying)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 64,
+              ),
+            ),
+        ],
       ),
     );
   }

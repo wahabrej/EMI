@@ -151,16 +151,11 @@ class ConfirmationStep extends StatelessWidget {
           const SizedBox(height: 12),
 
           // 5. Payment Summary
-          // lib/features/checkout/screens/confirmation_step.dart
-
-          // ─── Payment Summary ───
           _buildSummarySection(
             title: '5. Payment Details',
             icon: Icons.payment_outlined,
             children: [
               _buildRow('Payment Method', data.downPaymentMethod ?? 'CASH'),
-
-              // ✅ 👇 এখানে যোগ করুন
               if (data.downPaymentMethod == 'BANK') ...[
                 _buildRow('Bank Account Name', data.bankAccountName ?? 'N/A'),
                 _buildRow(
@@ -177,8 +172,6 @@ class ConfirmationStep extends StatelessWidget {
                   data.bankReceipt != null,
                 ),
               ],
-
-              //  BKASH এর জন্যও যোগ করতে পারেন
               if (data.downPaymentMethod == 'BKASH') ...[
                 _buildRow(
                   'Sender Mobile',
@@ -193,190 +186,200 @@ class ConfirmationStep extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Submit / Confirm Button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: vm.isLoading
-                  ? null
-                  : () async {
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint(
-                        "🔘 [ConfirmationStep] 'SUBMIT' Button Clicked",
-                      );
-                      debugPrint("📦 Full Order Data:");
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 BASIC INFO:");
-                      debugPrint("   Sale Type: ${data.saleType}");
-                      debugPrint("   Customer Name: ${data.name}");
-                      debugPrint("   Phone: ${data.phone}");
-                      debugPrint(
-                        "   Password: ${data.password.isNotEmpty ? '********' : 'empty'}",
-                      );
-                      debugPrint("   Present Address: ${data.presentAddress}");
-                      debugPrint(
-                        "   Permanent Address: ${data.permanentAddress}",
-                      );
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 ID & INCOME:");
-                      debugPrint("   ID Type: ${data.customerIdType}");
-                      debugPrint(
-                        "   NID/Passport Number: ${data.nidPassportNumber}",
-                      );
-                      debugPrint("   Source of Income: ${data.sourceOfIncome}");
-                      debugPrint("   Monthly Income: ${data.monthlyIncome}");
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 PRODUCT INFO:");
-                      debugPrint("   Product ID: ${data.productId}");
-                      debugPrint("   Product Model: ${data.productModel}");
-                      debugPrint("   Product Model ID: ${data.productModelId}");
-                      debugPrint("   Brand Name: ${data.brandName}");
-                      debugPrint("   MRP: ${data.mrp}");
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 EMI INFO:");
-                      debugPrint("   EMI Mode: ${data.emiMode}");
-                      debugPrint("   EMI Plan ID: ${data.emiPlanId}");
-                      debugPrint("   Tenure: ${data.emiTenureMonths}");
-                      debugPrint("   Down Payment: ${data.downPayment}");
-                      debugPrint("   Monthly EMI: ${data.monthlyEmi}");
+          // ─── ✅ SUBMIT BUTTON (Proper Circular Progress) ───
+          _buildSubmitButton(context, vm),
 
-                      debugPrint("   EMI Charge: ${data.emiCharge}");
-                      debugPrint("   App EMI Charge: ${data.appEmiCharge}");
-                      debugPrint("   Financed Amount: ${data.financedAmount}");
-                      debugPrint("   Total Payable: ${data.totalPayable}");
-                      debugPrint("   Cashback Earned: ${data.cashbackEarned}");
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 STORE HIERARCHY:");
-                      debugPrint("   Shop ID: ${data.shopId}");
-                      debugPrint("   Agent ID: ${data.agentId}");
-                      debugPrint("   Manager ID: ${data.managerId}");
-                      debugPrint("   Sales Person ID: ${data.salesPersonId}");
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 PAYMENT:");
-                      debugPrint(
-                        "   Payment Method: ${data.downPaymentMethod}",
-                      );
-                      debugPrint(
-                        "   Income Proof Type: ${data.incomeProofDocumentType}",
-                      );
-                      debugPrint(
-                        "   Down Payment Ref No: ${data.downPaymentReferenceNumber ?? 'N/A'}",
-                      );
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 FILE STATUS:");
-                      debugPrint(
-                        "   Customer Image: ${vm.customerImageFile != null ? '✅ Attached (${vm.customerImageFile!.path.split('/').last})' : '❌ Not Provided'}",
-                      );
-                      debugPrint(
-                        "   Customer Video: ${vm.customerVideoFile != null ? '✅ Attached (${vm.customerVideoFile!.path.split('/').last})' : '❌ Not Provided'}",
-                      );
-                      debugPrint(
-                        "   NID Front: ${data.nidFront != null ? '✅ Attached (${data.nidFront!.path.split('/').last})' : '❌ Not Provided'}",
-                      );
-                      debugPrint(
-                        "   NID Back: ${data.nidBack != null ? '✅ Attached (${data.nidBack!.path.split('/').last})' : '❌ Not Provided'}",
-                      );
-                      debugPrint(
-                        "   Income Proof: ${data.incomeProof != null ? '✅ Attached (${data.incomeProof!.path.split('/').last})' : '❌ Not Provided'}",
-                      );
-                      debugPrint(
-                        "   Bank Receipt: ${data.bankReceipt != null ? '✅ Attached (${data.bankReceipt!.path.split('/').last})' : '❌ Not Provided'}",
-                      );
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("📋 GUARANTORS (${data.guarantors.length}):");
-
-                      debugPrint(
-                        "═══════════════             *********************      ════════════════════════",
-                      );
-
-                      for (int i = 0; i < data.guarantors.length; i++) {
-                        final g = data.guarantors[i];
-                        debugPrint("   Guarantor ${i + 1}:");
-                        debugPrint("     Name: ${g.name}");
-                        debugPrint("     Phone: ${g.phone}");
-                        debugPrint("     Type: ${g.type}");
-                        debugPrint("     Relationship: ${g.relationship}");
-                        debugPrint("     ID Type: ${g.idType}");
-                        debugPrint("     ID Number: ${g.nidPassportNumber}");
-                        debugPrint(
-                          "     NID Front: ${g.nidFront != null ? '✅ Attached' : '❌ Not Provided'}",
-                        );
-                        debugPrint(
-                          "     NID Back: ${g.nidBack != null ? '✅ Attached' : '❌ Not Provided'}",
-                        );
-                      }
-                      debugPrint("═══════════════════════════════════════");
-                      debugPrint("🔄 Calling vm.submitOrder()...");
-
-                      bool success = await vm.submitOrder();
-
-                      debugPrint(
-                        "📊 [ConfirmationStep] Submission Result: $success",
-                      );
-
-                      if (!context.mounted) return;
-
-                      if (success) {
-                        debugPrint(
-                          "✅ [ConfirmationStep] Submission SUCCESSFUL!",
-                        );
-                        _showResponseDialog(
-                          context: context,
-                          isSuccess: true,
-                          message:
-                              "Your application has been submitted successfully!",
-                          vm: vm,
-                        );
-                      } else {
-                        debugPrint(" [ConfirmationStep] Submission FAILED!");
-                        debugPrint("   Error: ${vm.errorMessage}");
-                        _showResponseDialog(
-                          context: context,
-                          isSuccess: false,
-                          message:
-                              vm.errorMessage ??
-                              "Something went wrong. Please try again.-------",
-                          vm: vm,
-                        );
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.successGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: vm.isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.verified_user_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'SUBMIT',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
           const SizedBox(height: 30),
         ],
       ),
     );
   }
 
+  // ─── ✅ SEPARATE SUBMIT BUTTON WIDGET ───
+  Widget _buildSubmitButton(BuildContext context, CheckoutViewModel vm) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: vm.isLoading ? null : () => _handleSubmit(context, vm),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.successGreen,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
+          disabledBackgroundColor: AppColors.successGreen.withOpacity(0.5),
+        ),
+        child: vm.isLoading
+            ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Submitting...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.verified_user_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'SUBMIT',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  // ─── ✅ HANDLE SUBMIT ───
+  Future<void> _handleSubmit(BuildContext context, CheckoutViewModel vm) async {
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("🔘 [ConfirmationStep] 'SUBMIT' Button Clicked");
+    debugPrint("📦 Full Order Data:");
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 BASIC INFO:");
+    debugPrint("   Sale Type: ${vm.checkoutData.saleType}");
+    debugPrint("   Customer Name: ${vm.checkoutData.name}");
+    debugPrint("   Phone: ${vm.checkoutData.phone}");
+    debugPrint(
+      "   Password: ${vm.checkoutData.password.isNotEmpty ? '********' : 'empty'}",
+    );
+    debugPrint("   Present Address: ${vm.checkoutData.presentAddress}");
+    debugPrint("   Permanent Address: ${vm.checkoutData.permanentAddress}");
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 ID & INCOME:");
+    debugPrint("   ID Type: ${vm.checkoutData.customerIdType}");
+    debugPrint("   NID/Passport Number: ${vm.checkoutData.nidPassportNumber}");
+    debugPrint("   Source of Income: ${vm.checkoutData.sourceOfIncome}");
+    debugPrint("   Monthly Income: ${vm.checkoutData.monthlyIncome}");
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 PRODUCT INFO:");
+    debugPrint("   Product ID: ${vm.checkoutData.productId}");
+    debugPrint("   Product Model: ${vm.checkoutData.productModel}");
+    debugPrint("   Product Model ID: ${vm.checkoutData.productModelId}");
+    debugPrint("   Brand Name: ${vm.checkoutData.brandName}");
+    debugPrint("   MRP: ${vm.checkoutData.mrp}");
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 EMI INFO:");
+    debugPrint("   EMI Mode: ${vm.checkoutData.emiMode}");
+    debugPrint("   EMI Plan ID: ${vm.checkoutData.emiPlanId}");
+    debugPrint("   Tenure: ${vm.checkoutData.emiTenureMonths}");
+    debugPrint("   Down Payment: ${vm.checkoutData.downPayment}");
+    debugPrint("   Monthly EMI: ${vm.checkoutData.monthlyEmi}");
+    debugPrint("   EMI Charge: ${vm.checkoutData.emiCharge}");
+    debugPrint("   App EMI Charge: ${vm.checkoutData.appEmiCharge}");
+    debugPrint("   Financed Amount: ${vm.checkoutData.financedAmount}");
+    debugPrint("   Total Payable: ${vm.checkoutData.totalPayable}");
+    debugPrint("   Cashback Earned: ${vm.checkoutData.cashbackEarned}");
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 STORE HIERARCHY:");
+    debugPrint("   Shop ID: ${vm.checkoutData.shopId}");
+    debugPrint("   Agent ID: ${vm.checkoutData.agentId}");
+    debugPrint("   Manager ID: ${vm.checkoutData.managerId}");
+    debugPrint("   Sales Person ID: ${vm.checkoutData.salesPersonId}");
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 PAYMENT:");
+    debugPrint("   Payment Method: ${vm.checkoutData.downPaymentMethod}");
+    debugPrint(
+      "   Income Proof Type: ${vm.checkoutData.incomeProofDocumentType}",
+    );
+    debugPrint(
+      "   Down Payment Ref No: ${vm.checkoutData.downPaymentReferenceNumber ?? 'N/A'}",
+    );
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 FILE STATUS:");
+    debugPrint(
+      "   Customer Image: ${vm.customerImageFile != null ? '✅ Attached (${vm.customerImageFile!.path.split('/').last})' : '❌ Not Provided'}",
+    );
+    debugPrint(
+      "   Customer Video: ${vm.customerVideoFile != null ? '✅ Attached (${vm.customerVideoFile!.path.split('/').last})' : '❌ Not Provided'}",
+    );
+    debugPrint(
+      "   NID Front: ${vm.checkoutData.nidFront != null ? '✅ Attached' : '❌ Not Provided'}",
+    );
+    debugPrint(
+      "   NID Back: ${vm.checkoutData.nidBack != null ? '✅ Attached' : '❌ Not Provided'}",
+    );
+    debugPrint(
+      "   Income Proof: ${vm.checkoutData.incomeProof != null ? '✅ Attached' : '❌ Not Provided'}",
+    );
+    debugPrint(
+      "   Bank Receipt: ${vm.checkoutData.bankReceipt != null ? '✅ Attached' : '❌ Not Provided'}",
+    );
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("📋 GUARANTORS (${vm.checkoutData.guarantors.length}):");
+    for (int i = 0; i < vm.checkoutData.guarantors.length; i++) {
+      final g = vm.checkoutData.guarantors[i];
+      debugPrint("   Guarantor ${i + 1}:");
+      debugPrint("     Name: ${g.name}");
+      debugPrint("     Phone: ${g.phone}");
+      debugPrint("     Type: ${g.type}");
+      debugPrint("     Relationship: ${g.relationship}");
+      debugPrint("     ID Type: ${g.idType}");
+      debugPrint("     ID Number: ${g.nidPassportNumber}");
+      debugPrint(
+        "     NID Front: ${g.nidFront != null ? '✅ Attached' : '❌ Not Provided'}",
+      );
+      debugPrint(
+        "     NID Back: ${g.nidBack != null ? '✅ Attached' : '❌ Not Provided'}",
+      );
+    }
+    debugPrint("═══════════════════════════════════════");
+    debugPrint("🔄 Calling vm.submitOrder()...");
+
+    // ✅ CALL SUBMIT
+    bool success = await vm.submitOrder();
+
+    debugPrint("[ConfirmationStep] Submission Result: $success");
+
+    if (!context.mounted) return;
+
+    if (success) {
+      debugPrint("[ConfirmationStep] Submission SUCCESSFUL!");
+      _showResponseDialog(
+        context: context,
+        isSuccess: true,
+        message: "Your application has been submitted successfully!",
+        vm: vm,
+      );
+    } else {
+      debugPrint("[ConfirmationStep] Submission FAILED!");
+      debugPrint("   Error: ${vm.errorMessage}");
+      _showResponseDialog(
+        context: context,
+        isSuccess: false,
+        message: vm.errorMessage ?? "Something went wrong. Please try again.",
+        vm: vm,
+      );
+    }
+  }
+
+  // ─── RESPONSE DIALOG ───
   void _showResponseDialog({
     required BuildContext context,
     required bool isSuccess,
@@ -384,7 +387,7 @@ class ConfirmationStep extends StatelessWidget {
     required CheckoutViewModel vm,
   }) {
     debugPrint(
-      "📢 [ConfirmationStep] Showing ${isSuccess ? 'SUCCESS' : 'FAILURE'} Dialog",
+      "[ConfirmationStep] Showing ${isSuccess ? 'SUCCESS' : 'FAILURE'} Dialog",
     );
 
     showDialog(
@@ -417,7 +420,6 @@ class ConfirmationStep extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ─── Main Message ───
             Text(
               message,
               textAlign: TextAlign.center,
@@ -428,8 +430,6 @@ class ConfirmationStep extends StatelessWidget {
                 height: 1.5,
               ),
             ),
-
-            // ─── 🔥 Backend Error Details (Only for Failure) ───
             if (!isSuccess && vm.errorMessage != null) ...[
               const SizedBox(height: 16),
               const Divider(color: AppColors.errorRed, thickness: 1),
@@ -463,16 +463,6 @@ class ConfirmationStep extends StatelessWidget {
                   textAlign: TextAlign.left,
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Please check the error above and try again.',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.iconGrey.withOpacity(0.7),
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.left,
-              ),
             ],
           ],
         ),
@@ -499,9 +489,7 @@ class ConfirmationStep extends StatelessWidget {
                     context,
                   ).pushNamedAndRemoveUntil('/', (route) => false);
                 } else {
-                  debugPrint(
-                    "🔄 [ConfirmationStep] Closing Dialog to Try Again",
-                  );
+                  debugPrint("[ConfirmationStep] Closing Dialog to Try Again");
                   Navigator.pop(context);
                 }
               },
@@ -520,6 +508,7 @@ class ConfirmationStep extends StatelessWidget {
     );
   }
 
+  // ─── UI Helper Widgets ───
   Widget _buildSummarySection({
     required String title,
     required IconData icon,

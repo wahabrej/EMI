@@ -23,6 +23,7 @@ class LoanDetailData {
   num? monthlyIncome;
   String? status;
   String? issueDate;
+  String? nextPaymentDate;
   String? customerImage;
   String? customerNidFront;
   String? customerNidBack;
@@ -38,6 +39,7 @@ class LoanDetailData {
   num? emiCharge;
   num? financedAmount;
   num? totalPayable;
+  num? cashbackAmount; // 💡 Added Cashback field
 
   List<GuarantorDetail>? guarantors;
 
@@ -72,17 +74,19 @@ class LoanDetailData {
     this.emiCharge,
     this.financedAmount,
     this.totalPayable,
+    this.cashbackAmount,
     this.guarantors,
     this.rejectionReason,
     this.approvalRemarks,
     this.createdAt,
+    this.nextPaymentDate,
   });
 
   LoanDetailData.fromJson(Map<String, dynamic> json) {
     id = json['id']?.toString();
     displayId = json['displayId']?.toString();
 
-    // ─── Customer Data (Active Loan থেকে customer অবজেক্টে থাকে) ───
+    // ─── Customer Data ───
     final customer = json['customer'];
     if (customer != null) {
       name = customer['name']?.toString();
@@ -94,7 +98,6 @@ class LoanDetailData {
       monthlyIncome = _parseNum(customer['monthlyIncome']);
       customerImage = customer['customerImageUrl']?.toString();
     } else {
-      // Loan Application থেকে direct fields
       name = json['name']?.toString();
       phone = json['phone']?.toString();
       presentAddress = json['presentAddress']?.toString();
@@ -109,7 +112,22 @@ class LoanDetailData {
 
     idType = json['idType']?.toString() ?? 'NID';
     status = json['status']?.toString();
-    issueDate = json['issueDate']?.toString();
+    issueDate = json['issueDate']?.toString() ?? json['createdAt']?.toString();
+    
+    nextPaymentDate = json['nextPaymentDate']?.toString() ?? 
+                      json['monthlyPaymentDate']?.toString() ?? 
+                      json['paymentDate']?.toString();
+    
+    if (json['installments'] != null && json['installments'] is List) {
+      final installments = json['installments'] as List;
+      for (var inst in installments) {
+        if ((inst['status'] ?? '').toString().toUpperCase() != 'PAID') {
+          nextPaymentDate = inst['dueDate']?.toString();
+          break;
+        }
+      }
+    }
+
     incomeProofDocument = json['incomeProofDocument']?.toString();
     incomeProofDocumentType = json['incomeProofDocumentType']?.toString();
     createdAt = json['createdAt']?.toString();
@@ -118,7 +136,6 @@ class LoanDetailData {
     if (json['product'] != null) {
       product = ProductInfo.fromJson(json['product']);
     } else if (json['productModel'] != null) {
-      // Active Loan থেকে productModel
       final productModel = json['productModel'];
       product = ProductInfo(
         id: productModel['id']?.toString(),
@@ -130,7 +147,6 @@ class LoanDetailData {
     // ─── Calculation Data ───
     final snapshot = json['calculationSnapshot'];
     if (snapshot != null) {
-      // Active Loan থেকে calculationSnapshot
       mrp = _parseNum(snapshot['regularPrice']);
       downPayment = _parseNum(snapshot['downPaymentAmount']) ?? _parseNum(snapshot['initialPaymentAmount']);
       monthlyEmi = _parseNum(snapshot['monthlyEmi']) ?? _parseNum(snapshot['monthlyInstallment']);
@@ -138,9 +154,9 @@ class LoanDetailData {
       emiCharge = _parseNum(snapshot['appEmiChargeAmount']);
       financedAmount = _parseNum(snapshot['financedAmount']);
       totalPayable = _parseNum(snapshot['totalAfterCashback']) ?? _parseNum(snapshot['totalScheduledPayable']);
+      cashbackAmount = _parseNum(snapshot['cashbackAmount']) ?? _parseNum(snapshot['totalCashbackAmount']);
       downPaymentMethod = json['downPaymentMethod']?.toString();
     } else {
-      // Loan Application থেকে direct fields
       mrp = _parseNum(json['mrp']);
       downPayment = _parseNum(json['downPayment']);
       monthlyEmi = _parseNum(json['monthlyEmi']);
@@ -148,6 +164,7 @@ class LoanDetailData {
       emiCharge = _parseNum(json['emiCharge']);
       financedAmount = _parseNum(json['financedAmount']);
       totalPayable = _parseNum(json['totalPayable']);
+      cashbackAmount = _parseNum(json['cashbackAmount']);
       downPaymentMethod = json['downPaymentMethod']?.toString();
     }
 
@@ -164,7 +181,6 @@ class LoanDetailData {
           nidPassportNumber: g['nidPassportNumber']?.toString(),
         );
 
-        // ─── Guarantor Documents ───
         if (g['documents'] != null && (g['documents'] as List).isNotEmpty) {
           final docs = g['documents'] as List;
           for (var doc in docs) {
@@ -177,11 +193,9 @@ class LoanDetailData {
             }
           }
         } else {
-          // Fallback: direct fields
           guarantor.nidFront = g['nidFront']?.toString() ?? g['documentImageUrl']?.toString();
           guarantor.nidBack = g['nidBack']?.toString();
         }
-
         guarantors!.add(guarantor);
       }
     }
