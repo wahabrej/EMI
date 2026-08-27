@@ -48,10 +48,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
       final url1 = ApiEndPoint.loanApplicationById(id);
       debugPrint('🌐 [ViewModel] URL 1 (Loan App): $url1');
 
-      var response = await http.get(
-        Uri.parse(url1),
-        headers: headers,
-      );
+      var response = await http.get(Uri.parse(url1), headers: headers);
 
       debugPrint('📊 [ViewModel] URL 1 Status: ${response.statusCode}');
 
@@ -60,10 +57,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
         final url2 = ApiEndPoint.getLoanById(id);
         debugPrint('🌐 [ViewModel] URL 2 (Active Loan): $url2');
 
-        response = await http.get(
-          Uri.parse(url2),
-          headers: headers,
-        );
+        response = await http.get(Uri.parse(url2), headers: headers);
         debugPrint('📊 [ViewModel] URL 2 Status: ${response.statusCode}');
       }
 
@@ -96,8 +90,12 @@ class LoanApplicationViewModel extends ChangeNotifier {
           // 🔥 Active Loan হলে ডকুমেন্ট ম্যাপিং করুন
           if (_rawData != null) {
             final status = _rawData!['status']?.toString().toUpperCase() ?? '';
-            if (status == 'APPROVED' || status == 'ACTIVE' || status == 'DISBURSED') {
-              debugPrint('🔄 [ViewModel] Active Loan detected, mapping documents...');
+            if (status == 'APPROVED' ||
+                status == 'ACTIVE' ||
+                status == 'DISBURSED') {
+              debugPrint(
+                '🔄 [ViewModel] Active Loan detected, mapping documents...',
+              );
               _rawData = _mapActiveLoanFields(_rawData!);
             }
           }
@@ -109,14 +107,26 @@ class LoanApplicationViewModel extends ChangeNotifier {
           debugPrint('📋 [ViewModel] ID: ${_applicationDetails?.id}');
           debugPrint('📋 [ViewModel] Status: ${_applicationDetails?.status}');
           debugPrint('📋 [ViewModel] Name: ${_applicationDetails?.name}');
-          debugPrint('📋 [ViewModel] Raw Data Keys: ${_rawData?.keys.join(', ')}');
+          debugPrint(
+            '📋 [ViewModel] Raw Data Keys: ${_rawData?.keys.join(', ')}',
+          );
 
           if (_rawData != null) {
-            debugPrint('📄 [ViewModel] customerImageUrl: ${_rawData!['customerImageUrl']}');
-            debugPrint('📄 [ViewModel] customerVideoUrl: ${_rawData!['customerVideoUrl']}');
-            debugPrint('📄 [ViewModel] incomeProofUrl: ${_rawData!['incomeProofUrl']}');
-            debugPrint('📄 [ViewModel] customerDocuments: ${_rawData!['customerDocuments']}');
-            debugPrint('📄 [ViewModel] guarantorDocuments: ${_rawData!['guarantorDocuments']}');
+            debugPrint(
+              '📄 [ViewModel] customerImageUrl: ${_rawData!['customerImageUrl']}',
+            );
+            debugPrint(
+              '📄 [ViewModel] customerVideoUrl: ${_rawData!['customerVideoUrl']}',
+            );
+            debugPrint(
+              '📄 [ViewModel] incomeProofUrl: ${_rawData!['incomeProofUrl']}',
+            );
+            debugPrint(
+              '📄 [ViewModel] customerDocuments: ${_rawData!['customerDocuments']}',
+            );
+            debugPrint(
+              '📄 [ViewModel] guarantorDocuments: ${_rawData!['guarantorDocuments']}',
+            );
           }
 
           debugPrint('✅ [ViewModel] ========== END PARSED MODEL ==========');
@@ -124,7 +134,10 @@ class LoanApplicationViewModel extends ChangeNotifier {
           _errorMessage = 'No data found';
         }
       } else {
-        _errorMessage = data['message'] ?? data['error']?['message'] ?? "Failed to load details (${response.statusCode})";
+        _errorMessage =
+            data['message'] ??
+            data['error']?['message'] ??
+            "Failed to load details (${response.statusCode})";
         debugPrint('❌ [ViewModel] Error: $_errorMessage');
       }
     } catch (e) {
@@ -148,50 +161,88 @@ class LoanApplicationViewModel extends ChangeNotifier {
       List<Map<String, dynamic>> docs = [];
 
       // 🔥 1. customerImageUrl
-      if (customer['customerImageUrl'] != null && customer['customerImageUrl'].toString().isNotEmpty) {
-        docs.add({'url': customer['customerImageUrl'].toString(), 'documentType': 'CUSTOMER_PHOTO'});
+      if (customer['customerImageUrl'] != null &&
+          customer['customerImageUrl'].toString().isNotEmpty) {
+        docs.add({
+          'url': customer['customerImageUrl'].toString(),
+          'documentType': 'CUSTOMER_PHOTO',
+        });
       }
 
       // 🔥 2. customerVideoUrl
-      if (customer['customerVideoUrl'] != null && customer['customerVideoUrl'].toString().isNotEmpty) {
-        docs.add({'url': customer['customerVideoUrl'].toString(), 'documentType': 'CUSTOMER_VIDEO'});
+      if (customer['customerVideoUrl'] != null &&
+          customer['customerVideoUrl'].toString().isNotEmpty) {
+        docs.add({
+          'url': customer['customerVideoUrl'].toString(),
+          'documentType': 'CUSTOMER_VIDEO',
+        });
       }
 
       // 🔥 3. customerNidFront / NID Front
-      if (customer['customerNidFront'] != null && customer['customerNidFront'].toString().isNotEmpty) {
-        docs.add({'url': customer['customerNidFront'].toString(), 'documentType': 'NID_FRONT'});
+      if (customer['customerNidFront'] != null &&
+          customer['customerNidFront'].toString().isNotEmpty) {
+        docs.add({
+          'url': customer['customerNidFront'].toString(),
+          'documentType': 'NID_FRONT',
+        });
       }
 
       // 🔥 4. customerNidBack / NID Back
-      if (customer['customerNidBack'] != null && customer['customerNidBack'].toString().isNotEmpty) {
-        docs.add({'url': customer['customerNidBack'].toString(), 'documentType': 'NID_BACK'});
+      if (customer['customerNidBack'] != null &&
+          customer['customerNidBack'].toString().isNotEmpty) {
+        docs.add({
+          'url': customer['customerNidBack'].toString(),
+          'documentType': 'NID_BACK',
+        });
       }
 
       // 🔥 5. incomeProofDocument / incomeProofUrl
-      if (customer['incomeProofDocument'] != null && customer['incomeProofDocument'].toString().isNotEmpty) {
-        docs.add({'url': customer['incomeProofDocument'].toString(), 'documentType': 'INCOME_PROOF'});
+      if (customer['incomeProofDocument'] != null &&
+          customer['incomeProofDocument'].toString().isNotEmpty) {
+        docs.add({
+          'url': customer['incomeProofDocument'].toString(),
+          'documentType': 'INCOME_PROOF',
+        });
       }
-      if (customer['incomeProofUrl'] != null && customer['incomeProofUrl'].toString().isNotEmpty) {
-        bool exists = docs.any((d) => d['url'] == customer['incomeProofUrl'].toString());
+      if (customer['incomeProofUrl'] != null &&
+          customer['incomeProofUrl'].toString().isNotEmpty) {
+        bool exists = docs.any(
+          (d) => d['url'] == customer['incomeProofUrl'].toString(),
+        );
         if (!exists) {
-          docs.add({'url': customer['incomeProofUrl'].toString(), 'documentType': 'INCOME_PROOF'});
+          docs.add({
+            'url': customer['incomeProofUrl'].toString(),
+            'documentType': 'INCOME_PROOF',
+          });
         }
       }
 
       // 🔥 6. bankReceiptUrl / bankReceipt
-      if (customer['bankReceiptUrl'] != null && customer['bankReceiptUrl'].toString().isNotEmpty) {
-        docs.add({'url': customer['bankReceiptUrl'].toString(), 'documentType': 'BANK_RECEIPT'});
+      if (customer['bankReceiptUrl'] != null &&
+          customer['bankReceiptUrl'].toString().isNotEmpty) {
+        docs.add({
+          'url': customer['bankReceiptUrl'].toString(),
+          'documentType': 'BANK_RECEIPT',
+        });
       }
-      if (customer['bankReceipt'] != null && customer['bankReceipt'].toString().isNotEmpty) {
-        bool exists = docs.any((d) => d['url'] == customer['bankReceipt'].toString());
+      if (customer['bankReceipt'] != null &&
+          customer['bankReceipt'].toString().isNotEmpty) {
+        bool exists = docs.any(
+          (d) => d['url'] == customer['bankReceipt'].toString(),
+        );
         if (!exists) {
-          docs.add({'url': customer['bankReceipt'].toString(), 'documentType': 'BANK_RECEIPT'});
+          docs.add({
+            'url': customer['bankReceipt'].toString(),
+            'documentType': 'BANK_RECEIPT',
+          });
         }
       }
 
       // 🔥 7. MOST IMPORTANT: customer['documents'] থেকে ডকুমেন্ট নিন
       if (customer['documents'] != null && customer['documents'] is List) {
-        debugPrint('📄 [ViewModel] Found documents in customer: ${customer['documents']}');
+        debugPrint(
+          '📄 [ViewModel] Found documents in customer: ${customer['documents']}',
+        );
         for (var doc in customer['documents']) {
           String url = doc['url'] ?? doc['fileUrl'] ?? doc['path'] ?? '';
           String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
@@ -199,14 +250,17 @@ class LoanApplicationViewModel extends ChangeNotifier {
             bool exists = docs.any((d) => d['url'] == url);
             if (!exists) {
               docs.add({'url': url, 'documentType': docType});
-              debugPrint('📄 [ViewModel] Added doc from customer.documents: $docType -> $url');
+              debugPrint(
+                '📄 [ViewModel] Added doc from customer.documents: $docType -> $url',
+              );
             }
           }
         }
       }
 
       // 🔥 8. customerDocuments (যদি থাকে)
-      if (customer['customerDocuments'] != null && customer['customerDocuments'] is List) {
+      if (customer['customerDocuments'] != null &&
+          customer['customerDocuments'] is List) {
         for (var doc in customer['customerDocuments']) {
           String url = doc['url'] ?? doc['fileUrl'] ?? '';
           String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
@@ -220,31 +274,46 @@ class LoanApplicationViewModel extends ChangeNotifier {
       }
 
       data['customerDocuments'] = docs;
-      debugPrint('📄 [ViewModel] Created customerDocuments: ${docs.length} items');
+      debugPrint(
+        '📄 [ViewModel] Created customerDocuments: ${docs.length} items',
+      );
 
       // ─── customer থেকে URL গুলো data তে যোগ করুন ───
-      if (customer['customerImageUrl'] != null) data['customerImageUrl'] = customer['customerImageUrl'];
-      if (customer['customerVideoUrl'] != null) data['customerVideoUrl'] = customer['customerVideoUrl'];
-      if (customer['customerNidFront'] != null) data['customerNidFront'] = customer['customerNidFront'];
-      if (customer['customerNidBack'] != null) data['customerNidBack'] = customer['customerNidBack'];
-      if (customer['incomeProofUrl'] != null) data['incomeProofUrl'] = customer['incomeProofUrl'];
-      if (customer['bankReceiptUrl'] != null) data['bankReceiptUrl'] = customer['bankReceiptUrl'];
+      if (customer['customerImageUrl'] != null)
+        data['customerImageUrl'] = customer['customerImageUrl'];
+      if (customer['customerVideoUrl'] != null)
+        data['customerVideoUrl'] = customer['customerVideoUrl'];
+      if (customer['customerNidFront'] != null)
+        data['customerNidFront'] = customer['customerNidFront'];
+      if (customer['customerNidBack'] != null)
+        data['customerNidBack'] = customer['customerNidBack'];
+      if (customer['incomeProofUrl'] != null)
+        data['incomeProofUrl'] = customer['incomeProofUrl'];
+      if (customer['bankReceiptUrl'] != null)
+        data['bankReceiptUrl'] = customer['bankReceiptUrl'];
 
       // customer info
       if (customer['name'] != null) data['name'] = customer['name'];
       if (customer['phone'] != null) data['phone'] = customer['phone'];
-      if (customer['nidPassportNumber'] != null) data['nidPassportNumber'] = customer['nidPassportNumber'];
-      if (customer['sourceOfIncome'] != null) data['sourceOfIncome'] = customer['sourceOfIncome'];
-      if (customer['monthlyIncome'] != null) data['monthlyIncome'] = customer['monthlyIncome'];
-      if (customer['presentAddress'] != null) data['presentAddress'] = customer['presentAddress'];
-      if (customer['permanentAddress'] != null) data['permanentAddress'] = customer['permanentAddress'];
+      if (customer['nidPassportNumber'] != null)
+        data['nidPassportNumber'] = customer['nidPassportNumber'];
+      if (customer['sourceOfIncome'] != null)
+        data['sourceOfIncome'] = customer['sourceOfIncome'];
+      if (customer['monthlyIncome'] != null)
+        data['monthlyIncome'] = customer['monthlyIncome'];
+      if (customer['presentAddress'] != null)
+        data['presentAddress'] = customer['presentAddress'];
+      if (customer['permanentAddress'] != null)
+        data['permanentAddress'] = customer['permanentAddress'];
 
       // 🔥 MOST IMPORTANT: Guarantor Documents
       List<Map<String, dynamic>> guarantorDocs = [];
 
       // customer['guarantors'] থেকে ডকুমেন্ট নিন
       if (customer['guarantors'] != null && customer['guarantors'] is List) {
-        debugPrint('📄 [ViewModel] Found guarantors in customer: ${customer['guarantors']}');
+        debugPrint(
+          '📄 [ViewModel] Found guarantors in customer: ${customer['guarantors']}',
+        );
         for (int i = 0; i < customer['guarantors'].length; i++) {
           final g = customer['guarantors'][i];
 
@@ -253,7 +322,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
             guarantorDocs.add({
               'url': g['nidFront'].toString(),
               'documentType': 'NID_FRONT',
-              'guarantorIndex': i
+              'guarantorIndex': i,
             });
             debugPrint('📄 [ViewModel] Added guarantor $i NID FRONT');
           }
@@ -262,7 +331,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
             guarantorDocs.add({
               'url': g['nidBack'].toString(),
               'documentType': 'NID_BACK',
-              'guarantorIndex': i
+              'guarantorIndex': i,
             });
             debugPrint('📄 [ViewModel] Added guarantor $i NID BACK');
           }
@@ -278,7 +347,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
                   guarantorDocs.add({
                     'url': url,
                     'documentType': docType,
-                    'guarantorIndex': i
+                    'guarantorIndex': i,
                   });
                   debugPrint('📄 [ViewModel] Added guarantor $i doc: $docType');
                 }
@@ -294,23 +363,31 @@ class LoanApplicationViewModel extends ChangeNotifier {
           final g = data['guarantors'][i];
 
           if (g['nidFront'] != null && g['nidFront'].toString().isNotEmpty) {
-            bool exists = guarantorDocs.any((d) => d['url'] == g['nidFront'].toString() && d['guarantorIndex'] == i);
+            bool exists = guarantorDocs.any(
+              (d) =>
+                  d['url'] == g['nidFront'].toString() &&
+                  d['guarantorIndex'] == i,
+            );
             if (!exists) {
               guarantorDocs.add({
                 'url': g['nidFront'].toString(),
                 'documentType': 'NID_FRONT',
-                'guarantorIndex': i
+                'guarantorIndex': i,
               });
             }
           }
 
           if (g['nidBack'] != null && g['nidBack'].toString().isNotEmpty) {
-            bool exists = guarantorDocs.any((d) => d['url'] == g['nidBack'].toString() && d['guarantorIndex'] == i);
+            bool exists = guarantorDocs.any(
+              (d) =>
+                  d['url'] == g['nidBack'].toString() &&
+                  d['guarantorIndex'] == i,
+            );
             if (!exists) {
               guarantorDocs.add({
                 'url': g['nidBack'].toString(),
                 'documentType': 'NID_BACK',
-                'guarantorIndex': i
+                'guarantorIndex': i,
               });
             }
           }
@@ -318,8 +395,9 @@ class LoanApplicationViewModel extends ChangeNotifier {
       }
 
       data['guarantorDocuments'] = guarantorDocs;
-      debugPrint('📄 [ViewModel] Created guarantorDocuments: ${guarantorDocs.length} items');
-
+      debugPrint(
+        '📄 [ViewModel] Created guarantorDocuments: ${guarantorDocs.length} items',
+      );
     } else {
       // ─── customer অবজেক্ট না থাকলে সরাসরি data থেকে নিন ───
       // ... আগের কোড ...
@@ -327,6 +405,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
 
     return data;
   }
+
   // ─── Approve Application ───
   Future<bool> approveApplication(String id, String remarks) async {
     debugPrint('✅ [ViewModel] Approving application: $id');
@@ -371,7 +450,8 @@ class LoanApplicationViewModel extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _errorMessage = data['message'] ?? data['error']?['message'] ?? "Approval failed";
+        _errorMessage =
+            data['message'] ?? data['error']?['message'] ?? "Approval failed";
         _isLoading = false;
         notifyListeners();
         return false;
@@ -385,7 +465,11 @@ class LoanApplicationViewModel extends ChangeNotifier {
   }
 
   // ─── Reject Application ───
-  Future<bool> rejectApplication(String id, String reason, String remarks) async {
+  Future<bool> rejectApplication(
+    String id,
+    String reason,
+    String remarks,
+  ) async {
     debugPrint('❌ [ViewModel] Rejecting application: $id');
     _isLoading = true;
     _errorMessage = null;
@@ -403,9 +487,7 @@ class LoanApplicationViewModel extends ChangeNotifier {
       final url = ApiEndPoint.rejectLoanApplication(id);
       debugPrint('🌐 [ViewModel] Reject URL: $url');
 
-      final body = {
-        'rejectionReason': reason,
-      };
+      final body = {'rejectionReason': reason};
 
       if (remarks.isNotEmpty) {
         body['approvalRemarks'] = remarks;
@@ -432,7 +514,8 @@ class LoanApplicationViewModel extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _errorMessage = data['message'] ?? data['error']?['message'] ?? "Rejection failed";
+        _errorMessage =
+            data['message'] ?? data['error']?['message'] ?? "Rejection failed";
         _isLoading = false;
         notifyListeners();
         return false;

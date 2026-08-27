@@ -472,11 +472,14 @@ class _LoanApplicationDetailsScreenState
   }
 
   // ─── ✅ UPDATED: Customer Document Section ───
+// LoanApplicationDetailsScreen.dart - _buildCustomerDocumentSection ফাংশন আপডেট করুন
+
   Widget _buildCustomerDocumentSection(BuildContext context, dynamic app) {
     final List<Map<String, String>> docs = [];
     final viewModel = context.read<LoanApplicationViewModel>();
     final dataMap = viewModel.rawData ?? {};
 
+    // 🔥 Get customer documents from dataMap
     var customerDocs = dataMap['customerDocuments'];
     if (customerDocs != null && customerDocs is List) {
       for (var doc in customerDocs) {
@@ -484,26 +487,35 @@ class _LoanApplicationDetailsScreenState
         String docType = doc['documentType'] ?? doc['type'] ?? 'DOCUMENT';
         if (url.isNotEmpty) {
           String label = _getDocumentLabel(docType);
-          if (!docs.any((d) => d['url'] == url))
+          if (!docs.any((d) => d['url'] == url)) {
             docs.add({'label': label, 'url': url});
+            debugPrint('📄 [UI] Added customer doc: $label -> $url');
+          }
         }
       }
     }
 
-    if (dataMap['customer'] != null &&
-        dataMap['customer'] is Map<String, dynamic>) {
-      final customer = dataMap['customer'] as Map<String, dynamic>;
-      String? photo = customer['customerImageUrl'] ?? customer['customerImage'];
-      if (photo != null && photo.toString().isNotEmpty) {
-        if (!docs.any((d) => d['url'] == photo))
-          docs.add({'label': 'PHOTO', 'url': photo.toString()});
-      }
-      String? video = customer['customerVideoUrl'] ?? customer['customerVideo'];
-      if (video != null && video.toString().isNotEmpty) {
-        if (!docs.any((d) => d['url'] == video))
-          docs.add({'label': 'VIDEO', 'url': video.toString()});
+    // 🔥 Also check direct fields from data (for backward compatibility)
+    if (dataMap['customerImageUrl'] != null && dataMap['customerImageUrl'].toString().isNotEmpty) {
+      String url = dataMap['customerImageUrl'].toString();
+      if (!docs.any((d) => d['url'] == url)) {
+        docs.add({'label': 'PHOTO', 'url': url});
       }
     }
+    if (dataMap['customerVideoUrl'] != null && dataMap['customerVideoUrl'].toString().isNotEmpty) {
+      String url = dataMap['customerVideoUrl'].toString();
+      if (!docs.any((d) => d['url'] == url)) {
+        docs.add({'label': 'VIDEO', 'url': url});
+      }
+    }
+    if (dataMap['incomeProofUrl'] != null && dataMap['incomeProofUrl'].toString().isNotEmpty) {
+      String url = dataMap['incomeProofUrl'].toString();
+      if (!docs.any((d) => d['url'] == url)) {
+        docs.add({'label': 'INCOME PROOF', 'url': url});
+      }
+    }
+
+    debugPrint('📄 [UI] Total customer documents: ${docs.length}');
 
     if (docs.isEmpty) {
       return Container(
@@ -535,26 +547,30 @@ class _LoanApplicationDetailsScreenState
             doc['label']!,
             doc['url']!,
             isVideo,
-            docs, // 📌 All documents list pass করছি
-            index, // 📌 Current index pass করছি
+            docs,
+            index,
           );
         },
       ),
     );
   }
 
+// ─── _getDocumentLabel ফাংশন আপডেট করুন ───
   String _getDocumentLabel(String docType) {
     final type = docType.toUpperCase();
     if (type.contains('PHOTO')) return 'PHOTO';
     if (type.contains('VIDEO')) return 'VIDEO';
-    if (type.contains('NID_FRONT')) return 'NID FRONT';
-    if (type.contains('NID_BACK')) return 'NID BACK';
-    if (type.contains('INCOME')) return 'INCOME PROOF';
+    if (type.contains('NID_FRONT') || type.contains('NIDFRONT')) return 'NID FRONT';
+    if (type.contains('NID_BACK') || type.contains('NIDBACK')) return 'NID BACK';
+    if (type.contains('INCOME') || type.contains('SALARY')) return 'INCOME PROOF';
     if (type.contains('BANK')) return 'BANK RECEIPT';
+    if (type.contains('CUSTOMER_PHOTO')) return 'PHOTO';
+    if (type.contains('CUSTOMER_VIDEO')) return 'VIDEO';
     return docType.replaceAll('_', ' ').toUpperCase();
   }
 
-  // ─── ✅ UPDATED: Guarantor Card with Documents ───
+// _buildGuarantorCardWithDocuments ফাংশন আপডেট করুন
+
   Widget _buildGuarantorCardWithDocuments(
       BuildContext context,
       dynamic g,
@@ -566,19 +582,22 @@ class _LoanApplicationDetailsScreenState
     Map<String, dynamic> guarantorMap = g is Map<String, dynamic> ? g : {};
     final List<Map<String, String>> docs = [];
 
+    // 🔥 Get guarantor documents from dataMap
     var guarantorDocs = dataMap['guarantorDocuments'] ?? [];
     if (guarantorDocs is List) {
       for (var doc in guarantorDocs) {
         if (doc['guarantorIndex'] == index) {
           String url = doc['url'] ?? '';
-          if (url.isNotEmpty)
-            docs.add({
-              'label': _getDocumentLabel(doc['documentType'] ?? ''),
-              'url': url,
-            });
+          if (url.isNotEmpty) {
+            String label = _getDocumentLabel(doc['documentType'] ?? '');
+            docs.add({'label': label, 'url': url});
+            debugPrint('📄 [UI] Added guarantor $index doc: $label -> $url');
+          }
         }
       }
     }
+
+    debugPrint('📄 [UI] Guarantor $index has ${docs.length} documents');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -653,6 +672,7 @@ class _LoanApplicationDetailsScreenState
               ],
             ),
           ),
+          // ─── Documents Section ───
           if (docs.isNotEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
@@ -665,8 +685,8 @@ class _LoanApplicationDetailsScreenState
                     docs[docIndex]['label']!,
                     docs[docIndex]['url']!,
                     false,
-                    docs, // 📌 All documents list
-                    docIndex, // 📌 Current index
+                    docs,
+                    docIndex,
                   ),
                 ),
               ),
@@ -678,12 +698,12 @@ class _LoanApplicationDetailsScreenState
 
   // ─── ✅ UPDATED: Document Thumbnail with Slide Navigation ───
   Widget _docThumbnail(
-      String label,
-      String url,
-      bool isVideo,
-      List<Map<String, String>> allDocs,
-      int currentIndex,
-      ) {
+    String label,
+    String url,
+    bool isVideo,
+    List<Map<String, String>> allDocs,
+    int currentIndex,
+  ) {
     if (url.isEmpty) return const SizedBox.shrink();
     final fullUrl = ApiEndPoint.assetUrl(url);
 
@@ -697,11 +717,7 @@ class _LoanApplicationDetailsScreenState
             child: InkWell(
               onTap: () {
                 // 📌 Open full-screen slider viewer
-                _showDocumentSlider(
-                  context,
-                  allDocs,
-                  currentIndex,
-                );
+                _showDocumentSlider(context, allDocs, currentIndex);
               },
               child: Stack(
                 children: [
@@ -812,10 +828,10 @@ class _LoanApplicationDetailsScreenState
 
   // ─── ✅ NEW: Document Slider Viewer ───
   void _showDocumentSlider(
-      BuildContext context,
-      List<Map<String, String>> documents,
-      int initialIndex,
-      ) {
+    BuildContext context,
+    List<Map<String, String>> documents,
+    int initialIndex,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -888,10 +904,10 @@ class _LoanApplicationDetailsScreenState
 
   // ─── ✅ NEW: Full Screen Image (for single image) ───
   void _showFullScreenImage(
-      BuildContext context,
-      String imageUrl,
-      String title,
-      ) {
+    BuildContext context,
+    String imageUrl,
+    String title,
+  ) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -935,10 +951,7 @@ class _LoanApplicationDetailsScreenState
               child: Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),
           ],
@@ -949,10 +962,10 @@ class _LoanApplicationDetailsScreenState
 
   // ─── Action Buttons ───
   Widget _buildActionButtons(
-      BuildContext context,
-      LoanApplicationViewModel viewModel,
-      String id,
-      ) {
+    BuildContext context,
+    LoanApplicationViewModel viewModel,
+    String id,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -982,10 +995,10 @@ class _LoanApplicationDetailsScreenState
   }
 
   void _showApproveDialog(
-      BuildContext context,
-      LoanApplicationViewModel viewModel,
-      String id,
-      ) {
+    BuildContext context,
+    LoanApplicationViewModel viewModel,
+    String id,
+  ) {
     final remarksController = TextEditingController();
     showDialog(
       context: context,
@@ -1022,10 +1035,10 @@ class _LoanApplicationDetailsScreenState
   }
 
   void _showRejectDialog(
-      BuildContext context,
-      LoanApplicationViewModel viewModel,
-      String id,
-      ) {
+    BuildContext context,
+    LoanApplicationViewModel viewModel,
+    String id,
+  ) {
     final remarksController = TextEditingController();
     String selectedReason = "Incomplete application";
     final reasons = [
@@ -1174,7 +1187,8 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
             itemCount: widget.documents.length,
             itemBuilder: (context, index) {
               final doc = widget.documents[index];
-              final isVideo = doc['label']?.toUpperCase().contains('VIDEO') ?? false;
+              final isVideo =
+                  doc['label']?.toUpperCase().contains('VIDEO') ?? false;
               final url = ApiEndPoint.assetUrl(doc['url']!);
               final label = doc['label'] ?? 'Document';
 
@@ -1200,10 +1214,7 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.7),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
                 ),
               ),
               child: Row(
@@ -1246,10 +1257,7 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.7),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
                 ),
               ),
               child: Column(
@@ -1272,7 +1280,7 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         widget.documents.length,
-                            (index) => Container(
+                        (index) => Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           width: 8,
                           height: 8,
@@ -1295,11 +1303,13 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                           TextButton(
                             onPressed: _currentIndex > 0
                                 ? () {
-                              _pageController.previousPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            }
+                                    _pageController.previousPage(
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
                                 : null,
                             child: const Text(
                               'Previous',
@@ -1307,13 +1317,16 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _currentIndex < widget.documents.length - 1
+                            onPressed:
+                                _currentIndex < widget.documents.length - 1
                                 ? () {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            }
+                                    _pageController.nextPage(
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
                                 : null,
                             child: const Text(
                               'Next',
@@ -1350,11 +1363,7 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.broken_image,
-                color: Colors.white,
-                size: 64,
-              ),
+              Icon(Icons.broken_image, color: Colors.white, size: 64),
               SizedBox(height: 8),
               Text(
                 'Failed to load image',
