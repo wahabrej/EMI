@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constant/App_Colors.dart';
+import '../../../core/constant/Token_storage.dart';
 import '../viewModel/OrderSummaryViewModel.dart';
 
 class OrderScreen extends StatefulWidget {
@@ -11,18 +12,32 @@ class OrderScreen extends StatefulWidget {
 }
 
 class _OrderScreenState extends State<OrderScreen> {
+  final AppStorage _appStorage = AppStorage();
+  String? _userRole;
+
   @override
   void initState() {
     super.initState();
-    // Fetch summary without passing token from View
+    _getUserRole();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OrderSummaryViewModel>(context, listen: false)
-          .fetchOrderSummary();
+      Provider.of<OrderSummaryViewModel>(
+        context,
+        listen: false,
+      ).fetchOrderSummary();
     });
+  }
+
+  Future<void> _getUserRole() async {
+    final userRole = await _appStorage.getUserRole();
+    setState(() {
+      _userRole = userRole;
+    });
+    debugPrint("👤 User Role in OrderScreen: $userRole");
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
@@ -67,8 +82,11 @@ class _OrderScreenState extends State<OrderScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
                     ),
-                    child: const Text('Retry', style: TextStyle(color: Colors.white)),
-                  )
+                    child: const Text(
+                      'Retry',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -78,9 +96,7 @@ class _OrderScreenState extends State<OrderScreen> {
 
           // 3. Empty State
           if (data == null) {
-            return const Center(
-              child: Text('No summary data available.'),
-            );
+            return const Center(child: Text('No summary data available.'));
           }
 
           // 4. Dynamic Data Render State
@@ -117,12 +133,14 @@ class _OrderScreenState extends State<OrderScreen> {
                         Icons.check_circle_outline,
                         Colors.green,
                       ),
-                      _buildMetricCard(
-                        'Total Outstanding',
-                        '৳${data.totalOutstanding ?? "0.00"}',
-                        Icons.pending_actions,
-                        Colors.orange,
-                      ),
+                      if (_userRole?.toUpperCase() == 'SUPER_ADMIN')
+                        _buildMetricCard(
+                          'Total Outstanding',
+                          '৳${data.totalOutstanding ?? "0.00"}',
+                          Icons.pending_actions,
+                          Colors.orange,
+                        ),
+
                       _buildMetricCard(
                         'Products Sold',
                         '${data.totalProductsSold ?? 0} Pcs',
@@ -156,7 +174,9 @@ class _OrderScreenState extends State<OrderScreen> {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.successBg,
                             borderRadius: BorderRadius.circular(20),
@@ -189,82 +209,84 @@ class _OrderScreenState extends State<OrderScreen> {
 
                   data.topProducts == null || data.topProducts!.isEmpty
                       ? const Text(
-                    'No top products data found',
-                    style: TextStyle(color: AppColors.greyText),
-                  )
+                          'No top products data found',
+                          style: TextStyle(color: AppColors.greyText),
+                        )
                       : ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: data.topProducts!.length,
-                    separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final product = data.topProducts![index];
-                      return Container(
-                        padding: const EdgeInsets.all(12.0),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBg,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderGrey),
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: AppColors.bgGrey,
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryBlue,
-                                ),
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: data.topProducts!.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final product = data.topProducts![index];
+                            return Container(
+                              padding: const EdgeInsets.all(12.0),
+                              decoration: BoxDecoration(
+                                color: AppColors.cardBg,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.borderGrey),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                              child: Row(
                                 children: [
-                                  Text(
-                                    product.productName ?? 'Unknown',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.black,
+                                  CircleAvatar(
+                                    backgroundColor: AppColors.bgGrey,
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primaryBlue,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Brand: ${product.brand ?? "N/A"}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.greyText,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product.productName ?? 'Unknown',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.black,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Brand: ${product.brand ?? "N/A"}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.greyText,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.infoBlue,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${product.unitsSold ?? 0} Sold',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primaryBlue,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.infoBlue,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '${product.unitsSold ?? 0} Sold',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ],
               ),
             ),
@@ -275,7 +297,11 @@ class _OrderScreenState extends State<OrderScreen> {
   }
 
   Widget _buildMetricCard(
-      String title, String value, IconData icon, Color iconColor) {
+    String title,
+    String value,
+    IconData icon,
+    Color iconColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

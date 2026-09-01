@@ -446,13 +446,19 @@ class _HomeScreenState extends State<HomeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '$totalCustomers',
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.black,
-                      height: 1,
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      RouteName.totalCustomerScreen,
+                    ),
+                    child: Text(
+                      '$totalCustomers',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.black,
+                        height: 1,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -669,7 +675,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         print(" Going to BrandSelectionForManager $_userRole");
 
-        if (_userRole?.toUpperCase() == 'MANAGER' || _userRole?.toUpperCase() == 'SHOP') {
+        if (_userRole?.toUpperCase() == 'MANAGER' ||
+            _userRole?.toUpperCase() == 'SHOP') {
           print(" Going to BrandSelectionForManager");
           Navigator.pushNamed(
             context,

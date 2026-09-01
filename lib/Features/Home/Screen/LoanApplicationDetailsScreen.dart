@@ -696,7 +696,7 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  // ─── ✅ UPDATED: Document Thumbnail with Slide Navigation ───
+  // ─── UPDATED: Document Thumbnail with Slide Navigation ───
   Widget _docThumbnail(
     String label,
     String url,
@@ -787,7 +787,7 @@ class _LoanApplicationDetailsScreenState
                         ),
                       ),
                     ),
-                  // 📌 Video indicator
+                  // Video indicator
                   if (isVideo)
                     Positioned(
                       bottom: 4,
@@ -826,7 +826,7 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  // ─── ✅ NEW: Document Slider Viewer ───
+  // ───  NEW: Document Slider Viewer ───
   void _showDocumentSlider(
     BuildContext context,
     List<Map<String, String>> documents,
@@ -842,7 +842,7 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  // ─── ✅ NEW: Video Player (updated) ───
+  // ─── NEW: Video Player (updated) ───
   void _showVideoPlayer(BuildContext context, String videoUrl, String title) {
     final controller = VideoPlayerController.network(videoUrl);
     showDialog(
