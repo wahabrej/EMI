@@ -33,20 +33,25 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
           }
 
           // ── Data Filtering Logic ──
-          var loans = viewModel.dashboardData?.loans?.where((l) {
-            final status = (l.status ?? '').toUpperCase();
-            final matchesStatus = status == 'ACTIVE' ||
-                status == 'DISBURSED' ||
-                status == 'APPROVED';
+          var loans =
+              viewModel.dashboardData?.loans?.where((l) {
+                final status = (l.status ?? '').toUpperCase();
+                final matchesStatus =
+                    status == 'ACTIVE' ||
+                    status == 'DISBURSED' ||
+                    status == 'APPROVED';
 
-            final query = _searchQuery.toLowerCase();
-            final matchesSearch = query.isEmpty ||
-                (l.customer?.name?.toLowerCase().contains(query) ?? false) ||
-                (l.customer?.phone?.toLowerCase().contains(query) ?? false) ||
-                (l.displayId?.toLowerCase().contains(query) ?? false);
+                final query = _searchQuery.toLowerCase();
+                final matchesSearch =
+                    query.isEmpty ||
+                    (l.customer?.name?.toLowerCase().contains(query) ??
+                        false) ||
+                    (l.customer?.phone?.toLowerCase().contains(query) ??
+                        false) ||
+                    (l.displayId?.toLowerCase().contains(query) ?? false);
 
-            return matchesStatus && matchesSearch;
-          }).toList() ??
+                return matchesStatus && matchesSearch;
+              }).toList() ??
               [];
 
           // ── Filter Logic ──
@@ -73,17 +78,21 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
 
           // ── Sort Logic ──
           if (_sortBy == 'Newest') {
-            loans.sort((a, b) =>
-                (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
+            loans.sort(
+              (a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''),
+            );
           } else if (_sortBy == 'Oldest') {
-            loans.sort((a, b) =>
-                (a.createdAt ?? '').compareTo(b.createdAt ?? ''));
+            loans.sort(
+              (a, b) => (a.createdAt ?? '').compareTo(b.createdAt ?? ''),
+            );
           } else if (_sortBy == 'Amount') {
             loans.sort((a, b) {
-              final aAmt = double.tryParse(
-                  a.calculationSnapshot?.regularPrice ?? '0') ?? 0;
-              final bAmt = double.tryParse(
-                  b.calculationSnapshot?.regularPrice ?? '0') ?? 0;
+              final aAmt =
+                  double.tryParse(a.calculationSnapshot?.regularPrice ?? '0') ??
+                  0;
+              final bAmt =
+                  double.tryParse(b.calculationSnapshot?.regularPrice ?? '0') ??
+                  0;
               return bAmt.compareTo(aAmt);
             });
           }
@@ -95,8 +104,8 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
           final Set<String> activeCustomers = {};
 
           for (var loan in loans) {
-            if (loan.customer?.id != null) activeCustomers.add(
-                loan.customer!.id!);
+            if (loan.customer?.id != null)
+              activeCustomers.add(loan.customer!.id!);
 
             if (loan.installments != null) {
               for (var inst in loan.installments!) {
@@ -221,8 +230,11 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
             children: [
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const Expanded(
                 child: Text(
@@ -242,8 +254,11 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                       context,
                       RouteName.sellerNotificationScreen,
                     ),
-                    child: const Icon(Icons.notifications_none_rounded,
-                        color: Colors.white, size: 28),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                   Positioned(
                     right: 0,
@@ -284,15 +299,19 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search_rounded,
-                          color: Color(0xFF94A3B8), size: 22),
+                      const Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 22,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           onChanged: (v) => setState(() => _searchQuery = v),
                           style: const TextStyle(fontSize: 14),
                           decoration: const InputDecoration(
-                            hintText: 'Search by customer name, phone or Loan ID...',
+                            hintText:
+                                'Search by customer name, phone or Loan ID...',
                             hintStyle: TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 13,
@@ -318,7 +337,10 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                 child: const Row(
                   children: [
                     Icon(
-                        Icons.tune_rounded, color: Color(0xFF0052CC), size: 20),
+                      Icons.tune_rounded,
+                      color: Color(0xFF0052CC),
+                      size: 20,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'Filter',
@@ -476,10 +498,13 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                   child: Container(
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 9),
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF0052CC) : Colors
-                          .white,
+                      color: isSelected
+                          ? const Color(0xFF0052CC)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
@@ -490,11 +515,13 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                     child: Text(
                       filter,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : const Color(
-                            0xFF64748B),
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF64748B),
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight
-                            .w600,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
                       ),
                     ),
                   ),
@@ -532,11 +559,10 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                   setState(() => _sortBy = newValue!);
                 },
                 items: ['Newest', 'Oldest', 'Amount']
-                    .map((value) =>
-                    DropdownMenuItem(
-                      value: value,
-                      child: Text(value),
-                    ))
+                    .map(
+                      (value) =>
+                          DropdownMenuItem(value: value, child: Text(value)),
+                    )
                     .toList(),
               ),
             ),
@@ -552,12 +578,12 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
     final name = customer?.name ?? 'Customer Name';
     final phone = customer?.phone ?? 'N/A';
     final loanId = loan.displayId ?? 'LN-000000';
-    final productName = loan.productModel?.name ?? loan.product?.name ??
-        'Smartphone Loan';
-    final loanAmt = double.tryParse(
-        loan.calculationSnapshot?.regularPrice ?? '0') ?? 0;
-    final emiAmt = double.tryParse(
-        loan.calculationSnapshot?.monthlyEmi ?? '0') ?? 0;
+    final productName =
+        loan.productModel?.name ?? loan.product?.name ?? 'Smartphone Loan';
+    final loanAmt =
+        double.tryParse(loan.calculationSnapshot?.regularPrice ?? '0') ?? 0;
+    final emiAmt =
+        double.tryParse(loan.calculationSnapshot?.monthlyEmi ?? '0') ?? 0;
     final tenure = loan.calculationSnapshot?.planMonths ?? 12;
 
     double outstanding = 0;
@@ -569,8 +595,9 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
           outstanding += double.tryParse(inst.totalDue ?? "0") ?? 0;
           if (nextDueDate == 'N/A' && inst.dueDate != null) {
             try {
-              nextDueDate = DateFormat('dd MMM yyyy').format(
-                  DateTime.parse(inst.dueDate!));
+              nextDueDate = DateFormat(
+                'dd MMM yyyy',
+              ).format(DateTime.parse(inst.dueDate!));
             } catch (_) {}
           }
         }
@@ -633,8 +660,10 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                       Row(
                         children: [
                           const Icon(
-                              Icons.phone_rounded, size: 13, color: Color(
-                              0xFF64748B)),
+                            Icons.phone_rounded,
+                            size: 13,
+                            color: Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -771,7 +800,9 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 9, vertical: 3),
+                        horizontal: 9,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFDCFCE7),
                         borderRadius: BorderRadius.circular(20),
@@ -829,9 +860,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Color(0xFFF1F5F9)),
-              ),
+              border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
             ),
             child: Row(
               children: [
@@ -843,18 +872,18 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                     onTap: () => _navigateToLoanDetails(loan),
                   ),
                 ),
-            //    Payment History
-            //     Expanded(
-            //       child: _actionButton(
-            //         Icons.history_rounded,
-            //         'Payment History',
-            //         onTap: () {
-            //          Navigator.pushNamed(context, RouteName.paymentScreen);
-            //         },
-            //       ),
-            //     ),
+                //    Payment History
+                //     Expanded(
+                //       child: _actionButton(
+                //         Icons.history_rounded,
+                //         'Payment History',
+                //         onTap: () {
+                //          Navigator.pushNamed(context, RouteName.paymentScreen);
+                //         },
+                //       ),
+                //     ),
                 Expanded(
-                  flex: 2,
+                  flex: 1,
                   child: ElevatedButton.icon(
                     onPressed: () => _navigateToEditCustomer(customer),
                     icon: const Icon(
@@ -865,7 +894,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                     label: const Text(
                       'Edit',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
@@ -887,12 +916,22 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                     'Collect Payment',
                     isGreen: true,
                     onTap: () {
-                      debugPrint('═══════════════════════════════════════════════════');
-                      debugPrint('💰 [Collect Payment] ========== BUTTON CLICKED ==========');
+                      debugPrint(
+                        '═══════════════════════════════════════════════════',
+                      );
+                      debugPrint(
+                        '💰 [Collect Payment] ========== BUTTON CLICKED ==========',
+                      );
                       debugPrint('💰 [Collect Payment] Loan ID: ${loan.id}');
-                      debugPrint('💰 [Collect Payment] Loan Display ID: ${loan.displayId}');
-                      debugPrint('💰 [Collect Payment] Customer Name: ${loan.customer?.name}');
-                      debugPrint('💰 [Collect Payment] Customer Phone: ${loan.customer?.phone}');
+                      debugPrint(
+                        '💰 [Collect Payment] Loan Display ID: ${loan.displayId}',
+                      );
+                      debugPrint(
+                        '💰 [Collect Payment] Customer Name: ${loan.customer?.name}',
+                      );
+                      debugPrint(
+                        '💰 [Collect Payment] Customer Phone: ${loan.customer?.phone}',
+                      );
 
                       // ─── Navigate to Single Loan Detail Screen ───
                       if (loan.id != null && loan.id.toString().isNotEmpty) {
@@ -901,7 +940,9 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                           RouteName.singleLoanDetailScreen,
                           arguments: loan.id.toString(),
                         );
-                        debugPrint('✅ Navigation to SingleLoanDetailScreen with ID: ${loan.id}');
+                        debugPrint(
+                          '✅ Navigation to SingleLoanDetailScreen with ID: ${loan.id}',
+                        );
                       } else {
                         debugPrint('❌ Loan ID is null or empty');
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -911,7 +952,9 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
                           ),
                         );
                       }
-                      debugPrint('═══════════════════════════════════════════════════');
+                      debugPrint(
+                        '═══════════════════════════════════════════════════',
+                      );
                     },
                   ),
                 ),
@@ -935,7 +978,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
   }
 
   // ─── Navigation Method ───
-// ActiveLoanScreen.dart
+  // ActiveLoanScreen.dart
   void _navigateToEditCustomer(dynamic customer) {
     debugPrint('✏️ [TotalCustomerScreen] Edit Customer Clicked');
     debugPrint('🆔 Customer ID: ${customer.id ?? 'N/A'}');
@@ -945,7 +988,9 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
       debugPrint('Customer ID is null or empty');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot edit pending applicant. Please complete application first.'),
+          content: Text(
+            'Cannot edit pending applicant. Please complete application first.',
+          ),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 3),
         ),
@@ -957,17 +1002,18 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
       final customerId = customer.id!;
       debugPrint(' Navigating to EditCustomer with ID: $customerId');
 
-
       Navigator.pushNamed(
-        context,
-        RouteName.editCustomerScreen,
-        arguments: customerId,
-      ).then((result) {
-        debugPrint('Edit navigation completed. Result: $result');
-      }).catchError((error) {
-        debugPrint(' Navigation error: $error');
-        _showErrorDialog('Navigation Error', error.toString());
-      });
+            context,
+            RouteName.editCustomerScreen,
+            arguments: customerId,
+          )
+          .then((result) {
+            debugPrint('Edit navigation completed. Result: $result');
+          })
+          .catchError((error) {
+            debugPrint(' Navigation error: $error');
+            _showErrorDialog('Navigation Error', error.toString());
+          });
     } catch (e, stackTrace) {
       debugPrint(' Navigation Exception: $e');
       debugPrint(' StackTrace: $stackTrace');
@@ -998,15 +1044,17 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
 
       // 🔥 LoanApplicationDetailsScreen এ loanId পাঠান
       Navigator.pushNamed(
-        context,
-        RouteName.loanApplicationDetailsScreen,
-        arguments: loanId,
-      ).then((result) {
-        debugPrint('✅ Navigation completed. Result: $result');
-      }).catchError((error) {
-        debugPrint('❌ Navigation error: $error');
-        _showErrorDialog('Navigation Error', error.toString());
-      });
+            context,
+            RouteName.loanApplicationDetailsScreen,
+            arguments: loanId,
+          )
+          .then((result) {
+            debugPrint('✅ Navigation completed. Result: $result');
+          })
+          .catchError((error) {
+            debugPrint('❌ Navigation error: $error');
+            _showErrorDialog('Navigation Error', error.toString());
+          });
 
       debugPrint('✅ Navigation command sent successfully');
     } catch (e, stackTrace) {
@@ -1015,6 +1063,7 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
       _showErrorDialog('Error', 'Could not open loan details: $e');
     }
   }
+
   // ─── Coming Soon Dialog ───
   void _showComingSoon(BuildContext context, String feature) {
     showDialog(
@@ -1067,11 +1116,11 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
   }
 
   Widget _actionButton(
-      IconData icon,
-      String label, {
-        bool isGreen = false,
-        VoidCallback? onTap,
-      }) {
+    IconData icon,
+    String label, {
+    bool isGreen = false,
+    VoidCallback? onTap,
+  }) {
     final color = isGreen ? const Color(0xFF16A34A) : const Color(0xFF0052CC);
 
     return InkWell(
@@ -1105,7 +1154,11 @@ class _ActiveLoanScreenState extends State<ActiveLoanScreen> {
     return Center(
       child: Column(
         children: [
-          Icon(Icons.account_balance_wallet_outlined, size: 64, color: Colors.grey.shade300),
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 64,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
           Text(
             message,
