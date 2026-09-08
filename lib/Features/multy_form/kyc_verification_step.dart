@@ -17,11 +17,23 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
   final _formKey = GlobalKey<FormState>();
   final _nidController = TextEditingController();
 
+  // final Map<String, String> _incomeProofOptions = {
+  //   'Salary Slip': 'INCOME_PROOF_SALARY_CERTIFICATE',
+  //   'Bank Statement': 'INCOME_PROOF_BANK_STATEMENT',
+  //   'Trade License': 'INCOME_PROOF_TRADE_LICENSE',
+  //   'ID Card': 'INCOME_PROOF_ID_CARD',
+  //   'INCOME_PROOF_DRIVING_LICENSE': 'Driving License',
+  //   'INCOME_PROOF_RENTAL_AGREEMENT': 'Rental Agreement',
+  //   'Others': 'INCOME_PROOF_OTHERS',
+  // };
+
   final Map<String, String> _incomeProofOptions = {
     'Salary Slip': 'INCOME_PROOF_SALARY_CERTIFICATE',
     'Bank Statement': 'INCOME_PROOF_BANK_STATEMENT',
     'Trade License': 'INCOME_PROOF_TRADE_LICENSE',
     'ID Card': 'INCOME_PROOF_ID_CARD',
+    'Driving License': 'INCOME_PROOF_DRIVING_LICENSE',
+    'Rental Agreement': 'INCOME_PROOF_RENTAL_AGREEMENT',
     'Others': 'INCOME_PROOF_OTHERS',
   };
   @override
@@ -219,24 +231,18 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFFCBD5E1)),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      data.incomeProof != null
-                          ? Icons.check_circle
-                          : Icons.file_upload_outlined,
-                      color: data.incomeProof != null
-                          ? Colors.green
-                          : AppColors.primaryBlue,
+                      Icons.add_photo_alternate_outlined,
+                      color: AppColors.primaryBlue,
                       size: 20,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
-                      data.incomeProof != null
-                          ? 'Income Proof Attached'
-                          : 'Upload Income Proof',
-                      style: const TextStyle(
+                      'Add Income Proof',
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E293B),
@@ -246,6 +252,19 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
                 ),
               ),
             ),
+            if (data.incomeProofFiles.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              ...data.incomeProofFiles.asMap().entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildIncomeProofFileCard(
+                    file: entry.value,
+                    index: entry.key,
+                    onRemove: () => vm.removeIncomeProof(entry.value),
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 30),
             SizedBox(
@@ -303,6 +322,41 @@ class _KycVerificationStepState extends State<KycVerificationStep> {
             if (file != null) const Icon(Icons.done, color: Colors.green),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildIncomeProofFileCard({
+    required File file,
+    required int index,
+    required VoidCallback onRemove,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: Colors.green, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Income Proof ${index + 1}: ${file.path.split('/').last}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+          IconButton(
+            onPressed: onRemove,
+            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+            tooltip: 'Remove',
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
       ),
     );
   }

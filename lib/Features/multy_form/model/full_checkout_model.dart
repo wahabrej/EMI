@@ -62,6 +62,7 @@ class FullCheckoutModel {
   File? nidFront;
   File? nidBack;
   File? incomeProof;
+  List<File> incomeProofFiles = [];
   String incomeProofDocumentType = 'INCOME_PROOF_BANK_STATEMENT';
 
   // Guarantors

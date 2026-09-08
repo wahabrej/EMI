@@ -156,7 +156,7 @@ class CheckoutViewModel extends ChangeNotifier {
   }
 
   // ─────────────── Catalog Integration ───────────────
-// lib/viewmodels/CheckoutViewModel.dart
+  // lib/viewmodels/CheckoutViewModel.dart
 
   void setProductFromCatalog({
     required String id,
@@ -175,7 +175,7 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("   ID: $id");
     debugPrint("   Price: $price");
     debugPrint("   SaleType: $saleType");
-    debugPrint("   Tenure: $tenure");  // ✅ Brand Selection থেকে আসা Tenure
+    debugPrint("   Tenure: $tenure"); // ✅ Brand Selection থেকে আসা Tenure
     debugPrint("   DownPayment: $downPayment");
     debugPrint("═══════════════════════════════════════");
 
@@ -190,7 +190,8 @@ class CheckoutViewModel extends ChangeNotifier {
 
       // ✅ Tenure সেট করুন
       if (tenure != null) {
-        checkoutData.emiTenureMonths = tenure; // ✅ Brand Selection থেকে আসা Tenure
+        checkoutData.emiTenureMonths =
+            tenure; // ✅ Brand Selection থেকে আসা Tenure
         checkoutData.newPlanMonths = tenure;
       }
 
@@ -231,12 +232,14 @@ class CheckoutViewModel extends ChangeNotifier {
   }
 
   // ─── EMI প্ল্যান লোড করুন ───
-// lib/viewmodels/CheckoutViewModel.dart
+  // lib/viewmodels/CheckoutViewModel.dart
 
-// ─── EMI প্ল্যান লোড করার সময় Tenure অনুযায়ী Filter করুন ───
+  // ─── EMI প্ল্যান লোড করার সময় Tenure অনুযায়ী Filter করুন ───
   Future<void> _loadEmiPlansForProduct(String productId) async {
     debugPrint("═══════════════════════════════════════");
-    debugPrint("🔄 [_loadEmiPlansForProduct] Loading EMI plans for product: $productId");
+    debugPrint(
+      "🔄 [_loadEmiPlansForProduct] Loading EMI plans for product: $productId",
+    );
 
     final url = "${ApiEndPoint.emiPlans}?productId=$productId&isActive=true";
     debugPrint("🌐 API URL: $url");
@@ -259,21 +262,28 @@ class CheckoutViewModel extends ChangeNotifier {
         debugPrint("✅ Loaded ${allPlans.length} EMI plans");
 
         // ✅ 🔥 Brand Selection থেকে আসা Tenure অনুযায়ী Filter করুন
-        final selectedTenure = checkoutData.emiTenureMonths; // Brand Selection থেকে আসা Tenure
+        final selectedTenure =
+            checkoutData.emiTenureMonths; // Brand Selection থেকে আসা Tenure
         debugPrint("📌 Selected Tenure: $selectedTenure months");
 
         // ✅ শুধু মিলে যাওয়া Tenure এর Plans রাখুন
         emiPlanList = allPlans.where((plan) {
           // plan.rawJson থেকে months বের করুন
-          final planMonths = plan.rawJson['months'] as int? ??
-              int.tryParse(plan.rawJson['months']?.toString() ?? '0') ?? 0;
+          final planMonths =
+              plan.rawJson['months'] as int? ??
+              int.tryParse(plan.rawJson['months']?.toString() ?? '0') ??
+              0;
           return planMonths == selectedTenure;
         }).toList();
 
-        debugPrint("✅ Filtered ${emiPlanList.length} plans for tenure: $selectedTenure months");
+        debugPrint(
+          "✅ Filtered ${emiPlanList.length} plans for tenure: $selectedTenure months",
+        );
 
         for (var plan in emiPlanList) {
-          debugPrint("   📌 Plan: ${plan.name} (ID: ${plan.id}) - ${plan.rawJson['months']} months");
+          debugPrint(
+            "   📌 Plan: ${plan.name} (ID: ${plan.id}) - ${plan.rawJson['months']} months",
+          );
         }
 
         if (emiPlanList.isNotEmpty) {
@@ -283,12 +293,16 @@ class CheckoutViewModel extends ChangeNotifier {
           await onEmiPlanSelected(firstPlan.id);
           debugPrint("✅ Data fetched for selected plan");
         } else {
-          debugPrint("⚠️ No EMI plans available for tenure: $selectedTenure months");
+          debugPrint(
+            "⚠️ No EMI plans available for tenure: $selectedTenure months",
+          );
         }
 
         notifyListeners();
       } else {
-        debugPrint("❌ Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}");
+        debugPrint(
+          "❌ Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}",
+        );
       }
     } catch (e) {
       debugPrint("❌ Error loading EMI plans: $e");
@@ -297,6 +311,7 @@ class CheckoutViewModel extends ChangeNotifier {
     initializePlanData();
     debugPrint("═══════════════════════════════════════");
   }
+
   // ─────────────── Recalculate EMI ───────────────
   void recalculateEmi() {
     debugPrint("═══════════════════════════════════════");
@@ -450,7 +465,9 @@ class CheckoutViewModel extends ChangeNotifier {
 
     debugPrint("═══════════════════════════════════════");
     debugPrint("🏪 [fetchShops] STARTED");
-    debugPrint("   📌 Token: ${userToken.isNotEmpty ? '✅ Found' : '❌ NOT FOUND'}");
+    debugPrint(
+      "   📌 Token: ${userToken.isNotEmpty ? '✅ Found' : '❌ NOT FOUND'}",
+    );
     debugPrint("   📌 API URL: ${ApiEndPoint.shops}");
     debugPrint("═══════════════════════════════════════");
 
@@ -468,9 +485,7 @@ class CheckoutViewModel extends ChangeNotifier {
         final List rawList = data['data'] ?? [];
         debugPrint("📦 [fetchShops] Raw List Length: ${rawList.length}");
 
-        shopList = rawList
-            .map((e) => DropdownItemModel.fromJson(e))
-            .toList();
+        shopList = rawList.map((e) => DropdownItemModel.fromJson(e)).toList();
 
         debugPrint("✅ [fetchShops] Loaded ${shopList.length} shops");
         for (var shop in shopList) {
@@ -480,11 +495,13 @@ class CheckoutViewModel extends ChangeNotifier {
         // ✅ 🔥 এখানে Auto-select যোগ করুন
         if (shopList.isNotEmpty) {
           final firstShop = shopList.first;
-          debugPrint("📌 [fetchShops] Auto-selecting first shop: ${firstShop.name}");
+          debugPrint(
+            "📌 [fetchShops] Auto-selecting first shop: ${firstShop.name}",
+          );
           checkoutData.shopId = firstShop.id;
-          checkoutData.shopName = firstShop.name;  // ✅ সরাসরি নাম সেট করুন
+          checkoutData.shopName = firstShop.name; // ✅ সরাসরি নাম সেট করুন
           await onShopSelected(firstShop.id);
-          notifyListeners();  // ✅ UI আপডেট করুন
+          notifyListeners(); // ✅ UI আপডেট করুন
         } else {
           debugPrint("⚠️ [fetchShops] No shops found!");
         }
@@ -509,7 +526,7 @@ class CheckoutViewModel extends ChangeNotifier {
     // ✅ Shop Name সেট করুন
     if (shopId != null) {
       final shop = shopList.firstWhere(
-            (e) => e.id == shopId,
+        (e) => e.id == shopId,
         orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
       );
       checkoutData.shopName = shop.name.isNotEmpty ? shop.name : null;
@@ -553,7 +570,7 @@ class CheckoutViewModel extends ChangeNotifier {
     // ✅ Agent Name সেট করুন
     if (agentId != null) {
       final agent = agentList.firstWhere(
-            (e) => e.id == agentId,
+        (e) => e.id == agentId,
         orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
       );
       checkoutData.agentName = agent.name.isNotEmpty ? agent.name : null;
@@ -596,7 +613,7 @@ class CheckoutViewModel extends ChangeNotifier {
     // ✅ Manager Name সেট করুন
     if (managerId != null) {
       final manager = managerList.firstWhere(
-            (e) => e.id == managerId,
+        (e) => e.id == managerId,
         orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
       );
       checkoutData.managerName = manager.name.isNotEmpty ? manager.name : null;
@@ -638,10 +655,12 @@ class CheckoutViewModel extends ChangeNotifier {
     // ✅ Sales Person Name সেট করুন
     if (salesPersonId != null) {
       final salesPerson = salesPersonList.firstWhere(
-            (e) => e.id == salesPersonId,
+        (e) => e.id == salesPersonId,
         orElse: () => DropdownItemModel(id: '', name: '', rawJson: {}),
       );
-      checkoutData.salesPersonName = salesPerson.name.isNotEmpty ? salesPerson.name : null;
+      checkoutData.salesPersonName = salesPerson.name.isNotEmpty
+          ? salesPerson.name
+          : null;
       debugPrint("   📌 Sales Person Name: ${checkoutData.salesPersonName}");
     }
 
@@ -671,7 +690,9 @@ class CheckoutViewModel extends ChangeNotifier {
 
   Future<void> loadEmiPlansForExistingProduct(String productId) async {
     debugPrint("═══════════════════════════════════════");
-    debugPrint("📌 [loadEmiPlansForExistingProduct] Called for product: $productId");
+    debugPrint(
+      "📌 [loadEmiPlansForExistingProduct] Called for product: $productId",
+    );
 
     if (productId.isEmpty) {
       debugPrint("⚠️ productId is empty");
@@ -708,15 +729,21 @@ class CheckoutViewModel extends ChangeNotifier {
         debugPrint("📌 Filtering plans for tenure: $selectedTenure months");
 
         emiPlanList = allPlans.where((plan) {
-          final planMonths = plan.rawJson['months'] as int? ??
-              int.tryParse(plan.rawJson['months']?.toString() ?? '0') ?? 0;
+          final planMonths =
+              plan.rawJson['months'] as int? ??
+              int.tryParse(plan.rawJson['months']?.toString() ?? '0') ??
+              0;
           return planMonths == selectedTenure;
         }).toList();
 
-        debugPrint(" Loaded ${emiPlanList.length} EMI plans for $selectedTenure months");
+        debugPrint(
+          " Loaded ${emiPlanList.length} EMI plans for $selectedTenure months",
+        );
 
         for (var plan in emiPlanList) {
-          debugPrint("    Plan: ${plan.name} (${plan.rawJson['months']} months)");
+          debugPrint(
+            "    Plan: ${plan.name} (${plan.rawJson['months']} months)",
+          );
         }
 
         // EXISTING_PLAN এর জন্য auto-select
@@ -725,13 +752,16 @@ class CheckoutViewModel extends ChangeNotifier {
           checkoutData.emiPlanId = firstPlan.id;
           debugPrint(" Auto-selected first plan: ${firstPlan.name}");
           await onEmiPlanSelected(firstPlan.id);
-        } else if (emiPlanList.isNotEmpty && checkoutData.emiMode == 'CREATE_NEW_PLAN') {
+        } else if (emiPlanList.isNotEmpty &&
+            checkoutData.emiMode == 'CREATE_NEW_PLAN') {
           notifyListeners();
         }
 
         notifyListeners();
       } else {
-        debugPrint(" Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}");
+        debugPrint(
+          " Failed to fetch EMI plans: ${data['error'] ?? 'Unknown error'}",
+        );
       }
     } catch (e) {
       debugPrint(" loadEmiPlansForExistingProduct Exception: $e");
@@ -740,6 +770,7 @@ class CheckoutViewModel extends ChangeNotifier {
     initializePlanData();
     debugPrint("═══════════════════════════════════════");
   }
+
   Future<void> onProductSelected(String? productId) async {
     debugPrint("═══════════════════════════════════════");
     debugPrint("📌 [onProductSelected] Called with productId: $productId");
@@ -943,6 +974,17 @@ class CheckoutViewModel extends ChangeNotifier {
 
   void setIncomeProof(File file) {
     checkoutData.incomeProof = file;
+    if (!checkoutData.incomeProofFiles.any((item) => item.path == file.path)) {
+      checkoutData.incomeProofFiles.add(file);
+    }
+    notifyListeners();
+  }
+
+  void removeIncomeProof(File file) {
+    checkoutData.incomeProofFiles.removeWhere((item) => item.path == file.path);
+    checkoutData.incomeProof = checkoutData.incomeProofFiles.isEmpty
+        ? null
+        : checkoutData.incomeProofFiles.last;
     notifyListeners();
   }
 
@@ -1021,7 +1063,7 @@ class CheckoutViewModel extends ChangeNotifier {
 
   // lib/viewmodels/CheckoutViewModel.dart
 
-// ─────────────── Submission Logic ───────────────
+  // ─────────────── Submission Logic ───────────────
 
   Future<bool> submitOrder() async {
     debugPrint("═══════════════════════════════════════");
@@ -1056,7 +1098,9 @@ class CheckoutViewModel extends ChangeNotifier {
         final result = await _submitSellingPriceCustomer();
 
         debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        debugPrint("📊 [submitOrder] _submitSellingPriceCustomer() result: $result");
+        debugPrint(
+          "📊 [submitOrder] _submitSellingPriceCustomer() result: $result",
+        );
         debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
         _isLoading = false;
@@ -1071,7 +1115,9 @@ class CheckoutViewModel extends ChangeNotifier {
         debugPrint("📌 [submitOrder] Calling createNewEmiPlan()...");
         debugPrint("   📌 newPlanName: ${checkoutData.newPlanName}");
         debugPrint("   📌 newPlanMonths: ${checkoutData.newPlanMonths}");
-        debugPrint("   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}");
+        debugPrint(
+          "   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}",
+        );
         debugPrint("   📌 appEmiChargeRate: ${checkoutData.appEmiChargeRate}");
         debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
@@ -1082,7 +1128,9 @@ class CheckoutViewModel extends ChangeNotifier {
 
         if (newId == null) {
           debugPrint("❌ [submitOrder] Failed to create new EMI plan");
-          debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          debugPrint(
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          );
           _isLoading = false;
           notifyListeners();
           return false;
@@ -1108,7 +1156,6 @@ class CheckoutViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return result;
-
     } catch (e, stackTrace) {
       debugPrint("═══════════════════════════════════════");
       debugPrint("❌ [submitOrder] EXCEPTION CAUGHT");
@@ -1129,7 +1176,9 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("   📌 newPlanName: ${checkoutData.newPlanName}");
     debugPrint("   📌 newPlanMonths: ${checkoutData.newPlanMonths}");
     debugPrint("   📌 downPaymentCalculationType: RATE");
-    debugPrint("   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}");
+    debugPrint(
+      "   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}",
+    );
     debugPrint("   📌 appEmiChargeType: RATE");
     debugPrint("   📌 appEmiChargeRate: ${checkoutData.appEmiChargeRate}");
     debugPrint("   📌 isActive: true");
@@ -1190,7 +1239,8 @@ class CheckoutViewModel extends ChangeNotifier {
           return id;
         } else {
           // ❌ API success false হলে error message
-          _errorMessage = data['message'] ??
+          _errorMessage =
+              data['message'] ??
               data['error']?['message'] ??
               data['error'] ??
               "Failed to create EMI plan";
@@ -1202,7 +1252,8 @@ class CheckoutViewModel extends ChangeNotifier {
         }
       } else {
         // ❌ HTTP error
-        _errorMessage = data['message'] ??
+        _errorMessage =
+            data['message'] ??
             data['error']?['message'] ??
             data['error'] ??
             "Server error: ${res.statusCode}";
@@ -1277,11 +1328,14 @@ class CheckoutViewModel extends ChangeNotifier {
           return true;
         } else {
           // ❌ API success false হলে error message
-          _errorMessage = data['message'] ??
+          _errorMessage =
+              data['message'] ??
               data['error']?['message'] ??
               data['error'] ??
               "Failed to submit customer. Please try again.";
-          debugPrint("❌ [_submitSellingPriceCustomer] API returned success: false");
+          debugPrint(
+            "❌ [_submitSellingPriceCustomer] API returned success: false",
+          );
           debugPrint("   Error: $_errorMessage");
           _isLoading = false;
           notifyListeners();
@@ -1289,11 +1343,14 @@ class CheckoutViewModel extends ChangeNotifier {
         }
       } else {
         // ❌ HTTP error
-        _errorMessage = data['message'] ??
+        _errorMessage =
+            data['message'] ??
             data['error']?['message'] ??
             data['error'] ??
             "Server error: ${response.statusCode}";
-        debugPrint("❌ [_submitSellingPriceCustomer] HTTP Error: ${response.statusCode}");
+        debugPrint(
+          "❌ [_submitSellingPriceCustomer] HTTP Error: ${response.statusCode}",
+        );
         debugPrint("   Error: $_errorMessage");
         _isLoading = false;
         notifyListeners();
@@ -1372,7 +1429,8 @@ class CheckoutViewModel extends ChangeNotifier {
           return true;
         } else {
           // ❌ API success false হলে error message
-          _errorMessage = data['message'] ??
+          _errorMessage =
+              data['message'] ??
               data['error']?['message'] ??
               data['error'] ??
               "Failed to submit loan application. Please try again.";
@@ -1384,11 +1442,14 @@ class CheckoutViewModel extends ChangeNotifier {
         }
       } else {
         // ❌ HTTP error
-        _errorMessage = data['message'] ??
+        _errorMessage =
+            data['message'] ??
             data['error']?['message'] ??
             data['error'] ??
             "Server error: ${response.statusCode}";
-        debugPrint("❌ [_submitLoanApplication] HTTP Error: ${response.statusCode}");
+        debugPrint(
+          "❌ [_submitLoanApplication] HTTP Error: ${response.statusCode}",
+        );
         debugPrint("   Error: $_errorMessage");
         _isLoading = false;
         notifyListeners();
@@ -1411,10 +1472,14 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     // ─── Basic Info ───
-    request.fields['issueDate'] = DateTime.now().toIso8601String().split('T')[0];
+    request.fields['issueDate'] = DateTime.now().toIso8601String().split(
+      'T',
+    )[0];
     request.fields['name'] = checkoutData.name;
     request.fields['phone'] = checkoutData.phone;
-    request.fields['password'] = checkoutData.password.isEmpty ? '12345678' : checkoutData.password;
+    request.fields['password'] = checkoutData.password.isEmpty
+        ? '12345678'
+        : checkoutData.password;
     request.fields['presentAddress'] = checkoutData.presentAddress;
     request.fields['permanentAddress'] = checkoutData.permanentAddress;
     debugPrint("   📌 [ISSUE DATE] issueDate: ${request.fields['issueDate']}");
@@ -1436,7 +1501,9 @@ class CheckoutViewModel extends ChangeNotifier {
 
     debugPrint("   📌 [ID & Income]");
     debugPrint("      idType: ${request.fields['idType']}");
-    debugPrint("      nidPassportNumber: ${request.fields['nidPassportNumber']}");
+    debugPrint(
+      "      nidPassportNumber: ${request.fields['nidPassportNumber']}",
+    );
     debugPrint("      sourceOfIncome: ${request.fields['sourceOfIncome']}");
     debugPrint("      monthlyIncome: ${request.fields['monthlyIncome']}");
 
@@ -1464,7 +1531,8 @@ class CheckoutViewModel extends ChangeNotifier {
 
     // ─── Payment Info ───
     request.fields['downPaymentMethod'] = checkoutData.downPaymentMethod;
-    request.fields['incomeProofDocumentType'] = checkoutData.incomeProofDocumentType;
+    request.fields['incomeProofDocumentType'] =
+        checkoutData.incomeProofDocumentType;
     request.fields['downPayment'] = checkoutData.downPayment.toString();
     request.fields['emiCharge'] = checkoutData.emiCharge.toString();
     request.fields['monthlyEmi'] = checkoutData.monthlyEmi.toString();
@@ -1475,14 +1543,22 @@ class CheckoutViewModel extends ChangeNotifier {
       request.fields['monthlyPaymentDate'] = checkoutData.monthlyPaymentDate!;
 
       // ✅ Monthly Payment Date Debug Print
-      debugPrint("   📌 [MONTHLY PAYMENT DATE] monthlyPaymentDate: ${checkoutData.monthlyPaymentDate}");
+      debugPrint(
+        "   📌 [MONTHLY PAYMENT DATE] monthlyPaymentDate: ${checkoutData.monthlyPaymentDate}",
+      );
     } else {
-      debugPrint("   ⚠️ [MONTHLY PAYMENT DATE] monthlyPaymentDate is NULL or EMPTY");
+      debugPrint(
+        "   ⚠️ [MONTHLY PAYMENT DATE] monthlyPaymentDate is NULL or EMPTY",
+      );
     }
 
     debugPrint(" [Payment Info]");
-    debugPrint("      downPaymentMethod: ${request.fields['downPaymentMethod']}");
-    debugPrint("      incomeProofDocumentType: ${request.fields['incomeProofDocumentType']}");
+    debugPrint(
+      "      downPaymentMethod: ${request.fields['downPaymentMethod']}",
+    );
+    debugPrint(
+      "      incomeProofDocumentType: ${request.fields['incomeProofDocumentType']}",
+    );
     debugPrint("      downPayment: ${request.fields['downPayment']}");
     debugPrint("      emiCharge: ${request.fields['emiCharge']}");
     debugPrint("      monthlyEmi: ${request.fields['monthlyEmi']}");
@@ -1497,7 +1573,8 @@ class CheckoutViewModel extends ChangeNotifier {
       debugPrint(" bankAccountName: ${request.fields['bankAccountName']}");
 
       // Bank Account Number
-      request.fields['bankAccountNumber'] = checkoutData.bankAccountNumber ?? '';
+      request.fields['bankAccountNumber'] =
+          checkoutData.bankAccountNumber ?? '';
       debugPrint("  bankAccountNumber: ${request.fields['bankAccountNumber']}");
 
       // Bank Name
@@ -1505,7 +1582,9 @@ class CheckoutViewModel extends ChangeNotifier {
       debugPrint("  bankName: ${request.fields['bankName']}");
 
       // Bank Receipt Status
-      request.fields['bankReceiptStatus'] = checkoutData.bankReceipt != null ? 'UPLOADED' : 'NOT_PROVIDED';
+      request.fields['bankReceiptStatus'] = checkoutData.bankReceipt != null
+          ? 'UPLOADED'
+          : 'NOT_PROVIDED';
       debugPrint("  bankReceiptStatus: ${request.fields['bankReceiptStatus']}");
     } else {
       request.fields['bankReceiptStatus'] = 'NOT_APPLICABLE';
@@ -1514,13 +1593,20 @@ class CheckoutViewModel extends ChangeNotifier {
     // Transaction Reference Number
     if (checkoutData.downPaymentReferenceNumber != null &&
         checkoutData.downPaymentReferenceNumber!.isNotEmpty) {
-      request.fields['downPaymentReferenceNumber'] = checkoutData.downPaymentReferenceNumber!;
-      debugPrint("   downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber']}");
+      request.fields['downPaymentReferenceNumber'] =
+          checkoutData.downPaymentReferenceNumber!;
+      debugPrint(
+        "   downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber']}",
+      );
     }
 
     debugPrint("   [Bank Info]");
-    debugPrint("      bankReceiptStatus: ${request.fields['bankReceiptStatus']}");
-    debugPrint("      downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber'] ?? 'N/A'}");
+    debugPrint(
+      "      bankReceiptStatus: ${request.fields['bankReceiptStatus']}",
+    );
+    debugPrint(
+      "      downPaymentReferenceNumber: ${request.fields['downPaymentReferenceNumber'] ?? 'N/A'}",
+    );
 
     // ─── Guarantors ───
     final guarantors = checkoutData.guarantors.map((g) => g.toJson()).toList();
@@ -1529,7 +1615,7 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("   [Guarantors]");
     debugPrint("      total: ${guarantors.length}");
     for (int i = 0; i < guarantors.length; i++) {
-      debugPrint("      Guarantor #${i+1}: ${jsonEncode(guarantors[i])}");
+      debugPrint("      Guarantor #${i + 1}: ${jsonEncode(guarantors[i])}");
     }
 
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -1563,7 +1649,9 @@ class CheckoutViewModel extends ChangeNotifier {
         ),
       );
       attachedCount++;
-      debugPrint("  [IMAGE] $fieldName: ${file.path.split('/').last} (image/$mimeSubtype)");
+      debugPrint(
+        "  [IMAGE] $fieldName: ${file.path.split('/').last} (image/$mimeSubtype)",
+      );
     }
 
     // ─── ভিডিও ফাইল আটাচ করার ফাংশন ───
@@ -1603,9 +1691,11 @@ class CheckoutViewModel extends ChangeNotifier {
           mimeType = 'video/3gpp';
           break;
         default:
-        // ডিফল্ট হিসেবে mp4 সেট করুন
+          // ডিফল্ট হিসেবে mp4 সেট করুন
           mimeType = 'video/mp4';
-          debugPrint("   [WARNING] Unknown video extension: $ext, using video/mp4");
+          debugPrint(
+            "   [WARNING] Unknown video extension: $ext, using video/mp4",
+          );
       }
 
       request.files.add(
@@ -1616,7 +1706,9 @@ class CheckoutViewModel extends ChangeNotifier {
         ),
       );
       attachedCount++;
-      debugPrint("   [VIDEO] $fieldName: ${file.path.split('/').last} ($mimeType)");
+      debugPrint(
+        "   [VIDEO] $fieldName: ${file.path.split('/').last} ($mimeType)",
+      );
     }
 
     // ─── PDF বা অন্যান্য ডকুমেন্ট আটাচ করার ফাংশন (ভবিষ্যতের জন্য) ───
@@ -1638,13 +1730,15 @@ class CheckoutViewModel extends ChangeNotifier {
           mimeType = 'application/msword';
           break;
         case 'docx':
-          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          mimeType =
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
           break;
         case 'xls':
           mimeType = 'application/vnd.ms-excel';
           break;
         case 'xlsx':
-          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          mimeType =
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
           break;
         default:
           mimeType = 'application/octet-stream';
@@ -1658,7 +1752,9 @@ class CheckoutViewModel extends ChangeNotifier {
         ),
       );
       attachedCount++;
-      debugPrint("  [DOCUMENT] $fieldName: ${file.path.split('/').last} ($mimeType)");
+      debugPrint(
+        "  [DOCUMENT] $fieldName: ${file.path.split('/').last} ($mimeType)",
+      );
     }
 
     // ─── Customer Image ───
@@ -1680,11 +1776,18 @@ class CheckoutViewModel extends ChangeNotifier {
 
     // ─── Income Proof ───
     debugPrint("   [Income Proof]");
-    await attachImage('incomeProofDocument', checkoutData.incomeProof);
+    if (checkoutData.incomeProofFiles.isNotEmpty) {
+      for (final file in checkoutData.incomeProofFiles) {
+        await attachImage('incomeProofDocument', file);
+      }
+    } else {
+      await attachImage('incomeProofDocument', checkoutData.incomeProof);
+    }
 
     // 🔥 Bank Receipt
     debugPrint("   [Bank Receipt]");
-    if (checkoutData.downPaymentMethod == 'BANK' && checkoutData.bankReceipt != null) {
+    if (checkoutData.downPaymentMethod == 'BANK' &&
+        checkoutData.bankReceipt != null) {
       await attachImage('bankReceipt', checkoutData.bankReceipt);
     } else {
       debugPrint("    [SKIP] bankReceipt: Not applicable or file missing");
@@ -1695,7 +1798,7 @@ class CheckoutViewModel extends ChangeNotifier {
     debugPrint("   [Guarantor Documents]");
     for (int i = 0; i < checkoutData.guarantors.length; i++) {
       final g = checkoutData.guarantors[i];
-      debugPrint("  Guarantor #${i+1}: ${g.name}");
+      debugPrint("  Guarantor #${i + 1}: ${g.name}");
       if (g.idType == 'NID') {
         await attachImage('guarantor${i}NidFront', g.nidFront);
         await attachImage('guarantor${i}NidBack', g.nidBack);
@@ -1715,7 +1818,9 @@ class CheckoutViewModel extends ChangeNotifier {
       debugPrint("📋 [FILE DETAILS]");
       for (int i = 0; i < request.files.length; i++) {
         final file = request.files[i];
-        debugPrint("   ${i+1}. ${file.field}: ${file.filename} (${file.contentType})");
+        debugPrint(
+          "   ${i + 1}. ${file.field}: ${file.filename} (${file.contentType})",
+        );
       }
     }
     debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

@@ -28,6 +28,8 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
   final List<String> _incomeSources = [
     'Private Service',
     'Business',
+    'Rental',
+    'Driving',
     'Student',
     'Others',
   ];

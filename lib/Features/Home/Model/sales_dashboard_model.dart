@@ -106,8 +106,12 @@ class Loans {
     displayId = json['displayId'];
     status = json['status'];
     createdAt = json['createdAt'];
-    customer = json['customer'] != null ? Customer.fromJson(json['customer']) : null;
-    productModel = json['productModel'] != null ? ProductModel.fromJson(json['productModel']) : null;
+    customer = json['customer'] != null
+        ? Customer.fromJson(json['customer'])
+        : null;
+    productModel = json['productModel'] != null
+        ? ProductModel.fromJson(json['productModel'])
+        : null;
     product = json['product'] != null ? Brand.fromJson(json['product']) : null;
     calculationSnapshot = json['calculationSnapshot'] != null
         ? CalculationSnapshot.fromJson(json['calculationSnapshot'])
@@ -144,14 +148,16 @@ class Customer {
   String? displayId;
   String? name;
   String? phone;
+  String? createdAt;
 
-  Customer({this.id, this.displayId, this.name, this.phone});
+  Customer({this.id, this.displayId, this.name, this.phone, this.createdAt});
 
   Customer.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     displayId = json['displayId'];
     name = json['name'];
     phone = json['phone'];
+    createdAt = json['createdAt'];
   }
 
   Map<String, dynamic> toJson() {
@@ -160,6 +166,7 @@ class Customer {
       'displayId': displayId,
       'name': name,
       'phone': phone,
+      'createdAt': createdAt,
     };
   }
 }
@@ -303,7 +310,9 @@ class Applications {
     id = json['id'];
     displayId = json['displayId'];
     customerId = json['customerId'];
-    customer = json['customer'] != null ? Customer.fromJson(json['customer']) : null;
+    customer = json['customer'] != null
+        ? Customer.fromJson(json['customer'])
+        : null;
     name = json['name'];
     phone = json['phone'];
     mrp = json['mrp'];

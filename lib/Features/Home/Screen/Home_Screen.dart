@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_pay_app/core/routes/Routes_name.dart';
 import '../../../core/constant/App_Colors.dart';
@@ -18,6 +19,57 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AppStorage _appStorage = AppStorage();
   String? _userRole;
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
+  List<DateTime> get _availableMonths {
+    final now = DateTime(DateTime.now().year, DateTime.now().month);
+    return List.generate(12, (index) => DateTime(now.year, now.month - index));
+  }
+
+  bool _isSelectedMonth(String? value) {
+    final date = DateTime.tryParse(value ?? '');
+    return date != null &&
+        date.year == _selectedMonth.year &&
+        date.month == _selectedMonth.month;
+  }
+
+  DateTime? _paymentDate(dynamic payment) {
+    if (payment is! Map) return null;
+
+    for (final key in ['date', 'paymentDate', 'createdAt', 'paidAt']) {
+      final date = DateTime.tryParse(payment[key]?.toString() ?? '');
+      if (date != null) return date;
+    }
+    return null;
+  }
+
+  int _monthlyCustomerCount(
+    List<Loans> loans,
+    List<Applications> applications,
+    int totalCustomers,
+  ) {
+    final customerIds = <String>{};
+
+    for (final loan in loans) {
+      final customer = loan.customer;
+      final customerDate = customer?.createdAt ?? loan.createdAt;
+      final id = customer?.id;
+      if (_isSelectedMonth(customerDate) && id != null && id.isNotEmpty) {
+        customerIds.add(id);
+      }
+    }
+
+    for (final application in applications) {
+      final customer = application.customer;
+      final customerDate = customer?.createdAt ?? application.createdAt;
+      final id = customer?.id ?? application.customerId;
+      if (_isSelectedMonth(customerDate) && id != null && id.isNotEmpty) {
+        customerIds.add(id);
+      }
+    }
+
+    return customerIds.length.clamp(0, totalCustomers);
+  }
 
   @override
   void initState() {
@@ -123,13 +175,20 @@ class _HomeScreenState extends State<HomeScreen> {
               .where((a) => (a.status ?? '').toUpperCase() == 'PENDING')
               .length;
 
-          // Total collection (simple sum if payment objects have amount)
-          num totalCollections = 0;
-          for (var p in payments) {
-            if (p is Map && p['amount'] != null) {
-              totalCollections += num.tryParse(p['amount'].toString()) ?? 0;
+          num monthlyCollections = 0;
+          for (final payment in payments) {
+            if (_isSelectedMonth(_paymentDate(payment)?.toIso8601String()) &&
+                payment is Map &&
+                payment['amount'] != null) {
+              monthlyCollections +=
+                  num.tryParse(payment['amount'].toString()) ?? 0;
             }
           }
+          final monthlyCustomers = _monthlyCustomerCount(
+            loans,
+            applications,
+            totalCustomers,
+          );
 
           return Stack(
             children: [
@@ -169,7 +228,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 _buildPortfolioCard(
                                   totalCustomers: totalCustomers,
-                                  totalCollections: totalCollections,
+                                  monthlyCustomers: monthlyCustomers,
+                                  monthlyCollections: monthlyCollections,
                                   activeLoans: activeLoansCount,
                                 ),
                                 const SizedBox(height: 14),
@@ -362,7 +422,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Portfolio Card ────────────────────────────────────
   Widget _buildPortfolioCard({
     required int totalCustomers,
-    required num totalCollections,
+    required int monthlyCustomers,
+    required num monthlyCollections,
     required int activeLoans,
   }) {
     double progressRatio = totalCustomers > 0
@@ -396,32 +457,85 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppColors.black,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 5,
+              PopupMenuButton<DateTime>(
+                position: PopupMenuPosition.under,
+                offset: const Offset(0, 6),
+                color: AppColors.white,
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                decoration: BoxDecoration(
-                  color: AppColors.bgGrey,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Text(
-                      'This Month',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.greyText,
-                        fontWeight: FontWeight.w500,
+                onSelected: (month) => setState(() => _selectedMonth = month),
+                itemBuilder: (context) => _availableMonths.map((month) {
+                  final isSelected =
+                      month.year == _selectedMonth.year &&
+                      month.month == _selectedMonth.month;
+                  return PopupMenuItem<DateTime>(
+                    value: month,
+                    height: 42,
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          size: 18,
+                          color: isSelected
+                              ? AppColors.primaryBlue
+                              : AppColors.greyText,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat('MMM yyyy').format(month),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? AppColors.primaryBlue
+                                : AppColors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgGrey,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.borderGrey),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.calendar_month_outlined,
+                        size: 16,
+                        color: AppColors.primaryBlue,
                       ),
-                    ),
-                    SizedBox(width: 3),
-                    Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 16,
-                      color: AppColors.greyText,
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Text(
+                        DateFormat('MMM yyyy').format(_selectedMonth),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.greyText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 17,
+                        color: AppColors.greyText,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -429,63 +543,48 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 18),
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.infoBlue,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.people_alt_outlined,
-                  color: AppColors.primaryBlue,
-                  size: 26,
+              Expanded(
+                child: _buildCustomerMetricCard(
+                  icon: Icons.people_alt_outlined,
+                  value: '$totalCustomers',
+                  label: 'Total Customers',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    RouteName.totalCustomerScreen,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      RouteName.totalCustomerScreen,
-                    ),
-                    child: Text(
-                      '$totalCustomers',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.black,
-                        height: 1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Total Customers',
-                    style: TextStyle(fontSize: 11, color: AppColors.greyText),
-                  ),
-                ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildCustomerMetricCard(
+                  icon: Icons.calendar_month_outlined,
+                  value: '$monthlyCustomers',
+                  label: 'Customer This Month',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Icon(
+                Icons.payments_outlined,
+                color: AppColors.primaryBlue,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Collection This Month',
+                style: TextStyle(fontSize: 11, color: AppColors.greyText),
               ),
               const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Total Collection",
-                    style: TextStyle(fontSize: 11, color: AppColors.greyText),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '৳${totalCollections.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryBlue,
-                    ),
-                  ),
-                ],
+              Text(
+                '৳${monthlyCollections.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryBlue,
+                ),
               ),
               const SizedBox(width: 14),
               SizedBox(
@@ -522,6 +621,64 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildCustomerMetricCard({
+    required IconData icon,
+    required String value,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    final card = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.bgGrey,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGrey),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.infoBlue,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.primaryBlue, size: 19),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.black,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.greyText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return onTap == null ? card : GestureDetector(onTap: onTap, child: card);
   }
 
   // ── Status Grid ───────────────────────────────────────

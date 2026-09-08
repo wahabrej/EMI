@@ -27,6 +27,7 @@ class CustomerData {
   String? incomeProof;
   String? status;
   String? createdAt;
+  String? salesPersonName;
 
   // 📌 ভিডিও ফিল্ড
   String? customerVideo;
@@ -55,6 +56,7 @@ class CustomerData {
     this.incomeProof,
     this.status,
     this.createdAt,
+    this.salesPersonName,
     this.customerVideo,
     this.customerVideoUrl,
     this.customerDocuments,
@@ -79,9 +81,12 @@ class CustomerData {
     incomeProof = json['incomeProof']?.toString();
     status = json['status']?.toString();
     createdAt = json['createdAt']?.toString();
+    salesPersonName = _readSalesPersonName(json);
 
     // 📌 ভিডিও URL গুলো পার্স করা
-    customerVideo = json['customerVideo']?.toString() ?? json['customerVideoUrl']?.toString();
+    customerVideo =
+        json['customerVideo']?.toString() ??
+        json['customerVideoUrl']?.toString();
     customerVideoUrl = json['customerVideoUrl']?.toString();
 
     // 📌 customerDocuments পার্স করা
@@ -110,6 +115,37 @@ class CustomerData {
     if (value == null) return null;
     if (value is num) return value;
     if (value is String) return num.tryParse(value);
+    return null;
+  }
+
+  String? _readSalesPersonName(Map<String, dynamic> json) {
+    final directName = json['salesPersonName']?.toString();
+    if (directName != null && directName.isNotEmpty) return directName;
+
+    final salesPerson = json['salesPerson'];
+    if (salesPerson is Map) {
+      final name =
+          salesPerson['name']?.toString() ??
+          salesPerson['fullName']?.toString() ??
+          salesPerson['username']?.toString();
+      if (name != null && name.isNotEmpty) return name;
+    }
+
+    final nestedCustomer = json['customer'];
+    if (nestedCustomer is Map) {
+      final nestedName = nestedCustomer['salesPersonName']?.toString();
+      if (nestedName != null && nestedName.isNotEmpty) return nestedName;
+
+      final nestedSalesPerson = nestedCustomer['salesPerson'];
+      if (nestedSalesPerson is Map) {
+        final name =
+            nestedSalesPerson['name']?.toString() ??
+            nestedSalesPerson['fullName']?.toString() ??
+            nestedSalesPerson['username']?.toString();
+        if (name != null && name.isNotEmpty) return name;
+      }
+    }
+
     return null;
   }
 }
@@ -207,9 +243,12 @@ class Document {
 
   String _getDocumentLabel(String docType) {
     final type = docType.toUpperCase();
-    if (type.contains('NID_FRONT') || type.contains('NIDFRONT')) return 'NID FRONT';
-    if (type.contains('NID_BACK') || type.contains('NIDBACK')) return 'NID BACK';
-    if (type.contains('INCOME') || type.contains('SALARY')) return 'INCOME PROOF';
+    if (type.contains('NID_FRONT') || type.contains('NIDFRONT'))
+      return 'NID FRONT';
+    if (type.contains('NID_BACK') || type.contains('NIDBACK'))
+      return 'NID BACK';
+    if (type.contains('INCOME') || type.contains('SALARY'))
+      return 'INCOME PROOF';
     if (type.contains('PHOTO')) return 'PHOTO';
     if (type.contains('VIDEO')) return 'VIDEO';
     if (type.contains('BANK')) return 'BANK RECEIPT';
@@ -236,7 +275,7 @@ class ActiveLoan {
     this.totalAmount,
     this.paidAmount,
     this.remainingAmount,
-    this.status
+    this.status,
   });
 
   ActiveLoan.fromJson(Map<String, dynamic> json) {
@@ -299,7 +338,9 @@ class Guarantor {
     profileImage = json['profileImage']?.toString();
 
     // 📌 ভিডিও URL গুলো পার্স করা
-    guarantorVideo = json['guarantorVideo']?.toString() ?? json['guarantorVideoUrl']?.toString();
+    guarantorVideo =
+        json['guarantorVideo']?.toString() ??
+        json['guarantorVideoUrl']?.toString();
     guarantorVideoUrl = json['guarantorVideoUrl']?.toString();
 
     // 📌 documents অ্যারে পার্স করা
