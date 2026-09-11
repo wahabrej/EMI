@@ -22,6 +22,7 @@ class CustomerData {
   String? sourceOfIncome;
   num? monthlyIncome;
   String? profileImage;
+  String? customerImageUrl; // 📌 নতুন ফিল্ড
   String? nidFront;
   String? nidBack;
   String? incomeProof;
@@ -51,6 +52,7 @@ class CustomerData {
     this.sourceOfIncome,
     this.monthlyIncome,
     this.profileImage,
+    this.customerImageUrl,
     this.nidFront,
     this.nidBack,
     this.incomeProof,
@@ -75,7 +77,14 @@ class CustomerData {
     nidPassportNumber = json['nidPassportNumber']?.toString();
     sourceOfIncome = json['sourceOfIncome']?.toString();
     monthlyIncome = _parseNum(json['monthlyIncome']);
+    
+    // 📌 ইমেজ ফিল্ড হ্যান্ডেল করা (Fallback লজিক সহ)
     profileImage = json['profileImage']?.toString();
+    customerImageUrl = json['customerImageUrl']?.toString();
+    if (profileImage == null || profileImage!.isEmpty) {
+      profileImage = customerImageUrl;
+    }
+
     nidFront = json['nidFront']?.toString();
     nidBack = json['nidBack']?.toString();
     incomeProof = json['incomeProof']?.toString();

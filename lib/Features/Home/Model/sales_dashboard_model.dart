@@ -79,48 +79,36 @@ class Data {
 }
 
 class Loans {
-  String? id;
-  String? displayId;
-  String? status;
-  String? createdAt;
+  String? id, displayId, status, createdAt;
   Customer? customer;
   ProductModel? productModel;
   Brand? product;
   CalculationSnapshot? calculationSnapshot;
   List<Installments>? installments;
 
-  Loans({
-    this.id,
-    this.displayId,
-    this.status,
-    this.createdAt,
-    this.customer,
-    this.productModel,
-    this.product,
-    this.calculationSnapshot,
-    this.installments,
-  });
+  Loans({this.id, this.displayId, this.status, this.createdAt, this.customer, this.productModel, this.product, this.calculationSnapshot, this.installments});
 
   Loans.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     displayId = json['displayId'];
     status = json['status'];
     createdAt = json['createdAt'];
-    customer = json['customer'] != null
-        ? Customer.fromJson(json['customer'])
-        : null;
-    productModel = json['productModel'] != null
-        ? ProductModel.fromJson(json['productModel'])
-        : null;
+    customer = json['customer'] != null ? Customer.fromJson(json['customer']) : null;
+    productModel = json['productModel'] != null ? ProductModel.fromJson(json['productModel']) : null;
     product = json['product'] != null ? Brand.fromJson(json['product']) : null;
-    calculationSnapshot = json['calculationSnapshot'] != null
-        ? CalculationSnapshot.fromJson(json['calculationSnapshot'])
-        : null;
+    calculationSnapshot = json['calculationSnapshot'] != null ? CalculationSnapshot.fromJson(json['calculationSnapshot']) : null;
     if (json['installments'] != null) {
       installments = <Installments>[];
-      json['installments'].forEach((v) {
-        installments!.add(Installments.fromJson(v));
-      });
+      json['installments'].forEach((v) => installments!.add(Installments.fromJson(v)));
+    }
+    
+    // 📌 লোন লেভেলে থাকা ইমেজ কাস্টমারে কপি করা
+    String? backupImg = json['profileImage']?.toString() ?? 
+                        json['customerImageUrl']?.toString() ?? 
+                        json['customerImage']?.toString() ?? 
+                        json['photo']?.toString();
+    if (customer != null && (customer!.profileImage == null || customer!.profileImage!.isEmpty)) {
+      if (backupImg != null && backupImg != "null") customer!.profileImage = backupImg;
     }
   }
 
@@ -133,24 +121,16 @@ class Loans {
     if (customer != null) data['customer'] = customer!.toJson();
     if (productModel != null) data['productModel'] = productModel!.toJson();
     if (product != null) data['product'] = product!.toJson();
-    if (calculationSnapshot != null) {
-      data['calculationSnapshot'] = calculationSnapshot!.toJson();
-    }
-    if (installments != null) {
-      data['installments'] = installments!.map((v) => v.toJson()).toList();
-    }
+    if (calculationSnapshot != null) data['calculationSnapshot'] = calculationSnapshot!.toJson();
+    if (installments != null) data['installments'] = installments!.map((v) => v.toJson()).toList();
     return data;
   }
 }
 
 class Customer {
-  String? id;
-  String? displayId;
-  String? name;
-  String? phone;
-  String? createdAt;
+  String? id, displayId, name, phone, createdAt, profileImage;
 
-  Customer({this.id, this.displayId, this.name, this.phone, this.createdAt});
+  Customer({this.id, this.displayId, this.name, this.phone, this.createdAt, this.profileImage});
 
   Customer.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -158,32 +138,29 @@ class Customer {
     name = json['name'];
     phone = json['phone'];
     createdAt = json['createdAt'];
+    
+    String? img = json['profileImage']?.toString() ?? 
+                  json['customerImageUrl']?.toString() ?? 
+                  json['customerImage']?.toString() ??
+                  json['photo']?.toString() ??
+                  json['image']?.toString();
+    if (img != null && img != "null") profileImage = img;
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'displayId': displayId,
-      'name': name,
-      'phone': phone,
-      'createdAt': createdAt,
-    };
+    return {'id': id, 'displayId': displayId, 'name': name, 'phone': phone, 'createdAt': createdAt, 'profileImage': profileImage};
   }
 }
 
 class ProductModel {
-  String? name;
-  String? code;
+  String? name, code;
   Brand? brand;
-
   ProductModel({this.name, this.code, this.brand});
-
   ProductModel.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     code = json['code'];
     brand = json['brand'] != null ? Brand.fromJson(json['brand']) : null;
   }
-
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['name'] = name;
@@ -195,33 +172,15 @@ class ProductModel {
 
 class Brand {
   String? name;
-
   Brand({this.name});
-
-  Brand.fromJson(Map<String, dynamic> json) {
-    name = json['name'];
-  }
-
-  Map<String, dynamic> toJson() {
-    return {'name': name};
-  }
+  Brand.fromJson(Map<String, dynamic> json) { name = json['name']; }
+  Map<String, dynamic> toJson() { return {'name': name}; }
 }
 
 class CalculationSnapshot {
-  String? totalAfterCashback;
-  String? regularPrice;
-  String? initialPaymentAmount;
+  String? totalAfterCashback, regularPrice, initialPaymentAmount, monthlyEmi;
   int? planMonths;
-  String? monthlyEmi;
-
-  CalculationSnapshot({
-    this.totalAfterCashback,
-    this.regularPrice,
-    this.initialPaymentAmount,
-    this.planMonths,
-    this.monthlyEmi,
-  });
-
+  CalculationSnapshot({this.totalAfterCashback, this.regularPrice, this.initialPaymentAmount, this.planMonths, this.monthlyEmi});
   CalculationSnapshot.fromJson(Map<String, dynamic> json) {
     totalAfterCashback = json['totalAfterCashback'];
     regularPrice = json['regularPrice'];
@@ -229,33 +188,12 @@ class CalculationSnapshot {
     planMonths = json['planMonths'];
     monthlyEmi = json['monthlyEmi'];
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'totalAfterCashback': totalAfterCashback,
-      'regularPrice': regularPrice,
-      'initialPaymentAmount': initialPaymentAmount,
-      'planMonths': planMonths,
-      'monthlyEmi': monthlyEmi,
-    };
-  }
+  Map<String, dynamic> toJson() { return {'totalAfterCashback': totalAfterCashback, 'regularPrice': regularPrice, 'initialPaymentAmount': initialPaymentAmount, 'planMonths': planMonths, 'monthlyEmi': monthlyEmi}; }
 }
 
 class Installments {
-  String? status;
-  String? totalDue;
-  String? remainingAmount;
-  String? originalAmount;
-  String? dueDate;
-
-  Installments({
-    this.status,
-    this.totalDue,
-    this.remainingAmount,
-    this.originalAmount,
-    this.dueDate,
-  });
-
+  String? status, totalDue, remainingAmount, originalAmount, dueDate;
+  Installments({this.status, this.totalDue, this.remainingAmount, this.originalAmount, this.dueDate});
   Installments.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     totalDue = json['totalDue'];
@@ -263,86 +201,47 @@ class Installments {
     originalAmount = json['originalAmount'];
     dueDate = json['dueDate'];
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'status': status,
-      'totalDue': totalDue,
-      'remainingAmount': remainingAmount,
-      'originalAmount': originalAmount,
-      'dueDate': dueDate,
-    };
-  }
+  Map<String, dynamic> toJson() { return {'status': status, 'totalDue': totalDue, 'remainingAmount': remainingAmount, 'originalAmount': originalAmount, 'dueDate': dueDate}; }
 }
 
 class Applications {
-  String? id;
-  String? displayId;
-  String? customerId;
+  String? id, displayId, customerId, name, phone, mrp, status, createdAt, productModel, profileImage;
   Customer? customer;
-  String? name;
-  String? phone;
-  String? mrp;
-  int? planMonths;
-  String? status;
-  String? createdAt;
-  String? productModel;
-  Brand? product;
-  Brand? productModelRelation;
-
-  Applications({
-    this.id,
-    this.displayId,
-    this.customerId,
-    this.customer,
-    this.name,
-    this.phone,
-    this.mrp,
-    this.planMonths,
-    this.status,
-    this.createdAt,
-    this.productModel,
-    this.product,
-    this.productModelRelation,
-  });
+  Brand? product, productModelRelation;
 
   Applications.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     displayId = json['displayId'];
     customerId = json['customerId'];
-    customer = json['customer'] != null
-        ? Customer.fromJson(json['customer'])
-        : null;
+    customer = json['customer'] != null ? Customer.fromJson(json['customer']) : null;
     name = json['name'];
     phone = json['phone'];
     mrp = json['mrp'];
-    planMonths = json['planMonths'];
     status = json['status'];
     createdAt = json['createdAt'];
     productModel = json['productModel'];
     product = json['product'] != null ? Brand.fromJson(json['product']) : null;
-    productModelRelation = json['productModelRelation'] != null
-        ? Brand.fromJson(json['productModelRelation'])
-        : null;
+    productModelRelation = json['productModelRelation'] != null ? Brand.fromJson(json['productModelRelation']) : null;
+        
+    profileImage = json['profileImage']?.toString() ?? 
+                   json['customerImageUrl']?.toString() ?? 
+                   json['customerImage']?.toString() ??
+                   json['photo']?.toString();
+                   
+    if (customer != null && (customer!.profileImage == null || customer!.profileImage!.isEmpty)) {
+       if (profileImage != null && profileImage != "null") customer!.profileImage = profileImage;
+    }
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['displayId'] = displayId;
-    data['customerId'] = customerId;
     if (customer != null) data['customer'] = customer!.toJson();
     data['name'] = name;
     data['phone'] = phone;
-    data['mrp'] = mrp;
-    data['planMonths'] = planMonths;
     data['status'] = status;
-    data['createdAt'] = createdAt;
-    data['productModel'] = productModel;
-    if (product != null) data['product'] = product!.toJson();
-    if (productModelRelation != null) {
-      data['productModelRelation'] = productModelRelation!.toJson();
-    }
+    data['profileImage'] = profileImage;
     return data;
   }
 }
@@ -350,14 +249,11 @@ class Applications {
 class Products {
   String? name;
   Brand? brand;
-
   Products({this.name, this.brand});
-
   Products.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     brand = json['brand'] != null ? Brand.fromJson(json['brand']) : null;
   }
-
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['name'] = name;

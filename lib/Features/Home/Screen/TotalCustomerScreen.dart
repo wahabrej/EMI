@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constant/App_Colors.dart';
+import '../../../core/constant/Api_End_point.dart';
 import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
 import '../Model/sales_dashboard_model.dart';
@@ -45,7 +46,11 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
           if (data.applications != null) {
             for (var app in data.applications!) {
               if (app.customer != null && app.customer!.id != null) {
-                uniqueCustomers[app.customer!.id!] = app.customer!;
+                // Keep existing or add new
+                if (!uniqueCustomers.containsKey(app.customer!.id!) ||
+                    (uniqueCustomers[app.customer!.id!]!.profileImage == null)) {
+                  uniqueCustomers[app.customer!.id!] = app.customer!;
+                }
               } else if (app.name != null && app.name!.isNotEmpty) {
                 final String guestKey = app.phone ?? app.name!;
                 if (!uniqueCustomers.containsKey(guestKey)) {
@@ -54,6 +59,7 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                     name: app.name,
                     phone: app.phone,
                     displayId: 'Pending applicant',
+                    profileImage: app.profileImage, // এখান থেকেও ইমেজ নিতে পারে
                   );
                 }
               }
@@ -152,7 +158,6 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.pushNamed(context, RouteName.brandSelectionScreen);
-          debugPrint('➕ Add Customer clicked');
         },
         backgroundColor: const Color(0xFF0052CC),
         elevation: 6,
@@ -199,7 +204,7 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
               ),
               const Expanded(
                 child: Text(
-                  'Total Customers',
+                  ' Customers List',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -285,7 +290,7 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _metricCard(
-              title: 'Pending Applicants',
+              title: 'Pending Apps',
               value: '$pending',
               icon: Icons.hourglass_top_rounded,
               iconBg: const Color(0xFFFFF7ED),
@@ -425,20 +430,26 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 26,
-                  backgroundColor: isPending
-                      ? const Color(0xFFFFF7ED)
-                      : const Color(0xFFEFF6FF),
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : 'C',
-                    style: TextStyle(
-                      color: isPending
-                          ? const Color(0xFFF59E0B)
-                          : const Color(0xFF0052CC),
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
+                  radius: 35,
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  backgroundImage:
+                  customer.profileImage != null &&
+                      customer.profileImage!.isNotEmpty
+                      ? NetworkImage(_getFullUrl(customer.profileImage!))
+                      : null,
+                  child:
+                  customer.profileImage == null || customer.profileImage!.isEmpty
+                      ? Text(
+                    customer.name != null && customer.name!.isNotEmpty
+                        ? customer.name![0].toUpperCase()
+                        : 'C',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0052CC),
                     ),
-                  ),
+                  )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -524,9 +535,6 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
           ),
 
           // Bottom actions
-// TotalCustomerScreen.dart - _buildCustomerCard মেথডে
-
-// Bottom actions
           Container(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             decoration: const BoxDecoration(
@@ -534,12 +542,11 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
             ),
             child: Row(
               children: [
-                // ✅ Call Button - সরাসরি Phone Dialer Open করবে
                 Expanded(
                   child: _outlineBtn(
                     Icons.phone_rounded,
                     'Call',
-                        () => _makePhoneCall(phone), // ✅ _makePhoneCall ব্যবহার করুন
+                    () => _makePhoneCall(phone),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -547,7 +554,7 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
                   child: _outlineBtn(
                     Icons.chat_bubble_outline_rounded,
                     'SMS',
-                        () => _launchAction('sms:$phone'),
+                    () => _launchAction('sms:$phone'),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -615,149 +622,60 @@ class _TotalCustomerScreenState extends State<TotalCustomerScreen> {
       ),
     );
   }
-  void _makePhoneCall(String phoneNumber) async {
-    // ডায়ালার খোলা
-    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
 
+  // 📌 ইমেজ ইউআরএল জেনারেট
+  String _getFullUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return ApiEndPoint.assetUrl(url);
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
     try {
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
-      } else {
-        final Uri dialUri = Uri(scheme: 'tel', path: phoneNumber);
-        await launchUrl(dialUri);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cannot call: $phoneNumber'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      debugPrint('Error making call: $e');
     }
   }
-// ─── Navigation to Edit Customer ───
+
   void _navigateToEditCustomer(Customer customer) {
-    debugPrint('✏️ [TotalCustomerScreen] Edit Customer Clicked');
-    debugPrint('🆔 Customer ID: ${customer.id ?? 'N/A'}');
-    debugPrint('📋 Customer Name: ${customer.name ?? 'Unknown'}');
-
     if (customer.id == null || customer.id!.isEmpty) {
-      debugPrint('⚠️ Customer ID is null or empty');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot edit pending applicant. Please complete application first.'),
+          content: Text('Cannot edit pending applicant.'),
           backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
         ),
       );
       return;
     }
-
-    try {
-      final customerId = customer.id!;
-      debugPrint('✅ Navigating to EditCustomer with ID: $customerId');
-
-      Navigator.pushNamed(
-        context,
-        RouteName.editCustomerScreen,
-        arguments: customerId,
-      ).then((result) {
-        debugPrint('✅ Edit navigation completed. Result: $result');
-      }).catchError((error) {
-        debugPrint('❌ Navigation error: $error');
-        _showErrorDialog('Navigation Error', error.toString());
-      });
-    } catch (e, stackTrace) {
-      debugPrint('❌ Navigation Exception: $e');
-      debugPrint('📚 StackTrace: $stackTrace');
-      _showErrorDialog('Error', 'Could not open edit screen: $e');
-    }
+    Navigator.pushNamed(
+      context,
+      RouteName.editCustomerScreen,
+      arguments: customer.id!,
+    );
   }
-  // ─── Navigation Method ───
+
   void _navigateToCustomerDetails(Customer customer) {
-    debugPrint('👤 [TotalCustomerScreen] View Details Clicked');
-    debugPrint('🆔 Customer ID: ${customer.id ?? 'N/A'}');
-    debugPrint('📋 Customer Name: ${customer.name ?? 'Unknown'}');
-    debugPrint('📞 Customer Phone: ${customer.phone ?? 'N/A'}');
+    String? id = customer.id ?? (customer.displayId != 'Pending applicant' ? customer.displayId : null);
 
-    // 🔥 নতুন চেক: customerId আছে কিনা
-    if (customer.id == null || customer.id!.isEmpty) {
-      debugPrint('⚠️ Customer ID is null or empty - checking application...');
-
-      // 🆕 application থেকে ID নেওয়ার চেষ্টা করুন
-      // যদি customerId থাকে, তাহলে সেটা ব্যবহার করুন
-      if (customer.displayId != null &&
-          customer.displayId != 'Pending applicant') {
-        // customerId পাওয়া গেছে
-        try {
-          final customerId = customer.displayId!;
-          Navigator.pushNamed(
-            context,
-            RouteName.customerDetailsScreen,
-            arguments: customerId,
-          );
-          return;
-        } catch (e) {
-          debugPrint('Error navigating with displayId: $e');
-        }
-      }
-
-      // যদি কোন customerId না থাকে, তাহলে পেন্ডিং অ্যাপ্লিকেশন ওপেন করুন
+    if (id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'This is a pending applicant. Please complete the application first.',
-          ),
+          content: Text('Pending applicant. Please complete application.'),
           backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
         ),
       );
-
-      // 🆕 পেন্ডিং অ্যাপ্লিকেশন স্ক্রিনে নিয়ে যান
-      // Navigator.pushNamed(context, RouteName.pendingApplicationScreen);
       return;
     }
 
-    try {
-      final customerId = customer.id!;
-      debugPrint('✅ Sending customerId: $customerId');
-
-      Navigator.pushNamed(
-            context,
-            RouteName.customerDetailsScreen,
-            arguments: customerId,
-          )
-          .then((result) {
-            debugPrint('✅ Navigation completed. Result: $result');
-          })
-          .catchError((error) {
-            debugPrint(' Navigation error: $error');
-            _showErrorDialog('Navigation Error', error.toString());
-          });
-
-      debugPrint('✅ Navigation command sent successfully');
-    } catch (e, stackTrace) {
-      debugPrint(' Navigation Exception: $e');
-      debugPrint('📚 StackTrace: $stackTrace');
-      _showErrorDialog('Error', 'Could not open customer details: $e');
-    }
-  }
-
-  // ─── Error Dialog ───
-  void _showErrorDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    Navigator.pushNamed(
+      context,
+      RouteName.customerDetailsScreen,
+      arguments: id,
     );
   }
 

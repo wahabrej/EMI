@@ -1009,8 +1009,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     return _buildListTile(
                       initials: name.isNotEmpty ? name[0].toUpperCase() : 'C',
                       title: name,
-                      subtitle:
-                          'MRP: ৳${app.mrp ?? 0} • ${app.planMonths ?? 0} mo',
+                      subtitle: 'MRP: ৳${app.mrp ?? 0} • mo',
                       badgeText: status,
                       badgeBg: isPending
                           ? const Color(0xFFFFF7ED)

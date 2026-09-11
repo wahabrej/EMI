@@ -298,22 +298,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             radius: 35,
             backgroundColor: const Color(0xFFEFF6FF),
             backgroundImage:
-                customer.profileImage != null &&
-                    customer.profileImage!.isNotEmpty
+            customer.profileImage != null &&
+                customer.profileImage!.isNotEmpty
                 ? NetworkImage(_getFullUrl(customer.profileImage!))
                 : null,
             child:
-                customer.profileImage == null || customer.profileImage!.isEmpty
+            customer.profileImage == null || customer.profileImage!.isEmpty
                 ? Text(
-                    customer.name != null && customer.name!.isNotEmpty
-                        ? customer.name![0].toUpperCase()
-                        : 'C',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0052CC),
-                    ),
-                  )
+              customer.name != null && customer.name!.isNotEmpty
+                  ? customer.name![0].toUpperCase()
+                  : 'C',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0052CC),
+              ),
+            )
                 : null,
           ),
           const SizedBox(width: 16),
@@ -359,7 +359,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
                 Text(
                   "Created At: ${customer.salesPersonName ?? 'N/A'}",
-                  style: const TextStyle(color: Color(0xFF64748B)),
+                  style: const TextStyle(color: Color(0xFF000000),fontWeight: FontWeight.w600,fontSize: 16),
                 ),
               ],
             ),
@@ -504,24 +504,24 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   // 📌 ডকুমেন্ট থাম্বনেইল (Slider সাপোর্ট সহ)
   Widget _docThumbnail(
-    String label,
-    String url,
-    bool isVideo,
-    List<Map<String, String>> allDocs,
-    int currentIndex,
-  ) {
+      String label,
+      String url,
+      bool isVideo,
+      List<Map<String, String>> allDocs,
+      int currentIndex,
+      ) {
     if (url.isEmpty) return const SizedBox.shrink();
 
     final fullUrl = _getFullUrl(url);
 
     bool isVideoFile =
         isVideo ||
-        label.toUpperCase().contains('VIDEO') ||
-        url.toLowerCase().endsWith('.mp4') ||
-        url.toLowerCase().endsWith('.mov') ||
-        url.toLowerCase().endsWith('.avi') ||
-        url.toLowerCase().endsWith('.mkv') ||
-        url.toLowerCase().endsWith('.webm');
+            label.toUpperCase().contains('VIDEO') ||
+            url.toLowerCase().endsWith('.mp4') ||
+            url.toLowerCase().endsWith('.mov') ||
+            url.toLowerCase().endsWith('.avi') ||
+            url.toLowerCase().endsWith('.mkv') ||
+            url.toLowerCase().endsWith('.webm');
 
     return Container(
       margin: const EdgeInsets.only(right: 12),
@@ -544,145 +544,145 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
                 child: isVideoFile
                     ? Stack(
-                        children: [
-                          Container(
-                            height: 80,
-                            width: 100,
-                            color: Colors.black87,
-                            child: const Center(
-                              child: Icon(
-                                Icons.play_circle_fill,
-                                color: Colors.white,
-                                size: 50,
-                              ),
-                            ),
-                          ),
-                          // 📌 Document count badge
-                          if (allDocs.length > 1)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${currentIndex + 1}/${allDocs.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'VIDEO',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Stack(
-                        children: [
-                          Image.network(
-                            fullUrl,
-                            height: 80,
-                            width: 100,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                height: 80,
-                                width: 100,
-                                color: Colors.grey[200],
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress
-                                                  .cumulativeBytesLoaded /
-                                              loadingProgress
-                                                  .expectedTotalBytes!
-                                        : null,
-                                    color: const Color(0xFF0052CC),
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 80,
-                              width: 100,
-                              color: Colors.grey[200],
-                              child: const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                    size: 30,
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Failed',
-                                    style: TextStyle(
-                                      fontSize: 8,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // 📌 Document count badge
-                          if (allDocs.length > 1)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${currentIndex + 1}/${allDocs.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+                  children: [
+                    Container(
+                      height: 80,
+                      width: 100,
+                      color: Colors.black87,
+                      child: const Center(
+                        child: Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 50,
+                        ),
                       ),
+                    ),
+                    // 📌 Document count badge
+                    if (allDocs.length > 1)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${currentIndex + 1}/${allDocs.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      bottom: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'VIDEO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+                    : Stack(
+                  children: [
+                    Image.network(
+                      fullUrl,
+                      height: 80,
+                      width: 100,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 80,
+                          width: 100,
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value:
+                              loadingProgress.expectedTotalBytes !=
+                                  null
+                                  ? loadingProgress
+                                  .cumulativeBytesLoaded /
+                                  loadingProgress
+                                      .expectedTotalBytes!
+                                  : null,
+                              color: const Color(0xFF0052CC),
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 80,
+                        width: 100,
+                        color: Colors.grey[200],
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                              size: 30,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Failed',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // 📌 Document count badge
+                    if (allDocs.length > 1)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${currentIndex + 1}/${allDocs.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -701,10 +701,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   // 📌 NEW: Document Slider Viewer
   void _showDocumentSlider(
-    BuildContext context,
-    List<Map<String, String>> documents,
-    int initialIndex,
-  ) {
+      BuildContext context,
+      List<Map<String, String>> documents,
+      int initialIndex,
+      ) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -1188,7 +1188,7 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         widget.documents.length,
-                        (index) => Container(
+                            (index) => Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           width: 8,
                           height: 8,
@@ -1210,13 +1210,13 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                           TextButton(
                             onPressed: _currentIndex > 0
                                 ? () {
-                                    _pageController.previousPage(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  }
+                              _pageController.previousPage(
+                                duration: const Duration(
+                                  milliseconds: 300,
+                                ),
+                                curve: Curves.easeInOut,
+                              );
+                            }
                                 : null,
                             child: const Text(
                               'Previous',
@@ -1225,15 +1225,15 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
                           ),
                           TextButton(
                             onPressed:
-                                _currentIndex < widget.documents.length - 1
+                            _currentIndex < widget.documents.length - 1
                                 ? () {
-                                    _pageController.nextPage(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  }
+                              _pageController.nextPage(
+                                duration: const Duration(
+                                  milliseconds: 300,
+                                ),
+                                curve: Curves.easeInOut,
+                              );
+                            }
                                 : null,
                             child: const Text(
                               'Next',
