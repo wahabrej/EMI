@@ -23,7 +23,11 @@ class MultyFormScreen extends StatelessWidget {
             elevation: 0,
             title: const Text(
               'Checkout Process',
-              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: AppColors.white),
@@ -60,7 +64,7 @@ class MultyFormScreen extends StatelessWidget {
         children: List.generate(totalActiveSteps, (index) {
           bool isCompleted = currentDisplayIndex > index;
           bool isActive = currentDisplayIndex == index;
-          int stepNumber = activeSteps[index] + 1; 
+          int stepNumber = activeSteps[index] + 1;
 
           return Expanded(
             child: Row(
@@ -71,17 +75,27 @@ class MultyFormScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isActive
                         ? AppColors.white
-                        : (isCompleted ? AppColors.successGreen : Colors.white24),
+                        : (isCompleted
+                              ? AppColors.successGreen
+                              : Colors.white24),
                     shape: BoxShape.circle,
-                    border: isActive ? Border.all(color: AppColors.white, width: 2) : null,
+                    border: isActive
+                        ? Border.all(color: AppColors.white, width: 2)
+                        : null,
                   ),
                   child: Center(
                     child: isCompleted
-                        ? const Icon(Icons.check, size: 16, color: AppColors.white)
+                        ? const Icon(
+                            Icons.check,
+                            size: 16,
+                            color: AppColors.white,
+                          )
                         : Text(
                             '$stepNumber',
                             style: TextStyle(
-                              color: isActive ? AppColors.primaryBlue : AppColors.white,
+                              color: isActive
+                                  ? AppColors.primaryBlue
+                                  : AppColors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
@@ -92,7 +106,9 @@ class MultyFormScreen extends StatelessWidget {
                   Expanded(
                     child: Container(
                       height: 2,
-                      color: isCompleted ? AppColors.successGreen : Colors.white24,
+                      color: isCompleted
+                          ? AppColors.successGreen
+                          : Colors.white24,
                     ),
                   ),
               ],
@@ -105,13 +121,20 @@ class MultyFormScreen extends StatelessWidget {
 
   Widget _buildStepBody(CheckoutViewModel vm, BuildContext context) {
     switch (vm.currentStep) {
-      case 0: return OrderReviewStep(onNext: () => vm.nextStep());
-      case 1: return CustomerInfoStep(onNext: () => vm.nextStep());
-      case 2: return KycVerificationStep(onNext: () => vm.nextStep());
-      case 3: return GuarantorStep(onNext: () => vm.nextStep());
-      case 4: return PaymentStep(onNext: () => vm.nextStep());
-      case 5: return ConfirmationStep(onSuccess: () => _handleSuccess(vm, context));
-      default: return const Center(child: Text("Unknown Step"));
+      case 0:
+        return OrderReviewStep(onNext: () => vm.nextStep());
+      case 1:
+        return CustomerInfoStep(onNext: () => vm.nextStep());
+      case 2:
+        return KycVerificationStep(onNext: () => vm.nextStep());
+      case 3:
+        return GuarantorStep(onNext: () => vm.nextStep());
+      case 4:
+        return PaymentStep(onNext: () => vm.nextStep());
+      case 5:
+        return ConfirmationStep(onSuccess: () => _handleSuccess(vm, context));
+      default:
+        return const Center(child: Text("Unknown Step"));
     }
   }
 
@@ -131,12 +154,19 @@ class MultyFormScreen extends StatelessWidget {
         content: const Text("Your order has been submitted successfully."),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+            ),
             onPressed: () {
-              vm.resetStep();
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+              vm.resetForm();
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/', (route) => false);
             },
-            child: const Text("Back to Home", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Back to Home",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

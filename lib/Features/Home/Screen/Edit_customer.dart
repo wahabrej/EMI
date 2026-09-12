@@ -30,6 +30,9 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
   TextEditingController? _nidController;
   TextEditingController? _incomeSourceController;
   TextEditingController? _monthlyIncomeController;
+  TextEditingController? _sourceOfIncomeOtherController;
+  TextEditingController? _businessNameController;
+  TextEditingController? _notesController;
   TextEditingController? _presentAddressController;
   TextEditingController? _permanentAddressController;
   TextEditingController? _monthlyPaymentDateController;
@@ -63,9 +66,7 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
   List<String> _guarantorNidBackUrls = [];
 
   String? _selectedIdType;
-  String? _selectedStatus;
   DateTime _selectedMonthlyPaymentDate = DateTime.now();
-  DateTime _selectedIssueDate = DateTime.now();
 
   // ─── Add Guarantor Dialog ───
   final TextEditingController _newGuarantorNameController =
@@ -114,6 +115,9 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
     _nidController?.dispose();
     _incomeSourceController?.dispose();
     _monthlyIncomeController?.dispose();
+    _sourceOfIncomeOtherController?.dispose();
+    _businessNameController?.dispose();
+    _notesController?.dispose();
     _presentAddressController?.dispose();
     _permanentAddressController?.dispose();
     _monthlyPaymentDateController?.dispose();
@@ -165,6 +169,13 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
     _monthlyIncomeController = TextEditingController(
       text: customer.monthlyIncome?.toString() ?? '',
     );
+    _sourceOfIncomeOtherController = TextEditingController(
+      text: customer.sourceOfIncomeOther ?? '',
+    );
+    _businessNameController = TextEditingController(
+      text: customer.businessName ?? '',
+    );
+    _notesController = TextEditingController(text: customer.notes ?? '');
     _presentAddressController = TextEditingController(
       text: customer.presentAddress ?? '',
     );
@@ -230,17 +241,12 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
     );
 
     _selectedIdType = customer.idType ?? 'NID';
-    _selectedStatus = customer.status ?? 'ACTIVE';
 
     if (customer.monthlyPaymentDate != null) {
       _selectedMonthlyPaymentDate = DateTime.parse(
         customer.monthlyPaymentDate!,
       );
     }
-    if (customer.issueDate != null) {
-      _selectedIssueDate = DateTime.parse(customer.issueDate!);
-    }
-
     _initGuarantorControllers(customer.guarantors ?? []);
   }
 
@@ -2153,6 +2159,16 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
     if (customer.monthlyIncome != null && customer.monthlyIncome!.isNotEmpty) {
       updatedData['monthlyIncome'] = customer.monthlyIncome;
     }
+    if (customer.sourceOfIncomeOther != null &&
+        customer.sourceOfIncomeOther!.isNotEmpty) {
+      updatedData['sourceOfIncomeOther'] = customer.sourceOfIncomeOther;
+    }
+    if (customer.businessName != null && customer.businessName!.isNotEmpty) {
+      updatedData['businessName'] = customer.businessName;
+    }
+    if (customer.notes != null && customer.notes!.isNotEmpty) {
+      updatedData['notes'] = customer.notes;
+    }
     if (customer.status != null && customer.status!.isNotEmpty) {
       updatedData['status'] = customer.status;
     }
@@ -2470,6 +2486,26 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
                     label: 'Monthly Income',
                     icon: Icons.currency_exchange_rounded,
                     prefix: '৳ ',
+                  ),
+                  const SizedBox(height: 12),
+                  if ((customer.sourceOfIncome ?? '').toUpperCase() == 'OTHERS')
+                    _buildReadOnlyField(
+                      controller: _sourceOfIncomeOtherController!,
+                      label: 'Other Source of Income',
+                      icon: Icons.work_history_outlined,
+                    ),
+                  const SizedBox(height: 12),
+                  _buildReadOnlyField(
+                    controller: _businessNameController!,
+                    label: 'Business Name',
+                    icon: Icons.business_outlined,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildReadOnlyField(
+                    controller: _notesController!,
+                    label: 'Sales Note / Remarks',
+                    icon: Icons.note_alt_outlined,
+                    maxLines: 3,
                   ),
                   const SizedBox(height: 12),
                   _buildReadOnlyField(

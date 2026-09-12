@@ -20,6 +20,9 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _monthlyIncomeController = TextEditingController();
+  final _sourceOfIncomeOtherController = TextEditingController();
+  final _businessNameController = TextEditingController();
+  final _notesController = TextEditingController();
   final _presentAddressController = TextEditingController();
   final _permanentAddressController = TextEditingController();
 
@@ -44,6 +47,9 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
     _monthlyIncomeController.text = vm.checkoutData.monthlyIncome == 0.0
         ? ''
         : vm.checkoutData.monthlyIncome.toStringAsFixed(0);
+    _sourceOfIncomeOtherController.text = vm.checkoutData.sourceOfIncomeOther;
+    _businessNameController.text = vm.checkoutData.businessName;
+    _notesController.text = vm.checkoutData.notes;
     _presentAddressController.text = vm.checkoutData.presentAddress;
     _permanentAddressController.text = vm.checkoutData.permanentAddress;
   }
@@ -54,21 +60,32 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
     _phoneController.dispose();
     _passwordController.dispose();
     _monthlyIncomeController.dispose();
+    _sourceOfIncomeOtherController.dispose();
+    _businessNameController.dispose();
+    _notesController.dispose();
     _presentAddressController.dispose();
     _permanentAddressController.dispose();
     super.dispose();
   }
 
-  Future<void> _showImageSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+  Future<void> _showImageSourceActionSheet(
+    BuildContext context,
+    Function(ImageSource) onSourceSelected,
+  ) async {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text('Select Photo Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Select Photo Source',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: Colors.blue),
@@ -93,16 +110,24 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
     );
   }
 
-  Future<void> _showVideoSourceActionSheet(BuildContext context, Function(ImageSource) onSourceSelected) async {
+  Future<void> _showVideoSourceActionSheet(
+    BuildContext context,
+    Function(ImageSource) onSourceSelected,
+  ) async {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text('Select Video Source', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Select Video Source',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.video_library, color: Colors.blue),
@@ -144,9 +169,7 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
   Future<void> _pickVideo(CheckoutViewModel vm) async {
     await _showVideoSourceActionSheet(context, (source) async {
       final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: source,
-      );
+      final XFile? video = await picker.pickVideo(source: source);
 
       if (video != null) {
         vm.setCustomerVideo(File(video.path));
@@ -159,9 +182,15 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
       vm.checkoutData.name = _nameController.text.trim();
       vm.checkoutData.phone = _phoneController.text.trim();
       vm.checkoutData.password = _passwordController.text.trim();
-      vm.checkoutData.monthlyIncome = double.tryParse(_monthlyIncomeController.text.trim()) ?? 0.0;
+      vm.checkoutData.monthlyIncome =
+          double.tryParse(_monthlyIncomeController.text.trim()) ?? 0.0;
+      vm.checkoutData.sourceOfIncomeOther = _sourceOfIncomeOtherController.text
+          .trim();
+      vm.checkoutData.businessName = _businessNameController.text.trim();
+      vm.checkoutData.notes = _notesController.text.trim();
       vm.checkoutData.presentAddress = _presentAddressController.text.trim();
-      vm.checkoutData.permanentAddress = _permanentAddressController.text.trim();
+      vm.checkoutData.permanentAddress = _permanentAddressController.text
+          .trim();
       widget.onNext();
     }
   }
@@ -179,7 +208,11 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
           children: [
             const Text(
               'Customer Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -187,7 +220,8 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
               controller: _nameController,
               label: 'Customer Name *',
               hint: 'Enter customer name',
-              validator: (v) => v!.trim().isEmpty ? 'Enter customer name' : null,
+              validator: (v) =>
+                  v!.trim().isEmpty ? 'Enter customer name' : null,
             ),
             const SizedBox(height: 12),
 
@@ -205,14 +239,18 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
               label: 'Customer Login Password *',
               hint: 'Enter login password',
               obscureText: _obscurePassword,
-              validator: (v) => v!.trim().isEmpty ? 'Enter login password' : null,
+              validator: (v) =>
+                  v!.trim().isEmpty ? 'Enter login password' : null,
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   size: 20,
                   color: const Color(0xFF64748B),
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
             ),
             const SizedBox(height: 16),
@@ -233,12 +271,19 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                       children: const [
                         Text(
                           'Customer Image',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           'Upload a clear customer photo for the profile',
-                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -247,7 +292,10 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                     onTap: () => _pickImage(vm),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
@@ -255,24 +303,31 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                       ),
                       child: vm.customerImageFile != null
                           ? ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.file(
-                          vm.customerImageFile!,
-                          width: 44,
-                          height: 44,
-                          fit: BoxFit.cover,
-                        ),
-                      )
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.file(
+                                vm.customerImageFile!,
+                                width: 44,
+                                height: 44,
+                                fit: BoxFit.cover,
+                              ),
+                            )
                           : Column(
-                        children: const [
-                          Icon(Icons.person_add_alt_1_outlined, color: Color(0xFF2563EB)),
-                          SizedBox(height: 4),
-                          Text(
-                            'Upload image',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                          ),
-                        ],
-                      ),
+                              children: const [
+                                Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  color: Color(0xFF2563EB),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Upload image',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ],
@@ -296,12 +351,19 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                       children: const [
                         Text(
                           'Customer Video(Optional)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           'Upload a short video for verification',
-                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -310,7 +372,10 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                     onTap: () => _pickVideo(vm),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
@@ -318,29 +383,40 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                       ),
                       child: vm.customerVideoFile != null
                           ? Row(
-                        children: [
-                          const Icon(Icons.video_file, color: Colors.blue, size: 20),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Video Attached',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade700,
-                            ),
-                          ),
-                        ],
-                      )
+                              children: [
+                                const Icon(
+                                  Icons.video_file,
+                                  color: Colors.blue,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Video Attached',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ],
+                            )
                           : Column(
-                        children: const [
-                          Icon(Icons.video_call_outlined, color: Color(0xFF2563EB)),
-                          SizedBox(height: 4),
-                          Text(
-                            'Upload video',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                          ),
-                        ],
-                      ),
+                              children: const [
+                                Icon(
+                                  Icons.video_call_outlined,
+                                  color: Color(0xFF2563EB),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Upload video',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ],
@@ -357,24 +433,40 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                     children: [
                       const Text(
                         'Source of Income *',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF334155),
+                        ),
                       ),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        value: _incomeSources.contains(vm.checkoutData.sourceOfIncome)
+                        value:
+                            _incomeSources.contains(
+                              vm.checkoutData.sourceOfIncome,
+                            )
                             ? vm.checkoutData.sourceOfIncome
                             : null,
-                        hint: const Text('Select source', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                        hint: const Text(
+                          'Select source',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
                         isExpanded: true,
                         items: _incomeSources.map((source) {
                           return DropdownMenuItem(
                             value: source,
-                            child: Text(source, style: const TextStyle(fontSize: 13)),
+                            child: Text(
+                              source,
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {
                           vm.checkoutData.sourceOfIncome = val ?? 'Business';
-                          vm.notifyListeners();
+                          setState(() {});
                         },
                         validator: (v) => v == null ? 'Select source' : null,
                         decoration: _inputDecoration(),
@@ -389,10 +481,44 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                     label: 'Monthly Income *',
                     hint: 'Enter income',
                     keyboardType: TextInputType.number,
-                    validator: (v) => v!.trim().isEmpty ? 'Enter monthly income' : null,
+                    validator: (v) =>
+                        v!.trim().isEmpty ? 'Enter monthly income' : null,
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+
+            if (vm.checkoutData.sourceOfIncome.toUpperCase() == 'OTHERS')
+              Column(
+                children: [
+                  _buildTextField(
+                    controller: _sourceOfIncomeOtherController,
+                    label: 'Specify Other Source of Income *',
+                    hint: 'Enter other source of income',
+                    validator: (v) =>
+                        vm.checkoutData.sourceOfIncome.toUpperCase() ==
+                                'OTHERS' &&
+                            (v == null || v.trim().isEmpty)
+                        ? 'Enter the other source of income'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+
+            _buildTextField(
+              controller: _businessNameController,
+              label: 'Business Name (Optional)',
+              hint: 'Enter business name if applicable',
+            ),
+            const SizedBox(height: 12),
+
+            _buildTextField(
+              controller: _notesController,
+              label: 'Sales Note / Remarks (Optional)',
+              hint: 'Add any additional remarks',
+              maxLines: 3,
             ),
             const SizedBox(height: 12),
 
@@ -401,7 +527,8 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
               label: 'Present Address *',
               hint: 'Enter present address',
               maxLines: 2,
-              validator: (v) => v!.trim().isEmpty ? 'Enter present address' : null,
+              validator: (v) =>
+                  v!.trim().isEmpty ? 'Enter present address' : null,
             ),
             const SizedBox(height: 12),
 
@@ -410,7 +537,8 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
               label: 'Permanent Address *',
               hint: 'Enter permanent address',
               maxLines: 2,
-              validator: (v) => v!.trim().isEmpty ? 'Enter permanent address' : null,
+              validator: (v) =>
+                  v!.trim().isEmpty ? 'Enter permanent address' : null,
             ),
             const SizedBox(height: 24),
 
@@ -422,11 +550,17 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text(
                   'Next Step',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -451,7 +585,11 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF334155),
+          ),
         ),
         const SizedBox(height: 6),
         TextFormField(
@@ -472,10 +610,22 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
       suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF2563EB))),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFF2563EB)),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
       filled: true,
       fillColor: Colors.white,
     );

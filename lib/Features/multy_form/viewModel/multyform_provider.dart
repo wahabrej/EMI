@@ -288,6 +288,7 @@ class CheckoutViewModel extends ChangeNotifier {
 
         if (emiPlanList.isNotEmpty) {
           final firstPlan = emiPlanList.first;
+          checkoutData.emiMode = 'EXISTING_PLAN';
           checkoutData.emiPlanId = firstPlan.id;
           debugPrint("📌 Auto-selected first plan: ${firstPlan.name}");
           await onEmiPlanSelected(firstPlan.id);
@@ -812,9 +813,9 @@ class CheckoutViewModel extends ChangeNotifier {
             debugPrint("   📌 Plan: ${plan.name} (ID: ${plan.id})");
           }
 
-          if (emiPlanList.isNotEmpty &&
-              checkoutData.emiMode == 'EXISTING_PLAN') {
+          if (emiPlanList.isNotEmpty) {
             final firstPlan = emiPlanList.first;
+            checkoutData.emiMode = 'EXISTING_PLAN';
             checkoutData.emiPlanId = firstPlan.id;
             debugPrint("✅ Auto-selected first plan: ${firstPlan.name}");
             await onEmiPlanSelected(firstPlan.id);
@@ -938,6 +939,106 @@ class CheckoutViewModel extends ChangeNotifier {
   // ─────────────── Setters ───────────────
   void resetStep() {
     _current_step = 0;
+    notifyListeners();
+  }
+
+  void resetForm() {
+    _current_step = 0;
+    _isLoading = false;
+    _errorMessage = null;
+
+    customerImageFile = null;
+    customerVideoFile = null;
+
+    shopList.clear();
+    agentList.clear();
+    managerList.clear();
+    salesPersonList.clear();
+    productList.clear();
+    emiPlanList.clear();
+
+    checkoutData.issueDate = null;
+    checkoutData.shopId = null;
+    checkoutData.shopName = null;
+    checkoutData.agentId = null;
+    checkoutData.agentName = null;
+    checkoutData.managerId = null;
+    checkoutData.managerName = null;
+    checkoutData.salesPersonId = null;
+    checkoutData.salesPersonName = null;
+    checkoutData.productId = null;
+    checkoutData.productModelId = null;
+    checkoutData.productModel = null;
+    checkoutData.brandName = null;
+    checkoutData.mrp = 0.0;
+    checkoutData.saleType = 'EMI';
+    checkoutData.emiMode = 'EXISTING_PLAN';
+    checkoutData.emiPlanId = null;
+    checkoutData.emiTenureMonths = 0;
+    checkoutData.downPayment = 0.0;
+    checkoutData.emiCharge = 0.0;
+    checkoutData.monthlyEmi = 0.0;
+    checkoutData.monthlyPaymentDate = null;
+
+    checkoutData.newPlanName = '';
+    checkoutData.newPlanMonths = 3;
+    checkoutData.downPaymentCalculationType = 'RATE';
+    checkoutData.downPaymentCalculationRate = '20';
+    checkoutData.downPaymentAmount = null;
+    checkoutData.appEmiChargeType = 'RATE';
+    checkoutData.appEmiChargeRate = '5';
+    checkoutData.appEmiChargeAmount = null;
+    checkoutData.cashbackRate = '0';
+    checkoutData.cashbackAmount = null;
+
+    checkoutData.customUpfrontPayment = 0.0;
+    checkoutData.customEmiDurationMonths = 6;
+    checkoutData.customAppEmiChargeRate = '0';
+    checkoutData.customCashbackRate = '0';
+    checkoutData.customEmiNote = '';
+    checkoutData.customAdditionalCharges = [];
+
+    checkoutData.name = '';
+    checkoutData.phone = '';
+    checkoutData.password = '';
+    checkoutData.presentAddress = '';
+    checkoutData.permanentAddress = '';
+    checkoutData.customerIdType = 'NID';
+    checkoutData.nidPassportNumber = '';
+    checkoutData.sourceOfIncome = 'Business';
+    checkoutData.sourceOfIncomeOther = '';
+    checkoutData.businessName = '';
+    checkoutData.monthlyIncome = 0.0;
+    checkoutData.notes = '';
+
+    checkoutData.customerPhoto = null;
+    checkoutData.customerVideo = null;
+    checkoutData.nidFront = null;
+    checkoutData.nidBack = null;
+    checkoutData.incomeProof = null;
+    checkoutData.incomeProofFiles = [];
+    checkoutData.incomeProofDocumentType = 'INCOME_PROOF_BANK_STATEMENT';
+
+    checkoutData.guarantors = [
+      GuarantorInfo(type: 'FAMILY', relationship: 'Brother'),
+      GuarantorInfo(type: 'NON_FAMILY', relationship: 'Friend'),
+    ];
+
+    checkoutData.downPaymentMethod = 'CASH';
+    checkoutData.bankAccountName = null;
+    checkoutData.bankAccountNumber = null;
+    checkoutData.bankName = null;
+    checkoutData.downPaymentReferenceNumber = null;
+    checkoutData.senderMobileNumber = null;
+    checkoutData.bankReceipt = null;
+
+    checkoutData.appEmiCharge = 0.0;
+    checkoutData.cashbackEarned = 0.0;
+    checkoutData.financedAmount = 0.0;
+    checkoutData.totalPayable = 0.0;
+    checkoutData.selectedCashbackRate = null;
+    checkoutData.downPaymentComponents = [];
+
     notifyListeners();
   }
 
@@ -1110,33 +1211,59 @@ class CheckoutViewModel extends ChangeNotifier {
 
       // ─── Create New EMI Plan ───
       if (checkoutData.emiMode == 'CREATE_NEW_PLAN') {
-        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        debugPrint("📌 [submitOrder] EMI Mode: CREATE_NEW_PLAN");
-        debugPrint("📌 [submitOrder] Calling createNewEmiPlan()...");
-        debugPrint("   📌 newPlanName: ${checkoutData.newPlanName}");
-        debugPrint("   📌 newPlanMonths: ${checkoutData.newPlanMonths}");
-        debugPrint(
-          "   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}",
-        );
-        debugPrint("   📌 appEmiChargeRate: ${checkoutData.appEmiChargeRate}");
-        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-        final newId = await createNewEmiPlan();
-
-        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        debugPrint("📊 [submitOrder] createNewEmiPlan() result: $newId");
-
-        if (newId == null) {
-          debugPrint("❌ [submitOrder] Failed to create new EMI plan");
+        if (emiPlanList.isNotEmpty) {
           debugPrint(
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
           );
-          _isLoading = false;
-          notifyListeners();
-          return false;
+          debugPrint(
+            "📌 [submitOrder] Existing EMI plans are already available. Switching from CREATE_NEW_PLAN to EXISTING_PLAN.",
+          );
+          debugPrint("   📌 Existing plan count: ${emiPlanList.length}");
+          checkoutData.emiMode = 'EXISTING_PLAN';
+          checkoutData.emiPlanId ??= emiPlanList.first.id;
+          await onEmiPlanSelected(checkoutData.emiPlanId);
+          debugPrint(
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          );
+        } else {
+          debugPrint(
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          );
+          debugPrint("📌 [submitOrder] EMI Mode: CREATE_NEW_PLAN");
+          debugPrint("📌 [submitOrder] Calling createNewEmiPlan()...");
+          debugPrint("   📌 newPlanName: ${checkoutData.newPlanName}");
+          debugPrint("   📌 newPlanMonths: ${checkoutData.newPlanMonths}");
+          debugPrint(
+            "   📌 downPaymentCalculationRate: ${checkoutData.downPaymentCalculationRate}",
+          );
+          debugPrint(
+            "   📌 appEmiChargeRate: ${checkoutData.appEmiChargeRate}",
+          );
+          debugPrint(
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          );
+
+          final newId = await createNewEmiPlan();
+
+          debugPrint(
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          );
+          debugPrint("📊 [submitOrder] createNewEmiPlan() result: $newId");
+
+          if (newId == null) {
+            debugPrint("❌ [submitOrder] Failed to create new EMI plan");
+            debugPrint(
+              "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            );
+            _isLoading = false;
+            notifyListeners();
+            return false;
+          }
+          debugPrint("✅ [submitOrder] New EMI Plan created with ID: $newId");
+          debugPrint(
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          );
         }
-        debugPrint("✅ [submitOrder] New EMI Plan created with ID: $newId");
-        debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       }
 
       // ─── Submit Loan Application ───
@@ -1497,7 +1624,10 @@ class CheckoutViewModel extends ChangeNotifier {
     request.fields['idType'] = checkoutData.customerIdType;
     request.fields['nidPassportNumber'] = checkoutData.nidPassportNumber;
     request.fields['sourceOfIncome'] = checkoutData.sourceOfIncome;
+    request.fields['sourceOfIncomeOther'] = checkoutData.sourceOfIncomeOther;
+    request.fields['businessName'] = checkoutData.businessName;
     request.fields['monthlyIncome'] = checkoutData.monthlyIncome.toString();
+    request.fields['notes'] = checkoutData.notes;
 
     debugPrint("   📌 [ID & Income]");
     debugPrint("      idType: ${request.fields['idType']}");
@@ -1708,52 +1838,6 @@ class CheckoutViewModel extends ChangeNotifier {
       attachedCount++;
       debugPrint(
         "   [VIDEO] $fieldName: ${file.path.split('/').last} ($mimeType)",
-      );
-    }
-
-    // ─── PDF বা অন্যান্য ডকুমেন্ট আটাচ করার ফাংশন (ভবিষ্যতের জন্য) ───
-    Future<void> attachDocument(String fieldName, File? file) async {
-      if (file == null || !file.existsSync()) {
-        debugPrint("[SKIP] $fieldName: File not found or null");
-        skippedCount++;
-        return;
-      }
-
-      String ext = file.path.split('.').last.toLowerCase();
-      String mimeType;
-
-      switch (ext) {
-        case 'pdf':
-          mimeType = 'application/pdf';
-          break;
-        case 'doc':
-          mimeType = 'application/msword';
-          break;
-        case 'docx':
-          mimeType =
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-          break;
-        case 'xls':
-          mimeType = 'application/vnd.ms-excel';
-          break;
-        case 'xlsx':
-          mimeType =
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-          break;
-        default:
-          mimeType = 'application/octet-stream';
-      }
-
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          fieldName,
-          file.path,
-          contentType: MediaType.parse(mimeType),
-        ),
-      );
-      attachedCount++;
-      debugPrint(
-        "  [DOCUMENT] $fieldName: ${file.path.split('/').last} ($mimeType)",
       );
     }
 

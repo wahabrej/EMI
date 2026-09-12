@@ -20,6 +20,9 @@ class CustomerData {
   String? permanentAddress;
   String? nidPassportNumber;
   String? sourceOfIncome;
+  String? sourceOfIncomeOther;
+  String? businessName;
+  String? notes;
   num? monthlyIncome;
   String? profileImage;
   String? customerImageUrl; // 📌 নতুন ফিল্ড
@@ -76,8 +79,11 @@ class CustomerData {
     permanentAddress = json['permanentAddress']?.toString();
     nidPassportNumber = json['nidPassportNumber']?.toString();
     sourceOfIncome = json['sourceOfIncome']?.toString();
+    sourceOfIncomeOther = json['sourceOfIncomeOther']?.toString();
+    businessName = json['businessName']?.toString();
+    notes = json['notes']?.toString();
     monthlyIncome = _parseNum(json['monthlyIncome']);
-    
+
     // 📌 ইমেজ ফিল্ড হ্যান্ডেল করা (Fallback লজিক সহ)
     profileImage = json['profileImage']?.toString();
     customerImageUrl = json['customerImageUrl']?.toString();
@@ -276,6 +282,7 @@ class ActiveLoan {
   num? paidAmount;
   num? remainingAmount;
   String? status;
+  List<LoanInstallment>? installments;
 
   ActiveLoan({
     this.id,
@@ -295,6 +302,47 @@ class ActiveLoan {
     paidAmount = _parseNum(json['paidAmount']);
     remainingAmount = _parseNum(json['remainingAmount']);
     status = json['status']?.toString();
+
+    if (json['installments'] != null && json['installments'] is List) {
+      installments = <LoanInstallment>[];
+      for (var item in json['installments']) {
+        installments!.add(LoanInstallment.fromJson(item));
+      }
+    }
+  }
+
+  num? _parseNum(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value);
+    return null;
+  }
+}
+
+class LoanInstallment {
+  String? id;
+  String? status;
+  String? dueDate;
+  num? totalDue;
+  num? remainingAmount;
+  num? originalAmount;
+
+  LoanInstallment({
+    this.id,
+    this.status,
+    this.dueDate,
+    this.totalDue,
+    this.remainingAmount,
+    this.originalAmount,
+  });
+
+  LoanInstallment.fromJson(Map<String, dynamic> json) {
+    id = json['id']?.toString();
+    status = json['status']?.toString();
+    dueDate = json['dueDate']?.toString() ?? json['date']?.toString();
+    totalDue = _parseNum(json['totalDue'] ?? json['amount']);
+    remainingAmount = _parseNum(json['remainingAmount'] ?? json['remaining']);
+    originalAmount = _parseNum(json['originalAmount'] ?? json['original']);
   }
 
   num? _parseNum(dynamic value) {

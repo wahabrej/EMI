@@ -3,8 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../CustomerFeature/home/model/customer_dashboard_model.dart';
-import '../../../core/constant/App_Colors.dart';
+import '../../../core/constant/Token_storage.dart';
 import '../../../core/routes/Routes_name.dart';
 import '../ViewModel/SalesDashboardViewModel.dart';
 
@@ -16,9 +15,29 @@ class PendingApprovalScreen extends StatefulWidget {
 }
 
 class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
+  final AppStorage _appStorage = AppStorage();
   String _selectedFilter = 'All';
   String _sortBy = 'Newest';
   String _searchQuery = '';
+  String? _currentUserId;
+  String? _currentUserRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUserProfile();
+  }
+
+  Future<void> _loadCurrentUserProfile() async {
+    final userId = await _appStorage.getUserId();
+    final role = await _appStorage.getUserRole();
+    if (!mounted) return;
+
+    setState(() {
+      _currentUserId = userId;
+      _currentUserRole = role;
+    });
+  }
 
   // Safe Down Payment extractor
   String _getDownPayment(dynamic app) {
@@ -39,10 +58,12 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
         final snapshot = app.calculationSnapshot;
         if (snapshot != null) {
           try {
-            if (snapshot.downPayment != null) return snapshot.downPayment.toString();
+            if (snapshot.downPayment != null)
+              return snapshot.downPayment.toString();
           } catch (_) {}
           try {
-            if (snapshot.downpayment != null) return snapshot.downpayment.toString();
+            if (snapshot.downpayment != null)
+              return snapshot.downpayment.toString();
           } catch (_) {}
         }
       } catch (_) {}
@@ -91,9 +112,10 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: Consumer<SalesDashboardViewModel>(
         builder: (context, viewModel, child) {
-          var apps = viewModel.dashboardData?.applications
-              ?.where((a) => (a.status ?? '').toUpperCase() == 'PENDING')
-              .toList() ??
+          var apps =
+              viewModel.dashboardData?.applications
+                  ?.where((a) => (a.status ?? '').toUpperCase() == 'PENDING')
+                  .toList() ??
               [];
 
           if (_searchQuery.isNotEmpty) {
@@ -127,7 +149,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                         if (apps.isEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 80),
-                            child: _buildEmptyState('No pending applications found'),
+                            child: _buildEmptyState(
+                              'No pending applications found',
+                            ),
                           )
                         else
                           ListView.builder(
@@ -189,8 +213,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
             children: [
               IconButton(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const Expanded(
                 child: Text(
@@ -210,8 +237,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       context,
                       RouteName.sellerNotificationScreen,
                     ),
-                    child: const Icon(Icons.notifications_none_rounded,
-                        color: Colors.white, size: 28),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                   Positioned(
                     right: 0,
@@ -249,8 +279,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search_rounded,
-                          color: Color(0xFF94A3B8), size: 22),
+                      const Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 22,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
@@ -282,7 +315,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.tune_rounded, color: Color(0xFF0052CC), size: 20),
+                    Icon(
+                      Icons.tune_rounded,
+                      color: Color(0xFF0052CC),
+                      size: 20,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'Filter',
@@ -434,9 +471,14 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                   onTap: () => setState(() => _selectedFilter = filter),
                   child: Container(
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF0052CC) : Colors.white,
+                      color: isSelected
+                          ? const Color(0xFF0052CC)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
@@ -447,9 +489,13 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                     child: Text(
                       filter,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF64748B),
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
                       ),
                     ),
                   ),
@@ -498,6 +544,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   // ───────────────────── PENDING CARD ─────────────────────
   Widget _buildPendingCard(dynamic app, NumberFormat currency) {
     final name = (app.name ?? 'Unknown Applicant').toString();
+    final canEdit = _canEditPendingApplication(app);
     final phone = (app.phone ?? 'N/A').toString();
     final mrp = double.tryParse((app.mrp ?? '0').toString()) ?? 0;
     final tenure = app.planMonths ?? 12;
@@ -506,7 +553,8 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
 
     String product = 'Smartphone';
     try {
-      product = app.productName?.toString() ??
+      product =
+          app.productName?.toString() ??
           app.product?.name?.toString() ??
           app.product?.toString() ??
           'Smartphone';
@@ -565,57 +613,79 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                           ),
                           isVerified
                               ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.green.withOpacity(0.3)),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.verified_rounded, color: Colors.green, size: 12),
-                                SizedBox(width: 3),
-                                Text(
-                                  'Docs Verified',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
                                   ),
-                                ),
-                              ],
-                            ),
-                          )
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.green.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.verified_rounded,
+                                        color: Colors.green,
+                                        size: 12,
+                                      ),
+                                      SizedBox(width: 3),
+                                      Text(
+                                        'Docs Verified',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
                               : Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.pending_rounded, color: Colors.orange, size: 12),
-                                SizedBox(width: 3),
-                                Text(
-                                  'Docs Pending',
-                                  style: TextStyle(
-                                    color: Colors.orange,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.orange.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.pending_rounded,
+                                        color: Colors.orange,
+                                        size: 12,
+                                      ),
+                                      SizedBox(width: 3),
+                                      Text(
+                                        'Docs Pending',
+                                        style: TextStyle(
+                                          color: Colors.orange,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.phone_rounded, size: 13, color: Color(0xFF64748B)),
+                          const Icon(
+                            Icons.phone_rounded,
+                            size: 13,
+                            color: Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             phone,
@@ -641,7 +711,10 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF7ED),
                         borderRadius: BorderRadius.circular(20),
@@ -714,22 +787,26 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed: () => _navigateToEditCustomer(app),
-                    icon: const Icon(
+                    onPressed: canEdit
+                        ? () => _navigateToEditCustomer(app)
+                        : null,
+                    icon: Icon(
                       Icons.edit_outlined,
                       size: 16,
-                      color: Colors.white,
+                      color: canEdit ? Colors.white : Colors.grey.shade400,
                     ),
-                    label: const Text(
+                    label: Text(
                       'Edit',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: canEdit ? Colors.white : Colors.grey.shade500,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0052CC),
+                      backgroundColor: canEdit
+                          ? const Color(0xFF0052CC)
+                          : Colors.grey.shade200,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       shape: RoundedRectangleBorder(
@@ -746,13 +823,17 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       debugPrint(' [PendingApprovalScreen] Review Clicked');
                       if (app.id != null) {
                         Navigator.pushNamed(
-                            context,
-                            RouteName.loanApplicationDetailsScreen,
-                            arguments: app.id.toString()
+                          context,
+                          RouteName.loanApplicationDetailsScreen,
+                          arguments: app.id.toString(),
                         );
                       }
                     },
-                    icon: const Icon(Icons.edit_note_rounded, size: 16, color: Colors.white),
+                    icon: const Icon(
+                      Icons.edit_note_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                     label: const Text(
                       'Review',
                       style: TextStyle(
@@ -777,6 +858,23 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
         ],
       ),
     );
+  }
+
+  bool _canEditPendingApplication(dynamic app) {
+    final userRole = (_currentUserRole ?? '').toUpperCase();
+    final userId = (_currentUserId ?? '').toString();
+    final salesPersonId = (app.salesPersonId ?? app.salesPerson?.id ?? '')
+        .toString();
+
+    if (userRole != 'SALES_PERSON') {
+      return false;
+    }
+
+    if (userId.isEmpty || salesPersonId.isEmpty) {
+      return false;
+    }
+
+    return salesPersonId == userId;
   }
 
   // ✅ ─── Navigation to Edit Customer ───
@@ -811,7 +909,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       debugPrint('⚠️ Customer ID is null or empty');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot edit pending applicant. Please complete the application first.'),
+          content: Text(
+            'Cannot edit pending applicant. Please complete the application first.',
+          ),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 3),
         ),
@@ -823,15 +923,17 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       debugPrint('✅ Navigating to EditCustomer with ID: $customerId');
 
       Navigator.pushNamed(
-        context,
-        RouteName.editCustomerScreen,
-        arguments: customerId,
-      ).then((result) {
-        debugPrint('✅ Edit navigation completed. Result: $result');
-      }).catchError((error) {
-        debugPrint('❌ Navigation error: $error');
-        _showErrorDialog('Navigation Error', error.toString());
-      });
+            context,
+            RouteName.editCustomerScreen,
+            arguments: customerId,
+          )
+          .then((result) {
+            debugPrint('✅ Edit navigation completed. Result: $result');
+          })
+          .catchError((error) {
+            debugPrint('❌ Navigation error: $error');
+            _showErrorDialog('Navigation Error', error.toString());
+          });
     } catch (e, stackTrace) {
       debugPrint('❌ Navigation Exception: $e');
       debugPrint('📚 StackTrace: $stackTrace');
@@ -915,8 +1017,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     return Center(
       child: Column(
         children: [
-          Icon(Icons.assignment_turned_in_outlined,
-              size: 64, color: Colors.grey.shade300),
+          Icon(
+            Icons.assignment_turned_in_outlined,
+            size: 64,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
           Text(
             message,

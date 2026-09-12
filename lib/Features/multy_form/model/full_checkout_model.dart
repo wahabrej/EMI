@@ -54,7 +54,10 @@ class FullCheckoutModel {
   String customerIdType = 'NID';
   String nidPassportNumber = '';
   String sourceOfIncome = 'Business';
+  String sourceOfIncomeOther = '';
+  String businessName = '';
   double monthlyIncome = 0.0;
+  String notes = '';
 
   // KYC
   File? customerPhoto;

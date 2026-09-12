@@ -49,6 +49,9 @@ class EditData {
   String? customerVideoPath;
   String? customerVideoUrl;
   String? sourceOfIncome;
+  String? sourceOfIncomeOther;
+  String? businessName;
+  String? notes;
   String? monthlyIncome;
   String? productModel;
   String? productModelId;
@@ -116,6 +119,9 @@ class EditData {
     this.customerVideoPath,
     this.customerVideoUrl,
     this.sourceOfIncome,
+    this.sourceOfIncomeOther,
+    this.businessName,
+    this.notes,
     this.monthlyIncome,
     this.productModel,
     this.productModelId,
@@ -185,6 +191,9 @@ class EditData {
       customerVideoPath: json['customerVideoPath']?.toString(),
       customerVideoUrl: json['customerVideoUrl']?.toString(),
       sourceOfIncome: json['sourceOfIncome']?.toString(),
+      sourceOfIncomeOther: json['sourceOfIncomeOther']?.toString(),
+      businessName: json['businessName']?.toString(),
+      notes: json['notes']?.toString(),
       monthlyIncome: json['monthlyIncome']?.toString(),
       productModel: json['productModel']?.toString(),
       productModelId: json['productModelId']?.toString(),
@@ -197,7 +206,8 @@ class EditData {
       monthlyPaymentDate: json['monthlyPaymentDate']?.toString(),
       refundNote: json['refundNote']?.toString(),
       downPaymentMethod: json['downPaymentMethod']?.toString(),
-      downPaymentReferenceNumber: json['downPaymentReferenceNumber']?.toString(),
+      downPaymentReferenceNumber: json['downPaymentReferenceNumber']
+          ?.toString(),
       bankAccountName: json['bankAccountName']?.toString(),
       bankAccountNumber: json['bankAccountNumber']?.toString(),
       bankName: json['bankName']?.toString(),
@@ -214,21 +224,31 @@ class EditData {
       createdAt: json['createdAt']?.toString(),
       updatedAt: json['updatedAt']?.toString(),
       guarantors: json['guarantors'] != null
-          ? (json['guarantors'] as List).map((e) => Guarantor.fromJson(e)).toList()
+          ? (json['guarantors'] as List)
+                .map((e) => Guarantor.fromJson(e))
+                .toList()
           : null,
       documents: json['documents'] != null
-          ? (json['documents'] as List).map((e) => Document.fromJson(e)).toList()
+          ? (json['documents'] as List)
+                .map((e) => Document.fromJson(e))
+                .toList()
           : null,
       shop: json['shop'] != null ? Shop.fromJson(json['shop']) : null,
       agent: json['agent'] != null ? Shop.fromJson(json['agent']) : null,
       manager: json['manager'] != null ? Shop.fromJson(json['manager']) : null,
-      salesPerson: json['salesPerson'] != null ? Shop.fromJson(json['salesPerson']) : null,
+      salesPerson: json['salesPerson'] != null
+          ? Shop.fromJson(json['salesPerson'])
+          : null,
       assignedProductModel: json['assignedProductModel'] != null
           ? AssignedProductModel.fromJson(json['assignedProductModel'])
           : null,
-      product: json['product'] != null ? Product.fromJson(json['product']) : null,
+      product: json['product'] != null
+          ? Product.fromJson(json['product'])
+          : null,
       activeLoans: json['activeLoans'] != null
-          ? (json['activeLoans'] as List).map((e) => ActiveLoan.fromJson(e)).toList()
+          ? (json['activeLoans'] as List)
+                .map((e) => ActiveLoan.fromJson(e))
+                .toList()
           : null,
       nidFront: json['nidFront']?.toString(),
       nidBack: json['nidBack']?.toString(),
@@ -263,6 +283,9 @@ class EditData {
     data['customerVideoPath'] = customerVideoPath;
     data['customerVideoUrl'] = customerVideoUrl;
     data['sourceOfIncome'] = sourceOfIncome;
+    data['sourceOfIncomeOther'] = sourceOfIncomeOther;
+    data['businessName'] = businessName;
+    data['notes'] = notes;
     data['monthlyIncome'] = monthlyIncome;
     data['productModel'] = productModel;
     data['productModelId'] = productModelId;
@@ -393,7 +416,9 @@ class Guarantor {
       nidFront: json['nidFront']?.toString(),
       nidBack: json['nidBack']?.toString(),
       documents: json['documents'] != null
-          ? (json['documents'] as List).map((e) => Document.fromJson(e)).toList()
+          ? (json['documents'] as List)
+                .map((e) => Document.fromJson(e))
+                .toList()
           : null,
     );
   }
@@ -557,7 +582,9 @@ class AssignedProductModel {
       createdAt: json['createdAt']?.toString(),
       updatedAt: json['updatedAt']?.toString(),
       brand: json['brand'] != null ? Shop.fromJson(json['brand']) : null,
-      product: json['product'] != null ? Product.fromJson(json['product']) : null,
+      product: json['product'] != null
+          ? Product.fromJson(json['product'])
+          : null,
     );
   }
   Map<String, dynamic> toJson() {
@@ -635,7 +662,9 @@ class ActiveLoan {
       status: json['status']?.toString(),
       totalAmount: double.tryParse(json['totalAmount']?.toString() ?? '0'),
       paidAmount: double.tryParse(json['paidAmount']?.toString() ?? '0'),
-      remainingAmount: double.tryParse(json['remainingAmount']?.toString() ?? '0'),
+      remainingAmount: double.tryParse(
+        json['remainingAmount']?.toString() ?? '0',
+      ),
     );
   }
   Map<String, dynamic> toJson() {

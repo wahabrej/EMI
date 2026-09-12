@@ -20,6 +20,11 @@ class LoanDetailData {
   String? idType;
   String? nidPassportNumber;
   String? sourceOfIncome;
+  String? sourceOfIncomeOther;
+  String? businessName;
+  String? notes;
+  String? salesPersonId;
+  String? salesPersonName;
   num? monthlyIncome;
   String? status;
   String? issueDate;
@@ -95,6 +100,15 @@ class LoanDetailData {
       permanentAddress = customer['permanentAddress']?.toString();
       nidPassportNumber = customer['nidPassportNumber']?.toString();
       sourceOfIncome = customer['sourceOfIncome']?.toString();
+      sourceOfIncomeOther = customer['sourceOfIncomeOther']?.toString();
+      businessName = customer['businessName']?.toString();
+      notes = customer['notes']?.toString();
+      salesPersonId =
+          customer['salesPersonId']?.toString() ??
+          json['salesPersonId']?.toString();
+      salesPersonName =
+          customer['salesPersonName']?.toString() ??
+          json['salesPersonName']?.toString();
       monthlyIncome = _parseNum(customer['monthlyIncome']);
       customerImage = customer['customerImageUrl']?.toString();
     } else {
@@ -104,6 +118,11 @@ class LoanDetailData {
       permanentAddress = json['permanentAddress']?.toString();
       nidPassportNumber = json['nidPassportNumber']?.toString();
       sourceOfIncome = json['sourceOfIncome']?.toString();
+      sourceOfIncomeOther = json['sourceOfIncomeOther']?.toString();
+      businessName = json['businessName']?.toString();
+      notes = json['notes']?.toString();
+      salesPersonId = json['salesPersonId']?.toString();
+      salesPersonName = json['salesPersonName']?.toString();
       monthlyIncome = _parseNum(json['monthlyIncome']);
       customerImage = json['customerImage']?.toString();
       customerNidFront = json['customerNidFront']?.toString();
@@ -113,11 +132,12 @@ class LoanDetailData {
     idType = json['idType']?.toString() ?? 'NID';
     status = json['status']?.toString();
     issueDate = json['issueDate']?.toString() ?? json['createdAt']?.toString();
-    
-    nextPaymentDate = json['nextPaymentDate']?.toString() ?? 
-                      json['monthlyPaymentDate']?.toString() ?? 
-                      json['paymentDate']?.toString();
-    
+
+    nextPaymentDate =
+        json['nextPaymentDate']?.toString() ??
+        json['monthlyPaymentDate']?.toString() ??
+        json['paymentDate']?.toString();
+
     if (json['installments'] != null && json['installments'] is List) {
       final installments = json['installments'] as List;
       for (var inst in installments) {
@@ -148,13 +168,21 @@ class LoanDetailData {
     final snapshot = json['calculationSnapshot'];
     if (snapshot != null) {
       mrp = _parseNum(snapshot['regularPrice']);
-      downPayment = _parseNum(snapshot['downPaymentAmount']) ?? _parseNum(snapshot['initialPaymentAmount']);
-      monthlyEmi = _parseNum(snapshot['monthlyEmi']) ?? _parseNum(snapshot['monthlyInstallment']);
+      downPayment =
+          _parseNum(snapshot['downPaymentAmount']) ??
+          _parseNum(snapshot['initialPaymentAmount']);
+      monthlyEmi =
+          _parseNum(snapshot['monthlyEmi']) ??
+          _parseNum(snapshot['monthlyInstallment']);
       planMonths = _parseInt(snapshot['planMonths']);
       emiCharge = _parseNum(snapshot['appEmiChargeAmount']);
       financedAmount = _parseNum(snapshot['financedAmount']);
-      totalPayable = _parseNum(snapshot['totalAfterCashback']) ?? _parseNum(snapshot['totalScheduledPayable']);
-      cashbackAmount = _parseNum(snapshot['cashbackAmount']) ?? _parseNum(snapshot['totalCashbackAmount']);
+      totalPayable =
+          _parseNum(snapshot['totalAfterCashback']) ??
+          _parseNum(snapshot['totalScheduledPayable']);
+      cashbackAmount =
+          _parseNum(snapshot['cashbackAmount']) ??
+          _parseNum(snapshot['totalCashbackAmount']);
       downPaymentMethod = json['downPaymentMethod']?.toString();
     } else {
       mrp = _parseNum(json['mrp']);
@@ -177,7 +205,8 @@ class LoanDetailData {
           name: g['name']?.toString(),
           phone: g['phone']?.toString(),
           relationship: g['relationship']?.toString(),
-          idType: g['idType']?.toString() ?? g['documentType']?.toString() ?? 'NID',
+          idType:
+              g['idType']?.toString() ?? g['documentType']?.toString() ?? 'NID',
           nidPassportNumber: g['nidPassportNumber']?.toString(),
         );
 
@@ -193,7 +222,8 @@ class LoanDetailData {
             }
           }
         } else {
-          guarantor.nidFront = g['nidFront']?.toString() ?? g['documentImageUrl']?.toString();
+          guarantor.nidFront =
+              g['nidFront']?.toString() ?? g['documentImageUrl']?.toString();
           guarantor.nidBack = g['nidBack']?.toString();
         }
         guarantors!.add(guarantor);
@@ -260,6 +290,7 @@ int? _parseInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;
   if (value is double) return value.toInt();
-  if (value is String) return int.tryParse(value) ?? (double.tryParse(value)?.toInt());
+  if (value is String)
+    return int.tryParse(value) ?? (double.tryParse(value)?.toInt());
   return null;
 }

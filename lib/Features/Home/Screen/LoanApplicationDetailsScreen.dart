@@ -207,10 +207,17 @@ class _LoanApplicationDetailsScreenState
                     app.nidPassportNumber ?? 'N/A',
                   ),
                   _infoRow("Source of Income", app.sourceOfIncome ?? 'N/A'),
+                  if ((app.sourceOfIncome ?? '').toUpperCase() == 'OTHERS')
+                    _infoRow(
+                      "Other Source of Income",
+                      app.sourceOfIncomeOther ?? 'N/A',
+                    ),
+                  _infoRow("Business Name", app.businessName ?? 'N/A'),
                   _infoRow(
                     "Monthly Income",
                     "৳${currency.format(app.monthlyIncome ?? 0)}",
                   ),
+                  _infoRow("Sales Note / Remarks", app.notes ?? 'N/A'),
                   _infoRow("Present Address", app.presentAddress ?? 'N/A'),
                   _infoRow("Permanent Address", app.permanentAddress ?? 'N/A'),
                 ]),
@@ -472,7 +479,7 @@ class _LoanApplicationDetailsScreenState
   }
 
   // ─── ✅ UPDATED: Customer Document Section ───
-// LoanApplicationDetailsScreen.dart - _buildCustomerDocumentSection ফাংশন আপডেট করুন
+  // LoanApplicationDetailsScreen.dart - _buildCustomerDocumentSection ফাংশন আপডেট করুন
 
   Widget _buildCustomerDocumentSection(BuildContext context, dynamic app) {
     final List<Map<String, String>> docs = [];
@@ -496,19 +503,22 @@ class _LoanApplicationDetailsScreenState
     }
 
     // 🔥 Also check direct fields from data (for backward compatibility)
-    if (dataMap['customerImageUrl'] != null && dataMap['customerImageUrl'].toString().isNotEmpty) {
+    if (dataMap['customerImageUrl'] != null &&
+        dataMap['customerImageUrl'].toString().isNotEmpty) {
       String url = dataMap['customerImageUrl'].toString();
       if (!docs.any((d) => d['url'] == url)) {
         docs.add({'label': 'PHOTO', 'url': url});
       }
     }
-    if (dataMap['customerVideoUrl'] != null && dataMap['customerVideoUrl'].toString().isNotEmpty) {
+    if (dataMap['customerVideoUrl'] != null &&
+        dataMap['customerVideoUrl'].toString().isNotEmpty) {
       String url = dataMap['customerVideoUrl'].toString();
       if (!docs.any((d) => d['url'] == url)) {
         docs.add({'label': 'VIDEO', 'url': url});
       }
     }
-    if (dataMap['incomeProofUrl'] != null && dataMap['incomeProofUrl'].toString().isNotEmpty) {
+    if (dataMap['incomeProofUrl'] != null &&
+        dataMap['incomeProofUrl'].toString().isNotEmpty) {
       String url = dataMap['incomeProofUrl'].toString();
       if (!docs.any((d) => d['url'] == url)) {
         docs.add({'label': 'INCOME PROOF', 'url': url});
@@ -555,28 +565,31 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-// ─── _getDocumentLabel ফাংশন আপডেট করুন ───
+  // ─── _getDocumentLabel ফাংশন আপডেট করুন ───
   String _getDocumentLabel(String docType) {
     final type = docType.toUpperCase();
     if (type.contains('PHOTO')) return 'PHOTO';
     if (type.contains('VIDEO')) return 'VIDEO';
-    if (type.contains('NID_FRONT') || type.contains('NIDFRONT')) return 'NID FRONT';
-    if (type.contains('NID_BACK') || type.contains('NIDBACK')) return 'NID BACK';
-    if (type.contains('INCOME') || type.contains('SALARY')) return 'INCOME PROOF';
+    if (type.contains('NID_FRONT') || type.contains('NIDFRONT'))
+      return 'NID FRONT';
+    if (type.contains('NID_BACK') || type.contains('NIDBACK'))
+      return 'NID BACK';
+    if (type.contains('INCOME') || type.contains('SALARY'))
+      return 'INCOME PROOF';
     if (type.contains('BANK')) return 'BANK RECEIPT';
     if (type.contains('CUSTOMER_PHOTO')) return 'PHOTO';
     if (type.contains('CUSTOMER_VIDEO')) return 'VIDEO';
     return docType.replaceAll('_', ' ').toUpperCase();
   }
 
-// _buildGuarantorCardWithDocuments ফাংশন আপডেট করুন
+  // _buildGuarantorCardWithDocuments ফাংশন আপডেট করুন
 
   Widget _buildGuarantorCardWithDocuments(
-      BuildContext context,
-      dynamic g,
-      int index,
-      NumberFormat currency,
-      ) {
+    BuildContext context,
+    dynamic g,
+    int index,
+    NumberFormat currency,
+  ) {
     final viewModel = context.read<LoanApplicationViewModel>();
     final dataMap = viewModel.rawData ?? {};
     Map<String, dynamic> guarantorMap = g is Map<String, dynamic> ? g : {};
@@ -842,124 +855,6 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  // ─── NEW: Video Player (updated) ───
-  void _showVideoPlayer(BuildContext context, String videoUrl, String title) {
-    final controller = VideoPlayerController.network(videoUrl);
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => FutureBuilder(
-          future: controller.initialize(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              controller.play();
-              return Dialog(
-                backgroundColor: Colors.black,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AspectRatio(
-                      aspectRatio: controller.value.aspectRatio,
-                      child: VideoPlayer(controller),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            controller.value.isPlaying
-                                ? Icons.pause
-                                : Icons.play_arrow,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            if (controller.value.isPlaying) {
-                              controller.pause();
-                            } else {
-                              controller.play();
-                            }
-                            setState(() {});
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () {
-                            controller.dispose();
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }
-            return const Center(child: CircularProgressIndicator());
-          },
-        ),
-      ),
-    );
-  }
-
-  // ─── ✅ NEW: Full Screen Image (for single image) ───
-  void _showFullScreenImage(
-    BuildContext context,
-    String imageUrl,
-    String title,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 3.0,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Text(
-                      'Failed to load image',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ─── Action Buttons ───
   Widget _buildActionButtons(
     BuildContext context,
@@ -1113,7 +1008,6 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
   late PageController _pageController;
   late int _currentIndex;
   VideoPlayerController? _videoController;
-  bool _isVideoPlaying = false;
 
   @override
   void initState() {
@@ -1141,9 +1035,9 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
       _videoController = VideoPlayerController.network(url);
       await _videoController?.initialize();
       _videoController?.play();
-      setState(() {
-        _isVideoPlaying = true;
-      });
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -1154,7 +1048,6 @@ class _DocumentSliderViewerState extends State<_DocumentSliderViewer> {
 
     setState(() {
       _currentIndex = index;
-      _isVideoPlaying = false;
     });
 
     // Check if new page is video
