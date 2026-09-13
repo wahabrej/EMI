@@ -19,8 +19,12 @@ class ApiEndPoint {
   static String get currentUser => '$baseUrl${_withPrefix('/auth/me')}';
 
   /// 1. Sales Person / Staff Dashboard
-  static String salesDashboardSummary(String userId) =>
-      '$baseUrl${_withPrefix('/dashboard/summary/$userId')}';
+  static String salesDashboardSummary(String userId, {String? month}) {
+    final query = month != null && month.trim().isNotEmpty
+        ? '?month=${Uri.encodeComponent(month.trim())}'
+        : '';
+    return '$baseUrl${_withPrefix('/dashboard/summary/$userId$query')}';
+  }
 
   /// 2. Customer Dashboard
   static String customerDashboardSummary(String userId) =>
@@ -177,9 +181,11 @@ class ApiEndPoint {
   // ─── Payments (Staff/Collection) ───
   static String get collectPayment =>
       '$baseUrl${_withPrefix('/payments/collect')}';
-  static String get assignedProducts => '$baseUrl${_withPrefix('/assigned-products')}';
+  static String get assignedProducts =>
+      '$baseUrl${_withPrefix('/assigned-products')}';
 
-  static String editCustomer(String id) => '$baseUrl${_withPrefix('/customers/$id')}';
-  static String updatePaymentDate(String id) => '$baseUrl${_withPrefix('/customers/$id')}';
-
+  static String editCustomer(String id) =>
+      '$baseUrl${_withPrefix('/customers/$id')}';
+  static String updatePaymentDate(String id) =>
+      '$baseUrl${_withPrefix('/customers/$id')}';
 }

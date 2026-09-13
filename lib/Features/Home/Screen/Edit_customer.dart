@@ -2497,7 +2497,7 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
                   const SizedBox(height: 12),
                   _buildReadOnlyField(
                     controller: _businessNameController!,
-                    label: 'Business Name',
+                    label: 'Company / Business Name',
                     icon: Icons.business_outlined,
                   ),
                   const SizedBox(height: 12),

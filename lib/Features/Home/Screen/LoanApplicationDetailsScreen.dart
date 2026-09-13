@@ -212,7 +212,10 @@ class _LoanApplicationDetailsScreenState
                       "Other Source of Income",
                       app.sourceOfIncomeOther ?? 'N/A',
                     ),
-                  _infoRow("Business Name", app.businessName ?? 'N/A'),
+                  _infoRow(
+                    "Company / Business Name",
+                    app.businessName ?? 'N/A',
+                  ),
                   _infoRow(
                     "Monthly Income",
                     "৳${currency.format(app.monthlyIncome ?? 0)}",

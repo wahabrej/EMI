@@ -465,7 +465,14 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
                           );
                         }).toList(),
                         onChanged: (val) {
-                          vm.checkoutData.sourceOfIncome = val ?? 'Business';
+                          final selected = val ?? 'Business';
+                          vm.checkoutData.sourceOfIncome = selected;
+
+                          if (selected.toUpperCase() != 'OTHERS') {
+                            _sourceOfIncomeOtherController.clear();
+                            vm.checkoutData.sourceOfIncomeOther = '';
+                          }
+
                           setState(() {});
                         },
                         validator: (v) => v == null ? 'Select source' : null,
@@ -509,7 +516,7 @@ class _CustomerInfoStepState extends State<CustomerInfoStep> {
 
             _buildTextField(
               controller: _businessNameController,
-              label: 'Business Name (Optional)',
+              label: 'Company / Business Name (Optional)',
               hint: 'Enter business name if applicable',
             ),
             const SizedBox(height: 12),

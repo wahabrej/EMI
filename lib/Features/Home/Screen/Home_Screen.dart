@@ -19,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AppStorage _appStorage = AppStorage();
   String? _userRole;
-  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime? _selectedMonth;
 
   List<DateTime> get _availableMonths {
     final now = DateTime(DateTime.now().year, DateTime.now().month);
@@ -27,10 +27,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   bool _isSelectedMonth(String? value) {
+    if (_selectedMonth == null) return true;
+
     final date = DateTime.tryParse(value ?? '');
     return date != null &&
-        date.year == _selectedMonth.year &&
-        date.month == _selectedMonth.month;
+        date.year == _selectedMonth!.year &&
+        date.month == _selectedMonth!.month;
   }
 
   DateTime? _paymentDate(dynamic payment) {
@@ -100,13 +102,15 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.bgGrey,
       body: Consumer<SalesDashboardViewModel>(
         builder: (context, viewModel, child) {
-          if (viewModel.isLoading) {
+          final data = viewModel.dashboardData;
+
+          if (viewModel.isLoading && data == null) {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.primaryBlue),
             );
           }
 
-          if (viewModel.errorMessage != null) {
+          if (viewModel.errorMessage != null && data == null) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -132,7 +136,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                       ),
-                      onPressed: () => viewModel.fetchSalesDashboard(),
+                      onPressed: () => viewModel.fetchSalesDashboard(
+                        month: _selectedMonth == null
+                            ? null
+                            : DateFormat('yyyy-MM').format(_selectedMonth!),
+                      ),
                       child: const Text(
                         'Retry',
                         style: TextStyle(color: Colors.white),
@@ -143,8 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           }
-
-          final data = viewModel.dashboardData;
 
           // ── Stats calculate from model ──
           final int totalCustomers = data?.customers ?? 0;
@@ -213,7 +219,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 bottom: false,
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    await viewModel.fetchSalesDashboard();
+                    await viewModel.fetchSalesDashboard(
+                      month: _selectedMonth == null
+                          ? null
+                          : DateFormat('yyyy-MM').format(_selectedMonth!),
+                    );
                   },
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -457,7 +467,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppColors.black,
                 ),
               ),
-              PopupMenuButton<DateTime>(
+              PopupMenuButton<DateTime?>(
                 position: PopupMenuPosition.under,
                 offset: const Offset(0, 6),
                 color: AppColors.white,
@@ -465,42 +475,74 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                onSelected: (month) => setState(() => _selectedMonth = month),
-                itemBuilder: (context) => _availableMonths.map((month) {
-                  final isSelected =
-                      month.year == _selectedMonth.year &&
-                      month.month == _selectedMonth.month;
-                  return PopupMenuItem<DateTime>(
-                    value: month,
-                    height: 42,
-                    child: Row(
-                      children: [
-                        Icon(
-                          isSelected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_off,
-                          size: 18,
-                          color: isSelected
-                              ? AppColors.primaryBlue
-                              : AppColors.greyText,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          DateFormat('MMM yyyy').format(month),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: isSelected
-                                ? AppColors.primaryBlue
-                                : AppColors.black,
+                onSelected: (month) async {
+                  setState(() => _selectedMonth = month);
+                  await context
+                      .read<SalesDashboardViewModel>()
+                      .fetchSalesDashboard(
+                        month: month == null
+                            ? null
+                            : DateFormat('yyyy-MM').format(month),
+                      );
+                },
+                itemBuilder: (context) {
+                  final items = <PopupMenuEntry<DateTime?>>[
+                    const PopupMenuItem<DateTime?>(
+                      value: null,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.all_inclusive_rounded,
+                            size: 18,
+                            color: AppColors.primaryBlue,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 8),
+                          Text('All Time'),
+                        ],
+                      ),
                     ),
+                  ];
+
+                  items.addAll(
+                    _availableMonths.map((month) {
+                      final isSelected =
+                          _selectedMonth != null &&
+                          month.year == _selectedMonth!.year &&
+                          month.month == _selectedMonth!.month;
+
+                      return PopupMenuItem<DateTime?>(
+                        value: month,
+                        child: Row(
+                          children: [
+                            Icon(
+                              isSelected
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_off,
+                              size: 18,
+                              color: isSelected
+                                  ? AppColors.primaryBlue
+                                  : AppColors.greyText,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              DateFormat('MMM yyyy').format(month),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? AppColors.primaryBlue
+                                    : AppColors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   );
-                }).toList(),
+                  return items;
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -521,7 +563,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        DateFormat('MMM yyyy').format(_selectedMonth),
+                        _selectedMonth == null
+                            ? 'All Time'
+                            : DateFormat('MMM yyyy').format(_selectedMonth!),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.greyText,

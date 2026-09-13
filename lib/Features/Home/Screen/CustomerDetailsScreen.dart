@@ -192,6 +192,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             return const Center(child: Text("No details found"));
           }
 
+          debugPrint(
+            "🖥️ [CustomerDetailsScreen] customer loaded. activeLoansCount=${customer.activeLoans?.length ?? 0}, projectedScheduleCount=${customer.projectedInstallmentSchedule?.length ?? 0}, installmentsCount=${customer.activeLoans?.fold<int>(0, (sum, loan) => sum + (loan.installments?.length ?? 0)) ?? 0}",
+          );
+
+          final activeLoansCount = customer.activeLoans?.length ?? 0;
+          final installmentsCount =
+              customer.activeLoans?.fold<int>(
+                0,
+                (sum, loan) => sum + (loan.installments?.length ?? 0),
+              ) ??
+              0;
+
+          debugPrint(
+            "🖥️ [CustomerDetailsScreen] customer loaded. activeLoansCount=$activeLoansCount, installmentsCount=$installmentsCount",
+          );
+
           // 📌 ডকুমেন্ট কালেক্ট করা
           List<Map<String, String>> customerDocs = _collectCustomerDocuments(
             customer,
@@ -222,7 +238,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       "Other Source of Income",
                       customer.sourceOfIncomeOther ?? 'N/A',
                     ),
-                  _infoRow("Business Name", customer.businessName ?? 'N/A'),
+                  _infoRow(
+                    "Company / Business Name",
+                    customer.businessName ?? 'N/A',
+                  ),
                   _infoRow(
                     "Monthly Income",
                     "৳${currency.format(customer.monthlyIncome ?? 0)}",
@@ -270,6 +289,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ...customer.activeLoans!
                       .map((loan) => _buildLoanCard(loan, currency))
                       .toList(),
+                ] else if (customer.projectedInstallmentSchedule != null &&
+                    customer.projectedInstallmentSchedule!.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _sectionHeader("Payment Tracker"),
+                  _buildProjectedPaymentTrackerCard(
+                    customer.projectedInstallmentSchedule!,
+                    currency,
+                  ),
                 ],
 
                 // 📌 গ্যারান্টর সেকশন
@@ -727,6 +754,184 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     );
   }
 
+  Widget _buildProjectedPaymentTrackerCard(
+    List<LoanInstallment> installments,
+    NumberFormat currency,
+  ) {
+    if (installments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Projected Installment Schedule',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 18,
+              horizontalMargin: 0,
+              headingRowHeight: 34,
+              dataRowMinHeight: 42,
+              dataRowMaxHeight: 52,
+              columns: const [
+                DataColumn(
+                  label: Text(
+                    'SL',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Due Date',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Payment Date',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Payment Amount',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Charges / Financed',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Balance',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Status',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Cashback',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              ],
+              rows: installments.asMap().entries.map((entry) {
+                final index = entry.key + 1;
+                final inst = entry.value;
+                final status = (inst.status ?? 'PENDING').toUpperCase();
+                final isPaid = status == 'PAID';
+                final paymentAmount =
+                    inst.paymentAmount ??
+                    inst.totalDue ??
+                    inst.originalAmount ??
+                    0;
+                final chargesFinanced =
+                    inst.chargesFinanced ??
+                    inst.originalAmount ??
+                    inst.totalDue ??
+                    0;
+                final balance = inst.balance ?? inst.remainingAmount ?? 0;
+                final paymentDate = inst.paymentDate ?? '-';
+                final cashback = (inst.cashback ?? '').trim().isNotEmpty
+                    ? inst.cashback!
+                    : '-';
+
+                return DataRow(
+                  cells: [
+                    DataCell(Text('$index')),
+                    DataCell(Text(inst.dueDate ?? '-')),
+                    DataCell(Text(paymentDate)),
+                    DataCell(Text('৳${currency.format(paymentAmount)}')),
+                    DataCell(Text('৳${currency.format(chargesFinanced)}')),
+                    DataCell(Text('৳${currency.format(balance)}')),
+                    DataCell(
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isPaid
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            color: isPaid
+                                ? const Color(0xFF15803D)
+                                : const Color(0xFFF59E0B),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    DataCell(Text(cashback)),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPaymentTrackerCard(ActiveLoan loan, NumberFormat currency) {
     final installments = loan.installments ?? [];
     if (installments.isEmpty) {
@@ -749,76 +954,155 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 12),
-          ...installments.map((inst) {
-            final dueDate = inst.dueDate ?? 'N/A';
-            final status = (inst.status ?? '').toUpperCase();
-            final amount = inst.totalDue ?? inst.originalAmount ?? 0;
-            final isPaid = status == 'PAID';
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: isPaid
-                    ? const Color(0xFFECFDF5)
-                    : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isPaid
-                      ? const Color(0xFF86EFAC)
-                      : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dueDate,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '৳${currency.format(amount)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 18,
+              horizontalMargin: 0,
+              headingRowHeight: 34,
+              dataRowMinHeight: 42,
+              dataRowMaxHeight: 52,
+              columns: const [
+                DataColumn(
+                  label: Text(
+                    'SL',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                ),
+                DataColumn(
+                  label: Text(
+                    'Due Date',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
                     ),
-                    decoration: BoxDecoration(
-                      color: isPaid
-                          ? const Color(0xFFDCFCE7)
-                          : const Color(0xFFFFF7ED),
-                      borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Payment Date',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
                     ),
-                    child: Text(
-                      isPaid ? 'Paid' : 'Pending',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: isPaid
-                            ? const Color(0xFF15803D)
-                            : const Color(0xFFF59E0B),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Payment Amount',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Charges / Financed',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Balance',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Status',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Cashback',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              ],
+              rows: installments.asMap().entries.map((entry) {
+                final index = entry.key + 1;
+                final inst = entry.value;
+                final status = (inst.status ?? 'PENDING').toUpperCase();
+                final isPaid = status == 'PAID';
+                final paymentAmount =
+                    inst.paymentAmount ??
+                    inst.totalDue ??
+                    inst.originalAmount ??
+                    0;
+                final chargesFinanced =
+                    inst.chargesFinanced ??
+                    inst.originalAmount ??
+                    inst.totalDue ??
+                    0;
+                final balance = inst.balance ?? inst.remainingAmount ?? 0;
+                final paymentDate = inst.paymentDate ?? '-';
+                final cashback = (inst.cashback ?? '').trim().isNotEmpty
+                    ? inst.cashback!
+                    : '-';
+
+                return DataRow(
+                  cells: [
+                    DataCell(Text('$index')),
+                    DataCell(Text(inst.dueDate ?? '-')),
+                    DataCell(Text(paymentDate)),
+                    DataCell(Text('৳${currency.format(paymentAmount)}')),
+                    DataCell(Text('৳${currency.format(chargesFinanced)}')),
+                    DataCell(Text('৳${currency.format(balance)}')),
+                    DataCell(
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isPaid
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            color: isPaid
+                                ? const Color(0xFF15803D)
+                                : const Color(0xFFF59E0B),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+                    DataCell(Text(cashback)),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );

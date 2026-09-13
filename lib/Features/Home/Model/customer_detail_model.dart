@@ -41,6 +41,7 @@ class CustomerData {
   List<Document>? customerDocuments;
 
   List<ActiveLoan>? activeLoans;
+  List<LoanInstallment>? projectedInstallmentSchedule;
   List<Guarantor>? guarantors;
 
   CustomerData({
@@ -118,6 +119,25 @@ class CustomerData {
         activeLoans!.add(ActiveLoan.fromJson(v));
       });
     }
+
+    final projectedInstallments = json['projectedInstallmentSchedule'];
+    if (projectedInstallments != null && projectedInstallments is List) {
+      projectedInstallmentSchedule = <LoanInstallment>[];
+      for (var item in projectedInstallments) {
+        projectedInstallmentSchedule!.add(LoanInstallment.fromJson(item));
+      }
+    }
+
+    final nestedCustomer = json['customer'];
+    if (nestedCustomer is Map<String, dynamic> &&
+        nestedCustomer['projectedInstallmentSchedule'] != null &&
+        nestedCustomer['projectedInstallmentSchedule'] is List) {
+      projectedInstallmentSchedule ??= <LoanInstallment>[];
+      for (var item in nestedCustomer['projectedInstallmentSchedule']) {
+        projectedInstallmentSchedule!.add(LoanInstallment.fromJson(item));
+      }
+    }
+
     if (json['guarantors'] != null) {
       guarantors = <Guarantor>[];
       json['guarantors'].forEach((v) {
@@ -323,26 +343,61 @@ class LoanInstallment {
   String? id;
   String? status;
   String? dueDate;
+  String? paymentDate;
   num? totalDue;
+  num? paymentAmount;
+  num? chargesFinanced;
   num? remainingAmount;
   num? originalAmount;
+  num? balance;
+  String? cashback;
 
   LoanInstallment({
     this.id,
     this.status,
     this.dueDate,
+    this.paymentDate,
     this.totalDue,
+    this.paymentAmount,
+    this.chargesFinanced,
     this.remainingAmount,
     this.originalAmount,
+    this.balance,
+    this.cashback,
   });
 
   LoanInstallment.fromJson(Map<String, dynamic> json) {
     id = json['id']?.toString();
     status = json['status']?.toString();
     dueDate = json['dueDate']?.toString() ?? json['date']?.toString();
-    totalDue = _parseNum(json['totalDue'] ?? json['amount']);
+    paymentDate =
+        json['paymentDate']?.toString() ??
+        json['paidDate']?.toString() ??
+        json['paid_at']?.toString() ??
+        json['payment_date']?.toString();
+    totalDue = _parseNum(
+      json['totalDue'] ?? json['amount'] ?? json['chargesFinanced'],
+    );
+    paymentAmount = _parseNum(
+      json['paymentAmount'] ?? json['paidAmount'] ?? json['amountPaid'],
+    );
+    chargesFinanced = _parseNum(
+      json['chargesFinanced'] ??
+          json['charges'] ??
+          json['financeAmount'] ??
+          json['originalAmount'] ??
+          json['original'],
+    );
     remainingAmount = _parseNum(json['remainingAmount'] ?? json['remaining']);
     originalAmount = _parseNum(json['originalAmount'] ?? json['original']);
+    balance = _parseNum(
+      json['balance'] ?? json['remainingAmount'] ?? json['remaining'],
+    );
+    cashback =
+        json['cashback']?.toString() ??
+        json['cashbackAmount']?.toString() ??
+        json['cashback_amount']?.toString() ??
+        json['cashbackAmount']?.toString();
   }
 
   num? _parseNum(dynamic value) {

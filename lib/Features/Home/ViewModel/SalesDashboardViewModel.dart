@@ -18,7 +18,7 @@ class SalesDashboardViewModel extends ChangeNotifier {
   Data? get dashboardData => _dashboardData;
 
   /// Fetch Sales Dashboard Data using stored Token & User ID
-  Future<void> fetchSalesDashboard() async {
+  Future<void> fetchSalesDashboard({String? month}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -41,7 +41,7 @@ class SalesDashboardViewModel extends ChangeNotifier {
         return;
       }
 
-      final url = ApiEndPoint.salesDashboardSummary(userId);
+      final url = ApiEndPoint.salesDashboardSummary(userId, month: month);
 
       debugPrint('=================  API REQUEST  =================');
       debugPrint('URL: $url');
@@ -70,11 +70,12 @@ class SalesDashboardViewModel extends ChangeNotifier {
         }
       } else {
         final body = jsonDecode(response.body);
-        _errorMessage = body['message'] ??
+        _errorMessage =
+            body['message'] ??
             body['error']?['message'] ??
             'Server error occurred (${response.statusCode})';
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _errorMessage = 'Network connection failed: ${e.toString()}';
       debugPrint(' Exception Caught: $e');
     } finally {

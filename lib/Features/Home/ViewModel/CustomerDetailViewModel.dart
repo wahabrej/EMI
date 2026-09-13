@@ -55,28 +55,116 @@ class CustomerDetailViewModel extends ChangeNotifier {
         // 📌 Store raw data
         _rawData = data['data'] as Map<String, dynamic>?;
 
+        debugPrint(
+          "📦 [CustomerDetailVM] Raw data keys: ${_rawData?.keys.toList()}",
+        );
+        debugPrint(
+          "📦 [CustomerDetailVM] rawData['activeLoans'] exists: ${_rawData?['activeLoans'] != null}",
+        );
+        debugPrint(
+          "📦 [CustomerDetailVM] rawData['activeLoans'] type: ${_rawData?['activeLoans']?.runtimeType}",
+        );
+        debugPrint(
+          "📦 [CustomerDetailVM] rawData['projectedInstallmentSchedule'] exists: ${_rawData?['projectedInstallmentSchedule'] != null}",
+        );
+        debugPrint(
+          "📦 [CustomerDetailVM] rawData['projectedInstallmentSchedule'] type: ${_rawData?['projectedInstallmentSchedule']?.runtimeType}",
+        );
+
         // 📌 Parse customer data
         _customerDetail = CustomerData.fromJson(data['data']);
+
+        final activeLoansCount = _customerDetail?.activeLoans?.length ?? 0;
+        final installmentsCount =
+            _customerDetail?.activeLoans?.fold<int>(
+              0,
+              (sum, loan) => sum + (loan.installments?.length ?? 0),
+            ) ??
+            0;
+        final projectedScheduleCount =
+            _customerDetail?.projectedInstallmentSchedule?.length ?? 0;
+
+        debugPrint(
+          "📦 [CustomerDetailVM] Parsed activeLoans count: $activeLoansCount",
+        );
+        debugPrint(
+          "📦 [CustomerDetailVM] Parsed installments count: $installmentsCount",
+        );
+        debugPrint(
+          "📦 [CustomerDetailVM] Parsed projectedInstallmentSchedule count: $projectedScheduleCount",
+        );
+
+        if (_customerDetail?.activeLoans != null &&
+            _customerDetail!.activeLoans!.isNotEmpty) {
+          for (int i = 0; i < _customerDetail!.activeLoans!.length; i++) {
+            final loan = _customerDetail!.activeLoans![i];
+            debugPrint(
+              "📦 [CustomerDetailVM] Loan[$i] productName=${loan.productName}, status=${loan.status}, installments=${loan.installments?.length ?? 0}",
+            );
+
+            if (loan.installments != null) {
+              for (int j = 0; j < loan.installments!.length; j++) {
+                final inst = loan.installments![j];
+                debugPrint(
+                  "📦 [CustomerDetailVM] Installment[$j] dueDate=${inst.dueDate}, paymentDate=${inst.paymentDate}, paymentAmount=${inst.paymentAmount}, chargesFinanced=${inst.chargesFinanced}, balance=${inst.balance}, status=${inst.status}, cashback=${inst.cashback}",
+                );
+              }
+            }
+          }
+        } else if (_customerDetail?.projectedInstallmentSchedule != null &&
+            _customerDetail!.projectedInstallmentSchedule!.isNotEmpty) {
+          debugPrint(
+            "📦 [CustomerDetailVM] Using projectedInstallmentSchedule fallback. Count=${_customerDetail!.projectedInstallmentSchedule!.length}",
+          );
+          for (
+            int i = 0;
+            i < _customerDetail!.projectedInstallmentSchedule!.length;
+            i++
+          ) {
+            final inst = _customerDetail!.projectedInstallmentSchedule![i];
+            debugPrint(
+              "📦 [CustomerDetailVM] ProjectedInstallment[$i] dueDate=${inst.dueDate}, paymentDate=${inst.paymentDate}, paymentAmount=${inst.paymentAmount}, chargesFinanced=${inst.chargesFinanced}, balance=${inst.balance}, status=${inst.status}, cashback=${inst.cashback}",
+            );
+          }
+        } else {
+          debugPrint(
+            "📦 [CustomerDetailVM] No activeLoans or projectedInstallmentSchedule found. Payment Tracker section will not render.",
+          );
+        }
 
         // 📌 IMPORTANT: Map documents from raw data to customer
         _mapDocumentsToCustomer(_customerDetail!, _rawData);
 
         debugPrint("✅ [CustomerDetailVM] Loaded Successfully");
-        debugPrint("📄 [CustomerDetailVM] NID Front: ${_customerDetail?.nidFront}");
-        debugPrint("📄 [CustomerDetailVM] NID Back: ${_customerDetail?.nidBack}");
-        debugPrint("📄 [CustomerDetailVM] Income Proof: ${_customerDetail?.incomeProof}");
-        debugPrint("📄 [CustomerDetailVM] Profile Image: ${_customerDetail?.profileImage}");
-        debugPrint("📄 [CustomerDetailVM] Customer Video: ${_customerDetail?.customerVideo}");
+        debugPrint(
+          "📄 [CustomerDetailVM] NID Front: ${_customerDetail?.nidFront}",
+        );
+        debugPrint(
+          "📄 [CustomerDetailVM] NID Back: ${_customerDetail?.nidBack}",
+        );
+        debugPrint(
+          "📄 [CustomerDetailVM] Income Proof: ${_customerDetail?.incomeProof}",
+        );
+        debugPrint(
+          "📄 [CustomerDetailVM] Profile Image: ${_customerDetail?.profileImage}",
+        );
+        debugPrint(
+          "📄 [CustomerDetailVM] Customer Video: ${_customerDetail?.customerVideo}",
+        );
 
         // 📌 Debug guarantor documents
         if (_customerDetail?.guarantors != null) {
           for (var g in _customerDetail!.guarantors!) {
-            debugPrint("📄 [CustomerDetailVM] Guarantor: ${g.name}, NID Front: ${g.nidFront}, Video: ${g.guarantorVideo}");
+            debugPrint(
+              "📄 [CustomerDetailVM] Guarantor: ${g.name}, NID Front: ${g.nidFront}, Video: ${g.guarantorVideo}",
+            );
           }
         }
-
       } else {
-        _errorMessage = data['message'] ?? data['error']?['message'] ?? "Failed to load customer details";
+        _errorMessage =
+            data['message'] ??
+            data['error']?['message'] ??
+            "Failed to load customer details";
       }
     } catch (e) {
       _errorMessage = "Connection error: ${e.toString()}";
@@ -88,7 +176,10 @@ class CustomerDetailViewModel extends ChangeNotifier {
   }
 
   // 📌 Map documents from raw data to customer model (ভিডিও সহ)
-  void _mapDocumentsToCustomer(CustomerData customer, Map<String, dynamic>? rawData) {
+  void _mapDocumentsToCustomer(
+    CustomerData customer,
+    Map<String, dynamic>? rawData,
+  ) {
     if (rawData == null) return;
 
     debugPrint("🔄 [CustomerDetailVM] Mapping documents...");
@@ -106,7 +197,8 @@ class CustomerDetailViewModel extends ChangeNotifier {
         if (docType.contains('NID_FRONT') || docType.contains('NIDFRONT')) {
           customer.nidFront = url;
           debugPrint("📄 [CustomerDetailVM] Mapped NID Front: $url");
-        } else if (docType.contains('NID_BACK') || docType.contains('NIDBACK')) {
+        } else if (docType.contains('NID_BACK') ||
+            docType.contains('NIDBACK')) {
           customer.nidBack = url;
           debugPrint("📄 [CustomerDetailVM] Mapped NID Back: $url");
         } else if (docType.contains('INCOME') || docType.contains('SALARY')) {
@@ -123,43 +215,65 @@ class CustomerDetailViewModel extends ChangeNotifier {
     }
 
     // ─── Direct fields from customer object ───
-    if (rawData['customer'] != null && rawData['customer'] is Map<String, dynamic>) {
+    if (rawData['customer'] != null &&
+        rawData['customer'] is Map<String, dynamic>) {
       Map<String, dynamic> customerData = rawData['customer'];
 
-      if (customerData['customerNidFront'] != null && customerData['customerNidFront'].toString().isNotEmpty) {
+      if (customerData['customerNidFront'] != null &&
+          customerData['customerNidFront'].toString().isNotEmpty) {
         customer.nidFront = customerData['customerNidFront'].toString();
-        debugPrint("📄 [CustomerDetailVM] Mapped customerNidFront: ${customer.nidFront}");
+        debugPrint(
+          "📄 [CustomerDetailVM] Mapped customerNidFront: ${customer.nidFront}",
+        );
       }
 
-      if (customerData['customerNidBack'] != null && customerData['customerNidBack'].toString().isNotEmpty) {
+      if (customerData['customerNidBack'] != null &&
+          customerData['customerNidBack'].toString().isNotEmpty) {
         customer.nidBack = customerData['customerNidBack'].toString();
-        debugPrint("📄 [CustomerDetailVM] Mapped customerNidBack: ${customer.nidBack}");
+        debugPrint(
+          "📄 [CustomerDetailVM] Mapped customerNidBack: ${customer.nidBack}",
+        );
       }
 
-      if (customerData['customerImageUrl'] != null && customerData['customerImageUrl'].toString().isNotEmpty) {
+      if (customerData['customerImageUrl'] != null &&
+          customerData['customerImageUrl'].toString().isNotEmpty) {
         customer.profileImage = customerData['customerImageUrl'].toString();
-        debugPrint("📄 [CustomerDetailVM] Mapped customerImageUrl: ${customer.profileImage}");
+        debugPrint(
+          "📄 [CustomerDetailVM] Mapped customerImageUrl: ${customer.profileImage}",
+        );
       }
 
       // 📌 ভিডিও URL ম্যাপিং
-      if (customerData['customerVideoUrl'] != null && customerData['customerVideoUrl'].toString().isNotEmpty) {
+      if (customerData['customerVideoUrl'] != null &&
+          customerData['customerVideoUrl'].toString().isNotEmpty) {
         customer.customerVideo = customerData['customerVideoUrl'].toString();
-        debugPrint("📄 [CustomerDetailVM] Mapped customerVideoUrl: ${customer.customerVideo}");
+        debugPrint(
+          "📄 [CustomerDetailVM] Mapped customerVideoUrl: ${customer.customerVideo}",
+        );
       }
 
-      if (customerData['customerVideo'] != null && customerData['customerVideo'].toString().isNotEmpty) {
+      if (customerData['customerVideo'] != null &&
+          customerData['customerVideo'].toString().isNotEmpty) {
         customer.customerVideo = customerData['customerVideo'].toString();
-        debugPrint("📄 [CustomerDetailVM] Mapped customerVideo: ${customer.customerVideo}");
+        debugPrint(
+          "📄 [CustomerDetailVM] Mapped customerVideo: ${customer.customerVideo}",
+        );
       }
 
-      if (customerData['incomeProofUrl'] != null && customerData['incomeProofUrl'].toString().isNotEmpty) {
+      if (customerData['incomeProofUrl'] != null &&
+          customerData['incomeProofUrl'].toString().isNotEmpty) {
         customer.incomeProof = customerData['incomeProofUrl'].toString();
-        debugPrint("📄 [CustomerDetailVM] Mapped incomeProofUrl: ${customer.incomeProof}");
+        debugPrint(
+          "📄 [CustomerDetailVM] Mapped incomeProofUrl: ${customer.incomeProof}",
+        );
       }
 
-      if (customerData['incomeProofDocument'] != null && customerData['incomeProofDocument'].toString().isNotEmpty) {
+      if (customerData['incomeProofDocument'] != null &&
+          customerData['incomeProofDocument'].toString().isNotEmpty) {
         customer.incomeProof = customerData['incomeProofDocument'].toString();
-        debugPrint("📄 [CustomerDetailVM] Mapped incomeProofDocument: ${customer.incomeProof}");
+        debugPrint(
+          "📄 [CustomerDetailVM] Mapped incomeProofDocument: ${customer.incomeProof}",
+        );
       }
     }
 
@@ -175,39 +289,55 @@ class CustomerDetailViewModel extends ChangeNotifier {
             Map<String, dynamic> guarantorData = guarantors[i];
 
             // Direct fields
-            if (guarantorData['nidFront'] != null && guarantorData['nidFront'].toString().isNotEmpty) {
+            if (guarantorData['nidFront'] != null &&
+                guarantorData['nidFront'].toString().isNotEmpty) {
               g.nidFront = guarantorData['nidFront'].toString();
-              debugPrint("📄 [CustomerDetailVM] Guarantor $i NID Front: ${g.nidFront}");
+              debugPrint(
+                "📄 [CustomerDetailVM] Guarantor $i NID Front: ${g.nidFront}",
+              );
             }
 
-            if (guarantorData['nidBack'] != null && guarantorData['nidBack'].toString().isNotEmpty) {
+            if (guarantorData['nidBack'] != null &&
+                guarantorData['nidBack'].toString().isNotEmpty) {
               g.nidBack = guarantorData['nidBack'].toString();
-              debugPrint("📄 [CustomerDetailVM] Guarantor $i NID Back: ${g.nidBack}");
+              debugPrint(
+                "📄 [CustomerDetailVM] Guarantor $i NID Back: ${g.nidBack}",
+              );
             }
 
             // 📌 Guarantor Video
-            if (guarantorData['guarantorVideoUrl'] != null && guarantorData['guarantorVideoUrl'].toString().isNotEmpty) {
+            if (guarantorData['guarantorVideoUrl'] != null &&
+                guarantorData['guarantorVideoUrl'].toString().isNotEmpty) {
               g.guarantorVideo = guarantorData['guarantorVideoUrl'].toString();
-              debugPrint("📄 [CustomerDetailVM] Guarantor $i Video: ${g.guarantorVideo}");
+              debugPrint(
+                "📄 [CustomerDetailVM] Guarantor $i Video: ${g.guarantorVideo}",
+              );
             }
 
-            if (guarantorData['guarantorVideo'] != null && guarantorData['guarantorVideo'].toString().isNotEmpty) {
+            if (guarantorData['guarantorVideo'] != null &&
+                guarantorData['guarantorVideo'].toString().isNotEmpty) {
               g.guarantorVideo = guarantorData['guarantorVideo'].toString();
-              debugPrint("📄 [CustomerDetailVM] Guarantor $i Video: ${g.guarantorVideo}");
+              debugPrint(
+                "📄 [CustomerDetailVM] Guarantor $i Video: ${g.guarantorVideo}",
+              );
             }
 
             // Documents array
-            if (guarantorData['documents'] != null && guarantorData['documents'] is List) {
+            if (guarantorData['documents'] != null &&
+                guarantorData['documents'] is List) {
               List docs = guarantorData['documents'];
               for (var doc in docs) {
-                String docType = doc['documentType']?.toString()?.toUpperCase() ?? '';
+                String docType =
+                    doc['documentType']?.toString()?.toUpperCase() ?? '';
                 String url = doc['url']?.toString() ?? '';
 
                 if (url.isEmpty) continue;
 
-                if (docType.contains('NID_FRONT') || docType.contains('NIDFRONT')) {
+                if (docType.contains('NID_FRONT') ||
+                    docType.contains('NIDFRONT')) {
                   g.nidFront = url;
-                } else if (docType.contains('NID_BACK') || docType.contains('NIDBACK')) {
+                } else if (docType.contains('NID_BACK') ||
+                    docType.contains('NIDBACK')) {
                   g.nidBack = url;
                 } else if (docType.contains('VIDEO')) {
                   g.guarantorVideo = url;
@@ -225,20 +355,24 @@ class CustomerDetailViewModel extends ChangeNotifier {
           if (i < guarantors.length) {
             Map<String, dynamic> guarantorData = guarantors[i];
 
-            if (guarantorData['nidFront'] != null && guarantorData['nidFront'].toString().isNotEmpty) {
+            if (guarantorData['nidFront'] != null &&
+                guarantorData['nidFront'].toString().isNotEmpty) {
               g.nidFront = guarantorData['nidFront'].toString();
             }
 
-            if (guarantorData['nidBack'] != null && guarantorData['nidBack'].toString().isNotEmpty) {
+            if (guarantorData['nidBack'] != null &&
+                guarantorData['nidBack'].toString().isNotEmpty) {
               g.nidBack = guarantorData['nidBack'].toString();
             }
 
             // 📌 Guarantor Video from customer's guarantors
-            if (guarantorData['guarantorVideoUrl'] != null && guarantorData['guarantorVideoUrl'].toString().isNotEmpty) {
+            if (guarantorData['guarantorVideoUrl'] != null &&
+                guarantorData['guarantorVideoUrl'].toString().isNotEmpty) {
               g.guarantorVideo = guarantorData['guarantorVideoUrl'].toString();
             }
 
-            if (guarantorData['guarantorVideo'] != null && guarantorData['guarantorVideo'].toString().isNotEmpty) {
+            if (guarantorData['guarantorVideo'] != null &&
+                guarantorData['guarantorVideo'].toString().isNotEmpty) {
               g.guarantorVideo = guarantorData['guarantorVideo'].toString();
             }
           }
